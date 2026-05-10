@@ -1,1 +1,6 @@
+# Ensure pnpm (npm global bin) is on PATH so turbo can spawn workspace scripts.
+# Git Bash on Windows does not inherit %APPDATA%\npm by default.
+[ -n "${APPDATA:-}" ] && [ -d "$APPDATA/npm" ] && export PATH="$APPDATA/npm:$PATH"
+[ -d "$HOME/AppData/Roaming/npm" ] && export PATH="$HOME/AppData/Roaming/npm:$PATH"
+
 npx --no-install turbo run typecheck

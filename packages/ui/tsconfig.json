@@ -1,0 +1,7 @@
+{
+  "extends": "@stitch/config/typescript/react-native.json",
+  "compilerOptions": {
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"]
+}

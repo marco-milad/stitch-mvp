@@ -1,0 +1,8 @@
+{
+  "extends": "@stitch/config/typescript/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"]
+}

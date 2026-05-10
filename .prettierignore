@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+out/
+.next/
+.turbo/
+.expo/
+coverage/
+*.lock
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+**/__pycache__/
+**/.venv/
+**/migrations/versions/

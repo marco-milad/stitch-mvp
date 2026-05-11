@@ -1,7 +1,6 @@
-import { FlashList } from '@shopify/flash-list';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
+import { FlatList, Text, View, type ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CategoryFilter, type FilterCategory } from '@/components/community/CategoryFilter';
@@ -13,6 +12,11 @@ import { FEED_POSTS, type FeedPost } from '@/lib/mock/feedPosts';
 import { FEED_REELS, type FeedReel } from '@/lib/mock/feedReels';
 import { useFeedStore } from '@/stores/feedStore';
 
+// We initially used @shopify/flash-list for a ~17-item feed, but flash-list@1.7
+// has a `recyclerlistview` peer dep that pnpm couldn't hoist into apps/mobile,
+// so Metro bundling failed at runtime. With 17 cells, native FlatList is
+// equivalent in perf and removes the dep dance entirely. If we ever scale the
+// feed into the hundreds we can swap back to flash-list@2.x.
 type FeedItem =
   | FeedPost
   | FeedReel
@@ -64,9 +68,7 @@ export default function Community() {
     ];
   }, [filter, bookmarks]);
 
-  const getItemType = (item: FeedItem) => item.kind;
-
-  const renderItem = ({ item }: { item: FeedItem }) => {
+  const renderItem: ListRenderItem<FeedItem> = ({ item }) => {
     switch (item.kind) {
       case 'header':
         return <StoryBar />;
@@ -99,14 +101,15 @@ export default function Community() {
           </View>
         </View>
       ) : (
-        <FlashList
+        <FlatList
           data={items}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          getItemType={getItemType}
-          estimatedItemSize={400}
           contentContainerStyle={{ paddingBottom: 120 }}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
+          windowSize={9}
+          removeClippedSubviews
         />
       )}
     </SafeAreaView>

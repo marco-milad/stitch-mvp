@@ -128,7 +128,7 @@ export default function StoryViewer() {
           </View>
 
           {/* Tap zones */}
-          <View className="absolute inset-0 flex-row" pointerEvents="box-none">
+          <View className="absolute inset-0 flex-row" style={{ pointerEvents: 'box-none' }}>
             <Pressable
               className="flex-1"
               onPress={() => advance(-1)}

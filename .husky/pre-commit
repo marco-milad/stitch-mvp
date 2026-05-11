@@ -1,1 +1,7 @@
+# Ensure dev tools resolve in Git Bash on Windows (no-op on Linux/Mac).
+# - %APPDATA%\npm has pnpm
+# - ~/.local/bin has uv (used by lint-staged for Python files)
+[ -n "${APPDATA:-}" ] && [ -d "$APPDATA/npm" ] && export PATH="$APPDATA/npm:$PATH"
+[ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
+
 npx --no-install lint-staged

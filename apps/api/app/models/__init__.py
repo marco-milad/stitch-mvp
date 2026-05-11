@@ -1,0 +1,35 @@
+"""SQLAlchemy models. Importing this module registers every model with
+`Base.metadata`, which is what Alembic's autogenerate compares against.
+"""
+
+from app.models.ai import AiSession, Conversation, Message
+from app.models.audit import AuditLog
+from app.models.base import Base
+from app.models.notifications import DeviceToken, Notification
+from app.models.ops import Booking, Guest, Invoice, MaintenanceRequest, QrLog
+from app.models.social import Comment, Post, Reel, Story
+from app.models.unit import Unit, UnitMember
+from app.models.user import User, UserRole
+
+__all__ = [
+    "AiSession",
+    "AuditLog",
+    "Base",
+    "Booking",
+    "Comment",
+    "Conversation",
+    "DeviceToken",
+    "Guest",
+    "Invoice",
+    "MaintenanceRequest",
+    "Message",
+    "Notification",
+    "Post",
+    "QrLog",
+    "Reel",
+    "Story",
+    "Unit",
+    "UnitMember",
+    "User",
+    "UserRole",
+]

@@ -32,6 +32,10 @@ export default function RootLayout() {
               <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
               <Stack.Screen name="qr" options={{ presentation: 'modal' }} />
               <Stack.Screen name="voice" />
+              <Stack.Screen
+                name="story/[id]"
+                options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+              />
             </Stack>
           </SafeAreaProvider>
         </GestureHandlerRootView>

@@ -11,8 +11,25 @@
     "profile": "حسابي"
   },
   "home": {
-    "greeting": "أهلاً بيك في ستيتش",
-    "comingSoon": "الصفحة الرئيسية المخصصة ليك هتيجي الأسبوع الجاي."
+    "roleOwner": "مالك",
+    "forYou": "مقترح ليك",
+    "aiPersonalized": "ذكاء اصطناعي · مخصص",
+    "cta": {
+      "openGate": "افتح البوابة",
+      "openGateSub": "اظهار QR · {{unit}}",
+      "farah": "كلم فرح",
+      "farahSub": "مساعدة ذكية · ٢٤/٧",
+      "invite": "ادعو ضيف",
+      "inviteSub": "اعمل QR pass",
+      "report": "بلغ عن مشكلة",
+      "reportSub": "طلب صيانة"
+    },
+    "openRequests": "طلبات مفتوحة",
+    "viewAll": "اعرض الكل",
+    "duePayments": "مدفوعات مستحقة",
+    "payNow": "ادفع الآن",
+    "latest": "الأحدث",
+    "seeAll": "اعرض الكل"
   },
   "community": {
     "title": "المجتمع",

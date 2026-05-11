@@ -11,8 +11,25 @@
     "profile": "Profile"
   },
   "home": {
-    "greeting": "Welcome to Stitch",
-    "comingSoon": "Your personalized home feed lands in Week 2."
+    "roleOwner": "Owner",
+    "forYou": "For You",
+    "aiPersonalized": "AI · Personalized",
+    "cta": {
+      "openGate": "Open Gate",
+      "openGateSub": "Show QR · {{unit}}",
+      "farah": "Talk to Farah",
+      "farahSub": "AI concierge · 24/7",
+      "invite": "Invite Guest",
+      "inviteSub": "Generate QR pass",
+      "report": "Report Issue",
+      "reportSub": "Maintenance request"
+    },
+    "openRequests": "Open requests",
+    "viewAll": "View all",
+    "duePayments": "Due payments",
+    "payNow": "Pay now",
+    "latest": "Latest",
+    "seeAll": "See all"
   },
   "community": {
     "title": "Community",

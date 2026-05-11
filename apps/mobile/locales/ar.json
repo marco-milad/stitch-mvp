@@ -1,0 +1,64 @@
+{
+  "app": {
+    "name": "ستيتش",
+    "tagline": "كمبوندك في تطبيق واحد"
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "community": "المجتمع",
+    "services": "الخدمات",
+    "discover": "اكتشف",
+    "profile": "حسابي"
+  },
+  "home": {
+    "greeting": "أهلاً بيك في ستيتش",
+    "comingSoon": "الصفحة الرئيسية المخصصة ليك هتيجي الأسبوع الجاي."
+  },
+  "community": {
+    "title": "المجتمع",
+    "comingSoon": "البوستات والريلز والقصص هتيجي هنا."
+  },
+  "services": {
+    "title": "الخدمات",
+    "comingSoon": "صيانة، حجوزات، مدفوعات — هتيجي قريب."
+  },
+  "discover": {
+    "title": "اكتشف",
+    "comingSoonResident": "فعاليات، عروض، ماركت — قريباً.",
+    "comingSoonProspect": "جولات افتراضية، وحدات، وحجز زيارة — قريباً."
+  },
+  "profile": {
+    "title": "حسابي",
+    "signIn": "تسجيل الدخول",
+    "signOut": "تسجيل الخروج",
+    "signedInAs": "مسجل دخول بحساب {{email}}",
+    "anonymous": "تتصفح كزائر"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "كل حاجة شفتها."
+  },
+  "qr": {
+    "title": "QR والدخول",
+    "myQr": "الـ QR بتاعي",
+    "guestPass": "تصريح ضيف",
+    "scan": "امسح QR",
+    "activity": "سجل النشاط"
+  },
+  "voice": {
+    "title": "فرح",
+    "tapToTalk": "اضغط للكلام",
+    "listening": "بسمعك…"
+  },
+  "auth": {
+    "signInTitle": "أهلاً بيك تاني",
+    "signInSubtitle": "سجل دخول لحسابك",
+    "signUpTitle": "اعمل حسابك",
+    "email": "الإيميل",
+    "password": "الباسورد",
+    "submit": "متابعة",
+    "switchToSignUp": "أول مرة هنا؟ اعمل حساب",
+    "switchToSignIn": "عندك حساب؟ سجل دخول",
+    "skipForNow": "كمل كضيف"
+  }
+}

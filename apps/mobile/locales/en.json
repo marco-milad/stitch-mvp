@@ -1,0 +1,64 @@
+{
+  "app": {
+    "name": "Stitch",
+    "tagline": "Your community, in one app"
+  },
+  "tabs": {
+    "home": "Home",
+    "community": "Community",
+    "services": "Services",
+    "discover": "Discover",
+    "profile": "Profile"
+  },
+  "home": {
+    "greeting": "Welcome to Stitch",
+    "comingSoon": "Your personalized home feed lands in Week 2."
+  },
+  "community": {
+    "title": "Community",
+    "comingSoon": "Posts, reels, and stories will live here."
+  },
+  "services": {
+    "title": "Services",
+    "comingSoon": "Maintenance, bookings, payments — coming Week 2."
+  },
+  "discover": {
+    "title": "Discover",
+    "comingSoonResident": "Events, offers, marketplace — coming soon.",
+    "comingSoonProspect": "Tours, units, and visit booking — coming soon."
+  },
+  "profile": {
+    "title": "Profile",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {{email}}",
+    "anonymous": "Browsing as guest"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "You're all caught up."
+  },
+  "qr": {
+    "title": "QR & Access",
+    "myQr": "My QR",
+    "guestPass": "Guest Pass",
+    "scan": "Scan QR",
+    "activity": "Activity Log"
+  },
+  "voice": {
+    "title": "Farah",
+    "tapToTalk": "Tap to talk",
+    "listening": "Listening…"
+  },
+  "auth": {
+    "signInTitle": "Welcome back",
+    "signInSubtitle": "Sign in to your Stitch account",
+    "signUpTitle": "Create your account",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Continue",
+    "switchToSignUp": "New here? Create an account",
+    "switchToSignIn": "Already have an account? Sign in",
+    "skipForNow": "Continue as guest"
+  }
+}

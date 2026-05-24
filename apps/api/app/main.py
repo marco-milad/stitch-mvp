@@ -1,11 +1,19 @@
+# ruff: noqa: E402  -- `load_dotenv()` MUST run before `from app.*` imports
+# (those trigger `settings = Settings()` which reads env at import time).
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+
+# Load .env into os.environ so dev `os.environ.get(...)` reads work. In
+# prod (Railway, Docker) there's no .env file — load_dotenv is a no-op
+# and the platform's injected env vars are used directly.
+load_dotenv()
 
 from app.api.v1.router import api_router
 from app.core.config import settings

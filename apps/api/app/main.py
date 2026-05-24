@@ -36,20 +36,22 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
-# CORS — production uses an explicit `ALLOWED_ORIGINS` allow-list from
-# the environment (comma-separated, e.g.
-#   ALLOWED_ORIGINS="https://stitch.app,https://admin.stitch.app").
-# Dev falls back to a regex that matches any localhost port so Vite picking
-# 5174/5176/5177/... doesn't take a front-end offline.
-_allowed = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
-if _allowed:
-    _cors_kwargs: dict[str, object] = {"allow_origins": _allowed}
-else:
-    _cors_kwargs = {"allow_origin_regex": r"http://localhost:\d+"}
+# CORS — the regex is ALWAYS on and covers:
+#   • http(s)://localhost(:port)? — every Vite dev port
+#   • https://*.vercel.app         — every Vercel preview + production URL
+#                                    (Vercel rotates the preview subdomain
+#                                    on each deploy; an explicit allow-list
+#                                    is impossible to keep in sync).
+# `ALLOWED_ORIGINS` (comma-separated) layers on top for additional fixed
+# origins such as a custom production domain
+# (e.g. `ALLOWED_ORIGINS="https://stitch.app,https://admin.stitch.app"`).
+_VERCEL_AND_LOCAL_REGEX = r"https?://(localhost(:\d+)?|.+\.vercel\.app)"
+_extra_allowed = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    **_cors_kwargs,  # type: ignore[arg-type]
+    allow_origin_regex=_VERCEL_AND_LOCAL_REGEX,
+    allow_origins=_extra_allowed,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

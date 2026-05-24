@@ -44,7 +44,12 @@ class Settings(BaseSettings):
     # CORS — NoDecode disables pydantic-settings' default JSON parsing so the
     # validator below sees the raw string value and can split on commas.
     CORS_ALLOW_ORIGINS: Annotated[list[str], NoDecode] = Field(
-        default=["http://localhost:3000", "http://localhost:8081"]
+        default=[
+            "http://localhost:3000",
+            "http://localhost:5173",  # Vite dev server (apps/web)
+            "http://localhost:5174",  # Vite dev server (apps/admin)
+            "http://localhost:8081",  # Expo dev server (apps/mobile)
+        ]
     )
 
     @field_validator("CORS_ALLOW_ORIGINS", mode="before")

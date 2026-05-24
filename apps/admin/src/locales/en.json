@@ -1,0 +1,239 @@
+{
+  "app": {
+    "title": "Stitch Admin",
+    "tagline": "Madinet Masr Operations"
+  },
+  "nav": {
+    "content": "Content Management",
+    "requests": "Service Requests",
+    "gate": "Gate & Parking",
+    "signOut": "Sign out",
+    "lang": "العربية"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "publish": "Publish",
+    "draft": "Draft",
+    "search": "Search…",
+    "filter": "Filter",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "approve": "Approve",
+    "reject": "Reject",
+    "assign": "Assign",
+    "resolve": "Mark resolved",
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "viewAll": "View all",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "content": {
+    "title": "Content Management",
+    "subtitle": "Publish announcements, events, and reels into the resident feed.",
+    "newPost": "New post",
+    "kind": {
+      "post": "Post",
+      "event": "Event",
+      "reel": "Reel"
+    },
+    "categories": {
+      "events": "Events",
+      "news": "News",
+      "announcements": "Announcements",
+      "community": "Community"
+    },
+    "table": {
+      "title": "Title",
+      "kind": "Kind",
+      "category": "Category",
+      "status": "Status",
+      "published": "Published",
+      "actions": "Actions"
+    },
+    "form": {
+      "kind": "What are you publishing?",
+      "category": "Category",
+      "caption": "Caption",
+      "captionPlaceholder": "What should residents know?",
+      "title": "Slide / reel title",
+      "subtitle": "Subtitle",
+      "emoji": "Emoji",
+      "bg": "Background color (hex)",
+      "imageUrl": "Image URL (optional)",
+      "pinned": "Pin to top of feed",
+      "isEvent": "Mark as event (RSVP enabled)",
+      "publishCta": "Publish now",
+      "draftCta": "Save as draft"
+    },
+    "status": {
+      "draft": "Draft",
+      "scheduled": "Scheduled",
+      "live": "Live"
+    },
+    "live": {
+      "title": "Live feed",
+      "subtitle": "What residents see right now"
+    }
+  },
+  "requests": {
+    "title": "Service Requests & Dispatching",
+    "subtitle": "Monitor resident maintenance complaints and assign technicians.",
+    "stream": {
+      "live": "LIVE",
+      "offline": "OFFLINE"
+    },
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "inProgress": "In progress",
+      "resolved": "Resolved"
+    },
+    "actions": {
+      "dispatch": "Dispatch",
+      "resolve": "Mark resolved",
+      "dispatching": "Dispatching…",
+      "resolving": "Resolving…"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "resolved": "Resolved"
+    },
+    "errors": {
+      "dispatch": "Could not dispatch — {{message}}",
+      "resolve": "Could not mark resolved — {{message}}",
+      "load": "Could not load tickets — {{message}}"
+    },
+    "empty_loading": "Loading tickets…",
+    "categories": {
+      "ac": "AC",
+      "plumbing": "Plumbing",
+      "electrical": "Electrical",
+      "cleaning": "Cleaning",
+      "pest": "Pest control",
+      "other": "Other"
+    },
+    "urgency": {
+      "routine": "Routine",
+      "priority": "Priority",
+      "urgent": "Urgent"
+    },
+    "table": {
+      "id": "ID",
+      "resident": "Resident",
+      "unit": "Unit",
+      "category": "Category",
+      "urgency": "Urgency",
+      "status": "Status",
+      "assignee": "Assigned to",
+      "openedAt": "Opened"
+    },
+    "assign": {
+      "title": "Assign technician",
+      "selectTech": "Select technician",
+      "note": "Note (optional)",
+      "confirm": "Confirm assignment"
+    },
+    "empty": "No service requests match your filters."
+  },
+  "gate": {
+    "title": "Gate & Parking Operations",
+    "subtitle": "Approve parking permits and track visitor QR codes in real time.",
+    "tabs": {
+      "permits": "Parking permits",
+      "qr": "Visitor QR",
+      "live": "Live stream"
+    },
+    "live": {
+      "title": "Security control room",
+      "subtitle": "Live QR scan feed from every gate",
+      "connected": "LIVE",
+      "offline": "OFFLINE",
+      "waiting": "Awaiting first scan…",
+      "scoreboard": {
+        "entriesToday": "Total entries today",
+        "activeGuests": "Active guests inside",
+        "alerts": "Security alerts"
+      },
+      "row": {
+        "approvedIn": "Entry approved",
+        "approvedOut": "Safe exit",
+        "denied": "Scan denied",
+        "expired": "QR expired",
+        "host": "Host",
+        "code": "Code",
+        "ago": "{{value}}{{unit}} ago",
+        "justNow": "just now"
+      },
+      "status": {
+        "approved": "Approved",
+        "denied": "Denied",
+        "expired": "Expired"
+      },
+      "direction": {
+        "in": "Entry",
+        "out": "Exit"
+      },
+      "visitorKind": {
+        "guest": "Guest",
+        "contractor": "Contractor",
+        "delivery": "Delivery",
+        "resident": "Resident"
+      },
+      "gate": {
+        "main": "Main Gate",
+        "gate1": "Gate 1",
+        "gate2": "Gate 2",
+        "gate3": "Gate 3"
+      },
+      "zone": {
+        "phase1": "Phase 1",
+        "sarai": "Sarai",
+        "tajSultan": "Taj Sultan",
+        "sahel": "Sahel"
+      }
+    },
+    "permits": {
+      "table": {
+        "resident": "Resident",
+        "unit": "Unit",
+        "vehicle": "Vehicle",
+        "plate": "Plate",
+        "validity": "Validity",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "expired": "Expired"
+      },
+      "empty": "No parking permits in queue."
+    },
+    "qr": {
+      "table": {
+        "code": "Code",
+        "host": "Host",
+        "unit": "Unit",
+        "visitor": "Visitor",
+        "kind": "Kind",
+        "scannedAt": "Scanned"
+      },
+      "kinds": {
+        "in": "Entry",
+        "out": "Exit",
+        "guest": "Guest",
+        "denied": "Denied"
+      },
+      "empty": "No QR scans in the selected window."
+    }
+  },
+  "auth": {
+    "signedInAs": "Signed in as",
+    "role": "Admin"
+  }
+}

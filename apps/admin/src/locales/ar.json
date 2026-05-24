@@ -1,0 +1,239 @@
+{
+  "app": {
+    "title": "ستيتش · الإدارة",
+    "tagline": "عمليات مدينة مصر"
+  },
+  "nav": {
+    "content": "إدارة المحتوى",
+    "requests": "طلبات الخدمة",
+    "gate": "البوابة والمواقف",
+    "signOut": "تسجيل الخروج",
+    "lang": "English"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "publish": "نشر",
+    "draft": "مسودة",
+    "search": "بحث…",
+    "filter": "تصفية",
+    "all": "الكل",
+    "yes": "نعم",
+    "no": "لا",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "assign": "تعيين",
+    "resolve": "تم الحل",
+    "loading": "جاري التحميل…",
+    "empty": "لا يوجد عناصر بعد",
+    "viewAll": "عرض الكل",
+    "createdAt": "تم الإنشاء",
+    "updatedAt": "آخر تحديث"
+  },
+  "content": {
+    "title": "إدارة المحتوى",
+    "subtitle": "نشر الإعلانات والفعاليات والريلز لمجتمع السكان.",
+    "newPost": "بوست جديد",
+    "kind": {
+      "post": "بوست",
+      "event": "فعالية",
+      "reel": "ريل"
+    },
+    "categories": {
+      "events": "فعاليات",
+      "news": "أخبار",
+      "announcements": "إعلانات",
+      "community": "مجتمع"
+    },
+    "table": {
+      "title": "العنوان",
+      "kind": "النوع",
+      "category": "التصنيف",
+      "status": "الحالة",
+      "published": "تاريخ النشر",
+      "actions": "إجراءات"
+    },
+    "form": {
+      "kind": "إيه اللي بتنشره؟",
+      "category": "التصنيف",
+      "caption": "النص",
+      "captionPlaceholder": "إيه اللي محتاج السكان يعرفوه؟",
+      "title": "عنوان الشريحة / الريل",
+      "subtitle": "عنوان فرعي",
+      "emoji": "إيموجي",
+      "bg": "لون الخلفية (Hex)",
+      "imageUrl": "رابط الصورة (اختياري)",
+      "pinned": "تثبيت في أعلى الفيد",
+      "isEvent": "تحديد كفعالية (تفعيل RSVP)",
+      "publishCta": "نشر دلوقتي",
+      "draftCta": "حفظ كمسودة"
+    },
+    "status": {
+      "draft": "مسودة",
+      "scheduled": "مجدول",
+      "live": "منشور"
+    },
+    "live": {
+      "title": "الفيد المباشر",
+      "subtitle": "اللي السكان شايفينه دلوقتي"
+    }
+  },
+  "requests": {
+    "title": "طلبات الخدمة والإسناد",
+    "subtitle": "متابعة شكاوى السكان وتعيين الفنيين.",
+    "stream": {
+      "live": "مباشر",
+      "offline": "غير متصل"
+    },
+    "filters": {
+      "all": "الكل",
+      "pending": "قيد الانتظار",
+      "inProgress": "جاري الإصلاح",
+      "resolved": "تم حل المشكلة"
+    },
+    "actions": {
+      "dispatch": "تعيين فني",
+      "resolve": "تم حل المشكلة",
+      "dispatching": "جاري التعيين…",
+      "resolving": "جاري التحديث…"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "in_progress": "جاري الإصلاح",
+      "resolved": "تم حل المشكلة"
+    },
+    "errors": {
+      "dispatch": "تعذر التعيين — {{message}}",
+      "resolve": "تعذر تحديث الحالة — {{message}}",
+      "load": "تعذر تحميل التذاكر — {{message}}"
+    },
+    "empty_loading": "جاري تحميل التذاكر…",
+    "categories": {
+      "ac": "تكييف",
+      "plumbing": "سباكة",
+      "electrical": "كهرباء",
+      "cleaning": "نظافة",
+      "pest": "مكافحة حشرات",
+      "other": "غير ذلك"
+    },
+    "urgency": {
+      "routine": "عادي",
+      "priority": "أولوية",
+      "urgent": "عاجل"
+    },
+    "table": {
+      "id": "رقم",
+      "resident": "الساكن",
+      "unit": "الوحدة",
+      "category": "التصنيف",
+      "urgency": "الأولوية",
+      "status": "الحالة",
+      "assignee": "تم التعيين لـ",
+      "openedAt": "تاريخ الفتح"
+    },
+    "assign": {
+      "title": "تعيين فني",
+      "selectTech": "اختر فني",
+      "note": "ملاحظة (اختياري)",
+      "confirm": "تأكيد التعيين"
+    },
+    "empty": "مفيش طلبات مطابقة للفلاتر."
+  },
+  "gate": {
+    "title": "عمليات البوابة والمواقف",
+    "subtitle": "اعتماد تصاريح المواقف وتتبع QR الزوار لحظياً.",
+    "tabs": {
+      "permits": "تصاريح المواقف",
+      "qr": "QR الزوار",
+      "live": "البث المباشر"
+    },
+    "live": {
+      "title": "غرفة تحكم الأمن",
+      "subtitle": "بث مباشر لكل عمليات مسح QR على البوابات",
+      "connected": "مباشر",
+      "offline": "غير متصل",
+      "waiting": "في انتظار أول عملية مسح…",
+      "scoreboard": {
+        "entriesToday": "إجمالي الدخول اليوم",
+        "activeGuests": "ضيوف داخل الكومباوند",
+        "alerts": "تنبيهات أمنية"
+      },
+      "row": {
+        "approvedIn": "تم السماح بالدخول",
+        "approvedOut": "خروج آمن",
+        "denied": "تم رفض المسح",
+        "expired": "رمز QR منتهي الصلاحية",
+        "host": "المستضيف",
+        "code": "الكود",
+        "ago": "من {{value}}{{unit}}",
+        "justNow": "دلوقتي"
+      },
+      "status": {
+        "approved": "موافق عليه",
+        "denied": "مرفوض",
+        "expired": "منتهي"
+      },
+      "direction": {
+        "in": "دخول",
+        "out": "خروج"
+      },
+      "visitorKind": {
+        "guest": "ضيف",
+        "contractor": "مقاول",
+        "delivery": "دليفري",
+        "resident": "ساكن"
+      },
+      "gate": {
+        "main": "البوابة الرئيسية",
+        "gate1": "بوابة ١",
+        "gate2": "بوابة ٢",
+        "gate3": "بوابة ٣"
+      },
+      "zone": {
+        "phase1": "المرحلة الأولى",
+        "sarai": "سراي",
+        "tajSultan": "تاج سلطان",
+        "sahel": "الساحل"
+      }
+    },
+    "permits": {
+      "table": {
+        "resident": "الساكن",
+        "unit": "الوحدة",
+        "vehicle": "العربية",
+        "plate": "اللوحة",
+        "validity": "الصلاحية",
+        "status": "الحالة",
+        "actions": "إجراءات"
+      },
+      "status": {
+        "pending": "قيد المراجعة",
+        "approved": "تمت الموافقة",
+        "rejected": "مرفوض",
+        "expired": "منتهي"
+      },
+      "empty": "مفيش تصاريح في الانتظار."
+    },
+    "qr": {
+      "table": {
+        "code": "الكود",
+        "host": "المستضيف",
+        "unit": "الوحدة",
+        "visitor": "الزائر",
+        "kind": "النوع",
+        "scannedAt": "وقت المسح"
+      },
+      "kinds": {
+        "in": "دخول",
+        "out": "خروج",
+        "guest": "ضيف",
+        "denied": "مرفوض"
+      },
+      "empty": "مفيش عمليات مسح في الفترة دي."
+    }
+  },
+  "auth": {
+    "signedInAs": "مسجل دخول كـ",
+    "role": "مسؤول"
+  }
+}

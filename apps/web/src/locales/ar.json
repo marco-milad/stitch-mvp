@@ -1,0 +1,1242 @@
+{
+  "app": {
+    "name": "ستيتش",
+    "tagline": "كمبوندك في تطبيق واحد"
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "community": "المجتمع",
+    "services": "الخدمات",
+    "discover": "اكتشف",
+    "profile": "حسابي"
+  },
+  "neighbors": {
+    "title": "الجيران",
+    "subtitle": "اكتشف ناس في كمبوندك",
+    "back": "رجوع",
+    "entry": {
+      "title": "اعرف جيرانك",
+      "subtitle": "اتواصل مع السكان اللي في منطقتك"
+    },
+    "summary": "{{total}} جار · {{immediate}} في منطقتك",
+    "search": {
+      "placeholder": "ابحث بالاسم أو الوحدة أو الاهتمام"
+    },
+    "filters": {
+      "all": "الكل",
+      "rolesTitle": "الدور",
+      "interestsTitle": "الاهتمامات"
+    },
+    "roles": {
+      "owner": "ملاك",
+      "tenant": "مستأجرين",
+      "family-member": "عائلة"
+    },
+    "roleSingular": {
+      "owner": "مالك",
+      "tenant": "مستأجر",
+      "family-member": "عائلة"
+    },
+    "zones": {
+      "phase1": "فيز ١",
+      "sarai": "سراي",
+      "tajSultan": "تاج سلطان",
+      "sahel": "الساحل"
+    },
+    "interests": {
+      "football": "كورة",
+      "padel": "بادل",
+      "cycling": "دراجات",
+      "yoga": "يوجا",
+      "pets": "حيوانات أليفة",
+      "tech": "تكنولوجيا",
+      "cars": "عربيات",
+      "cooking": "طبخ",
+      "music": "موسيقى",
+      "photography": "تصوير",
+      "books": "كتب",
+      "fitness": "لياقة"
+    },
+    "card": {
+      "immediateNeighbor": "جار قريب",
+      "privateProfile": "ساكن خاص",
+      "unitHidden": "الوحدة مخفية",
+      "sendMessage": "رسالة",
+      "messagesDisabled": "الرسائل مغلقة",
+      "comingSoon": "الرسائل المباشرة هتيجي مع تكامل المراسلة."
+    },
+    "empty": "مفيش جيران بيطابقوا بحثك.",
+    "clearFilters": "امسح الفلاتر"
+  },
+  "family": {
+    "entry": {
+      "title": "العائلة",
+      "subtitle": "{{count}} أفراد"
+    },
+    "title": "العائلة",
+    "back": "رجوع",
+    "summary": {
+      "members": "{{count}} أفراد",
+      "pending": "{{count}} في الانتظار"
+    },
+    "sections": {
+      "active": "نشط",
+      "pending": "دعوات في الانتظار",
+      "permissions": "الصلاحيات"
+    },
+    "empty": "مفيش أعضاء عائلة لسه. اضغط +دعوة لإضافة أول واحد.",
+    "permissionsSummary": "{{n}} من {{total}} صلاحيات مفعّلة",
+    "inviteSent": "تم إرسال الدعوة",
+    "roles": {
+      "co-owner": "شريك مالك",
+      "resident": "مقيم",
+      "child": "طفل",
+      "guest": "ضيف"
+    },
+    "permissions": {
+      "bookServices": "حجز الخدمات",
+      "controlSmartHome": "التحكم في البيت الذكي",
+      "issueVisitorPasses": "إصدار تصاريح زوار",
+      "makePayments": "الدفع",
+      "viewFinancials": "عرض الفواتير",
+      "manageMembers": "إدارة الأعضاء"
+    },
+    "status": {
+      "active": "نشط",
+      "pending": "في الانتظار",
+      "expired": "منتهي"
+    },
+    "actions": {
+      "invite": "ادعُ فرد",
+      "resend": "إعادة إرسال",
+      "cancel": "إلغاء",
+      "remove": "إزالة",
+      "copyLink": "انسخ الرابط",
+      "linkCopied": "تم نسخ الرابط",
+      "sendWhatsApp": "ابعت على واتساب",
+      "done": "تم"
+    },
+    "invite": {
+      "title": "ادعُ فرد جديد",
+      "close": "إغلاق",
+      "submit": "ابعت الدعوة",
+      "submitting": "جاري الإرسال…",
+      "sections": {
+        "member": "بيانات الفرد",
+        "role": "الدور",
+        "permissions": "الصلاحيات"
+      },
+      "permissionsHint": "اتعبّت تلقائياً حسب الدور المختار. تقدر تعدّلها قبل الإرسال.",
+      "fields": {
+        "fullName": {
+          "label": "الاسم بالكامل",
+          "placeholder": "الاسم زي ما في البطاقة",
+          "error": "اكتب الاسم بالكامل (٢–٨٠ حرف)"
+        },
+        "phoneNumber": {
+          "label": "رقم التليفون",
+          "placeholder": "+20 100 000 0000",
+          "error": "اكتب رقم تليفون صحيح"
+        },
+        "email": {
+          "label": "إيميل (اختياري)",
+          "placeholder": "they@example.com",
+          "error": "اكتب إيميل صحيح"
+        },
+        "role": {
+          "label": "الدور",
+          "error": "اختار دور"
+        }
+      },
+      "success": {
+        "title": "تم إرسال الدعوة!",
+        "body": "{{name}} هيستلم رابط تفعيل على {{phone}}.",
+        "linkLabel": "رابط التفعيل",
+        "comingSoon": "الإرسال على واتساب هييجي مع تكامل المراسلة."
+      }
+    }
+  },
+  "smartHome": {
+    "title": "البيت الذكي",
+    "subtitle": "الأجهزة · السيناريوهات · الاستهلاك المباشر",
+    "back": "رجوع",
+    "emptyDevices": "مفيش أجهزة موصلة لسه — التسليم لسه في الطريق للوحدة دي.",
+    "live": {
+      "title": "مباشر",
+      "thisMonth": "الشهر ده",
+      "trendUp": "↑ {{pct}}% عن الشهر اللي فات",
+      "trendDown": "↓ {{pct}}% عن الشهر اللي فات",
+      "trendFlat": "زي الشهر اللي فات",
+      "weekLabel": "آخر ٧ أيام",
+      "electricity": "كهرباء",
+      "water": "مياه"
+    },
+    "scenes": {
+      "title": "سيناريوهات سريعة",
+      "welcome": "أهلاً بعودتك",
+      "movie": "ليلة فيلم",
+      "sleep": "نوم",
+      "away": "بعيد عن البيت"
+    },
+    "rooms": {
+      "living": "الصالة",
+      "kitchen": "المطبخ",
+      "master": "غرفة النوم الرئيسية",
+      "kids": "غرفة الأطفال",
+      "guest": "غرفة الضيوف",
+      "garden": "الحديقة"
+    },
+    "devices": {
+      "livingAc": "تكييف الصالة",
+      "livingCeiling": "إضاءة السقف",
+      "livingBlinds": "ستائر ذكية",
+      "kitchenPendants": "إضاءة المطبخ",
+      "masterAc": "تكييف غرفة النوم",
+      "masterBedlamp": "نجفة الكوميدينو",
+      "masterLock": "قفل الغرفة",
+      "kidsAc": "تكييف الأطفال",
+      "kidsNight": "ضوء الليل",
+      "guestLock": "باب الضيوف",
+      "gardenLights": "إضاءة الحديقة",
+      "waterHeater": "سخان"
+    },
+    "controls": {
+      "on": "شغال",
+      "off": "مقفول",
+      "locked": "مقفول",
+      "unlocked": "مفتوح",
+      "cooling": "بيبرد",
+      "heating": "بيسخن",
+      "idle": "في وضع الانتظار",
+      "target": "المطلوب",
+      "current": "الحالي",
+      "brightness": "السطوع",
+      "openness": "مفتوح",
+      "powerToggle": "التشغيل",
+      "lockToggle": "القفل"
+    }
+  },
+  "parking": {
+    "title": "المواقف",
+    "subtitle": "مواقفك + تصاريح الزوار",
+    "back": "رجوع",
+    "sections": {
+      "mySlots": "مواقفك المخصصة",
+      "passes": "تصاريح الزوار"
+    },
+    "empty": {
+      "slots": "مفيش مواقف مخصصة لسه — التسليم لسه في الطريق للوحدة دي.",
+      "passes": "مفيش تصاريح ضيوف. اضغط على +تصريح جديد لتصدر واحد."
+    },
+    "slot": {
+      "zone": "منطقة {{zone}}",
+      "covered": "مغطى",
+      "open": "مكشوف",
+      "ev": "شاحن سيارات كهربائية",
+      "underground": "تحت الأرض"
+    },
+    "pass": {
+      "status": {
+        "active": "نشط",
+        "expired": "منتهي",
+        "used": "تم الاستخدام"
+      },
+      "validUntil": "ساري لحد {{date}}",
+      "expiredOn": "انتهى {{date}}",
+      "showQr": "اظهر QR",
+      "revoke": "إلغاء"
+    },
+    "newPass": {
+      "cta": "تصريح جديد",
+      "title": "تصريح زائر جديد",
+      "close": "إغلاق",
+      "submit": "اصدر التصريح",
+      "submitting": "جاري الإصدار…",
+      "sections": {
+        "guest": "بيانات الضيف",
+        "validity": "ساري لحد"
+      },
+      "fields": {
+        "guestName": {
+          "label": "اسم الضيف",
+          "placeholder": "الاسم بالكامل زي البطاقة",
+          "error": "اكتب اسم الضيف (٢–٨٠ حرف)"
+        },
+        "plateNumber": {
+          "label": "رقم اللوحة",
+          "placeholder": "ABC 1234 أو ا ب ج ١٢٣٤",
+          "error": "اكتب رقم لوحة (٢–٢٠ حرف)"
+        },
+        "validUntil": {
+          "label": "ساري لحد",
+          "error": "اختار تاريخ انتهاء"
+        },
+        "notes": {
+          "label": "ملاحظات",
+          "placeholder": "البوابة المفضلة، الوقت المتوقع للوصول…"
+        }
+      },
+      "success": {
+        "title": "تم إصدار التصريح!",
+        "body": "ابعت الـ QR لـ {{guest}}. هيمسحه على البوابة عشان يدخل.",
+        "showQr": "اظهر QR",
+        "back": "ارجع للمواقف"
+      }
+    }
+  },
+  "wellness": {
+    "title": "Wellness",
+    "subtitle": "جيم · سبا · حصص جماعية — كله جوه الكمبوند.",
+    "back": "رجوع",
+    "facilities": {
+      "gym": {
+        "name": "الجيم",
+        "sub": "قوة · كارديو · تدريب شخصي"
+      },
+      "spa": {
+        "name": "السبا والـ Wellness",
+        "sub": "مساج · حمام · فاشيال"
+      },
+      "classes": {
+        "name": "الحصص الجماعية",
+        "sub": "يوجا · بيلاتس · HIIT · رقص"
+      }
+    },
+    "facility": {
+      "sessionsTitle": "الحصص المتاحة",
+      "bookSession": "احجز",
+      "noSessions": "مفيش حصص في المرفق ده لسه."
+    },
+    "session": {
+      "instructorWith": "مع {{name}}",
+      "noInstructor": "بدون مدرب"
+    },
+    "instructors": {
+      "omar": "كوتش عمر",
+      "tarek": "كوتش طارق",
+      "nada": "المعالجة ندى",
+      "layla": "ليلى"
+    },
+    "schedule": {
+      "byAppointment": "بموعد مسبق",
+      "daily": "يومياً",
+      "dailyMornings": "كل يوم صباحاً",
+      "mwf18": "الإثنين · الأربعاء · الجمعة ٦ مساءً",
+      "tueThu7": "الثلاثاء · الخميس ٧ صباحاً",
+      "tueSun": "الثلاثاء – الأحد",
+      "weekday10": "أيام الأسبوع ١٠ صباحاً",
+      "satEvening": "السبت ٧ مساءً",
+      "sunFri": "الأحد · الجمعة"
+    }
+  },
+  "properties": {
+    "switcher": {
+      "title": "غير الوحدة",
+      "close": "إغلاق",
+      "current": "الحالية"
+    },
+    "unitTypes": {
+      "villa": "فيلا",
+      "townhouse": "تاون هاوس",
+      "apartment": "شقة",
+      "studio": "استوديو"
+    },
+    "ownership": {
+      "owner": "مالك",
+      "tenant": "مستأجر",
+      "family-member": "عائلة"
+    },
+    "bedrooms": "{{count}} غرف",
+    "handover": {
+      "eta": "التسليم {{date}}"
+    },
+    "construction": {
+      "title": "تقدم البناء",
+      "sub": "صور · مراحل · موعد التسليم"
+    }
+  },
+  "homeParking": {
+    "title": "الزوار والمواقف",
+    "subtitle": "اعمل تصاريح واحجز موقف",
+    "back": "رجوع",
+    "tabs": {
+      "visitor": "تصريح زائر",
+      "parking": "المواقف"
+    },
+    "visitor": {
+      "form": {
+        "title": "صرح للزائر مسبقاً",
+        "subtitle": "اعمل QR لمرة واحدة — البوابة هتقبله أوتوماتيك",
+        "name": "اسم الزائر",
+        "namePlaceholder": "أحمد، دليفري Crave، …",
+        "kind": "نوع العربية",
+        "validFrom": "من",
+        "validTo": "إلى",
+        "note": "ملاحظة (اختياري)",
+        "issue": "إصدار تصريح QR",
+        "issuing": "جاري الإصدار…"
+      },
+      "kinds": {
+        "car": "عربية",
+        "delivery": "دليفري",
+        "rideshare": "أوبر / بولت"
+      },
+      "result": {
+        "title": "التصريح شغّال",
+        "subtitle": "ابعت الكود للزائر",
+        "code": "الكود",
+        "validity": "{{from}} → {{to}}",
+        "share": "مشاركة عبر واتساب",
+        "issueAnother": "إصدار تصريح تاني",
+        "whatsappText": "أهلاً {{name}} 🤝 ده QR pass للدخول من بوابة مدينة مصر — كود {{code}} — صالح من {{from}} لـ {{to}}. أبعتله/ها ده على الباب."
+      },
+      "history": {
+        "title": "آخر التصاريح",
+        "empty": "لسه ما اتعملش تصاريح النهارده."
+      },
+      "errors": {
+        "createFailed": "تعذر إصدار التصريح — {{message}}"
+      }
+    },
+    "parking": {
+      "intro": "احجز موقف في منطقتك. الحجز ينتهي تلقائياً في الوقت اللي تختاره.",
+      "zones": {
+        "all": "كل المناطق",
+        "phase1": "المرحلة الأولى",
+        "sarai": "سراي",
+        "tajSultan": "تاج سلطان"
+      },
+      "status": {
+        "free": "متاح",
+        "reserved_self": "محجوز ليك",
+        "reserved_other": "محجوز"
+      },
+      "book": {
+        "title": "احجز {{label}}",
+        "until": "حجز حتى",
+        "confirm": "تأكيد الحجز",
+        "booking": "جاري الحجز…",
+        "release": "إلغاء الحجز",
+        "releasing": "جاري الإلغاء…"
+      },
+      "mine": {
+        "title": "حجوزاتك الفعالة",
+        "empty": "مفيش حجوزات فعالة دلوقتي.",
+        "until": "حتى {{time}}"
+      },
+      "errors": {
+        "bookFailed": "تعذر الحجز — {{message}}",
+        "loadFailed": "تعذر تحميل المواقف — {{message}}"
+      }
+    }
+  },
+  "myTickets": {
+    "title": "تذاكر الصيانة الفعالة",
+    "subtitle": "تحديثات لحظية من فريق العمليات",
+    "empty": "مفيش تذاكر صيانة فعالة دلوقتي.",
+    "loading": "جاري تحميل التذاكر…",
+    "live": "مباشر",
+    "offline": "غير متصل",
+    "newRequest": "+ طلب جديد",
+    "create": {
+      "title": "افتح تذكرة جديدة",
+      "subtitle": "قولنا إيه المشكلة وهنبعتلك الفني اللي مناسب.",
+      "category": "التصنيف",
+      "categoryPlaceholder": "اختار تصنيف",
+      "ticketTitle": "العنوان",
+      "ticketTitlePlaceholder": "مثلاً: ماسورة بتنقط تحت حوض المطبخ",
+      "description": "التفاصيل",
+      "descriptionPlaceholder": "تفاصيل تساعد الفني يجي مجهز.",
+      "urgency": "الأولوية",
+      "cancel": "إلغاء",
+      "submit": "إرسال الطلب",
+      "submitting": "جاري الإرسال…"
+    },
+    "toast": {
+      "created": "اتسجل الطلب — هنتابع معاك أول بأول."
+    },
+    "errors": {
+      "createFailed": "تعذر الإرسال — {{message}}"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "in_progress": "جاري الإصلاح",
+      "resolved": "تم حل المشكلة"
+    },
+    "statusAr": {
+      "pending": "قيد الانتظار",
+      "in_progress": "جاري الإصلاح",
+      "resolved": "تم حل المشكلة"
+    },
+    "category": {
+      "ac": "تكييف",
+      "plumbing": "سباكة",
+      "electrical": "كهرباء",
+      "cleaning": "نظافة",
+      "pest": "مكافحة حشرات",
+      "other": "غير ذلك"
+    },
+    "urgency": {
+      "routine": "عادي",
+      "priority": "أولوية",
+      "urgent": "عاجل"
+    },
+    "assignee": {
+      "label": "تم التعيين لـ",
+      "specialty": "{{specialty}} · {{name}}"
+    },
+    "opened": "تم الفتح {{time}}",
+    "updated": "آخر تحديث {{time}}"
+  },
+  "home": {
+    "roleOwner": "مالك",
+    "forYou": "مقترح ليك",
+    "aiPersonalized": "ذكاء اصطناعي · مخصص",
+    "cta": {
+      "openGate": "افتح البوابة",
+      "openGateSub": "اظهار QR · {{unit}}",
+      "farah": "كلم فرح",
+      "farahSub": "مساعدة ذكية · ٢٤/٧",
+      "invite": "ادعو ضيف",
+      "inviteSub": "اعمل QR pass",
+      "report": "بلغ عن مشكلة",
+      "reportSub": "طلب صيانة"
+    },
+    "openRequests": "طلبات مفتوحة",
+    "viewAll": "اعرض الكل",
+    "duePayments": "مدفوعات مستحقة",
+    "payNow": "ادفع الآن",
+    "latest": "الأحدث",
+    "seeAll": "اعرض الكل",
+    "suggested": {
+      "title": "خدمات مقترحة",
+      "viewAll": "اعرض الكل"
+    },
+    "activeRequest": {
+      "title": "جاري التنفيذ",
+      "scheduledFor": "{{date}} · {{time}}",
+      "view": "عرض"
+    }
+  },
+  "community": {
+    "title": "المجتمع",
+    "comingSoon": "البوستات والريلز والقصص هتيجي هنا.",
+    "filters": {
+      "all": "الكل",
+      "announcements": "إعلانات",
+      "general": "عام",
+      "marketplace": "السوق",
+      "lostFound": "المفقودات",
+      "sports": "رياضة",
+      "events": "فعاليات",
+      "saved": "محفوظ"
+    }
+  },
+  "feed": {
+    "official": "رسمي"
+  },
+  "post": {
+    "detail": {
+      "back": "رجوع",
+      "share": "مشاركة",
+      "more": "المزيد",
+      "loading": "جاري التحميل…",
+      "notFound": "البوست مش موجود"
+    }
+  },
+  "comments": {
+    "title": "التعليقات",
+    "count_one": "تعليق واحد",
+    "count_other": "{{n}} تعليق",
+    "empty": "كن أول من يعلق.",
+    "placeholder": "اكتب تعليق…",
+    "send": "إرسال",
+    "likes_one": "إعجاب واحد",
+    "likes_other": "{{n}} إعجاب",
+    "relative": {
+      "justNow": "دلوقتي",
+      "mAgo": "{{value}} د",
+      "hAgo": "{{value}} س",
+      "dAgo": "{{value}} ي",
+      "wAgo": "{{value}} أ"
+    }
+  },
+  "services": {
+    "title": "الخدمات",
+    "comingSoon": "صيانة، حجوزات، مدفوعات — هتيجي قريب.",
+    "myRequestsBanner": {
+      "title": "طلباتي الحالية",
+      "subtitle": "تابع التذاكر اللي فتحتها مع فريق العمليات"
+    },
+    "tiles": {
+      "gardening": "الجنينة",
+      "gardeningSub": "صيانة · لاند سكيب · شجر",
+      "securityGuard": "حارس أمن",
+      "securityGuardSub": "حفلة · دورية · مرافقة"
+    },
+    "category": {
+      "providersTitle": "مزودي الخدمة",
+      "infoOnly": "الخدمة دي معلوماتية. اختار إجراء تحت عشان تكمل.",
+      "infoAction": "فتح",
+      "filters": {
+        "topRated": "الأعلى تقييم",
+        "fastest": "الأسرع",
+        "cheapest": "الأرخص"
+      },
+      "empty": "مفيش مزودين متاحين في الفئة دي لسه."
+    },
+    "providers": {
+      "rating": "{{rating}} ★",
+      "reviews": "{{n}} تقييم",
+      "responseTime": "رد خلال {{min}} دقيقة",
+      "priceFrom": "يبدأ من {{price}} جنيه",
+      "requestService": "اطلب الخدمة",
+      "offeringsTitle": "اختار اللي محتاجه",
+      "offeringDuration": "{{min}} دقيقة",
+      "badges": {
+        "verified": "موثق",
+        "topRated": "الأعلى تقييم",
+        "new": "جديد"
+      }
+    },
+    "offerings": {
+      "cleaning": {
+        "regular": "تنظيف عادي",
+        "deep": "تنظيف عميق",
+        "postEvent": "تنظيف بعد المناسبات"
+      },
+      "laundry": {
+        "regular": "غسيل وكي",
+        "delicate": "دراي كلين / دقيق",
+        "bulk": "غسيل كميات كبيرة"
+      },
+      "delivery": {
+        "express": "توصيل سريع",
+        "scheduled": "توصيل مجدول"
+      },
+      "pet": {
+        "walk": "تمشية الكلب",
+        "grooming": "حلاقة وتنظيف",
+        "vet": "زيارة بيطري"
+      },
+      "home": {
+        "plumbing": "سباكة",
+        "electrical": "كهرباء",
+        "pest": "مكافحة حشرات",
+        "handyman": "صنايعي"
+      },
+      "gardening": {
+        "maintenance": "صيانة الحديقة",
+        "landscaping": "لاند سكيب",
+        "treeCare": "العناية بالشجر"
+      },
+      "securityGuard": {
+        "event": "تأمين حفلة (٦ ساعات)",
+        "patrol": "دورية في الكمبوند (٤ ساعات)",
+        "escort": "مرافقة شخصية (ساعة)"
+      },
+      "wellness-sessions": {
+        "personal-training": "تدريب شخصي",
+        "group-strength": "كورس قوة جماعي",
+        "cardio-coaching": "كارديو كوتشينج",
+        "hot-stone-massage": "مساج بالحجر الساخن",
+        "hammam": "حمام",
+        "facial": "فاشيال",
+        "couples-massage": "مساج للأزواج",
+        "hatha-yoga": "هاثا يوجا",
+        "vinyasa-flow": "فينياسا فلو",
+        "hiit": "HIIT",
+        "pilates": "بيلاتس",
+        "zumba": "زومبا",
+        "aqua-aerobics": "أكوا إيروبكس"
+      }
+    },
+    "book": {
+      "title": "احجز الخدمة",
+      "close": "إغلاق",
+      "submit": "أكد الحجز",
+      "submitting": "جاري الحجز…",
+      "draftSaved": "تم الحفظ",
+      "sections": {
+        "when": "اختار يوم ووقت",
+        "notes": "في حاجة تحب تقولها؟"
+      },
+      "fields": {
+        "date": { "label": "اليوم", "error": "اختار يوم" },
+        "time": { "label": "الوقت", "error": "اختار ميعاد" },
+        "notes": {
+          "label": "ملاحظات",
+          "placeholder": "إرشادات الدخول، طلبات خاصة…"
+        },
+        "consent": {
+          "label": "موافق على مشاركة بياناتي مع المزود.",
+          "error": "لازم توافق عشان تكمل"
+        }
+      },
+      "slotsTitle": "المواعيد المتاحة",
+      "summary": {
+        "provider": "المزود",
+        "offering": "الخدمة",
+        "duration": "المدة",
+        "price": "السعر",
+        "property": "للوحدة"
+      },
+      "success": {
+        "title": "تم إرسال الطلب!",
+        "body": "{{provider}} هيؤكد خلال {{min}} دقيقة. تقدر تتابع الطلب من شاشة الطلبات في أي وقت.",
+        "viewRequests": "اعرض طلباتي",
+        "backToServices": "ارجع للخدمات"
+      }
+    },
+    "compoundMap": {
+      "title": "خريطة الكمبوند",
+      "back": "رجوع",
+      "tapHint": "اضغط على نقطة عشان تعرف التفاصيل",
+      "drawerTitle": "تفاصيل المكان",
+      "close": "إغلاق",
+      "legendTitle": "المفتاح",
+      "filters": {
+        "all": "الكل",
+        "amenity": "خدمات",
+        "gate": "بوابات",
+        "commercial": "تجاري"
+      },
+      "actions": {
+        "directions": "اعرف الطريق",
+        "call": "اتصل بالأمن",
+        "book": "احجز المرفق",
+        "learnMore": "تفاصيل أكتر",
+        "directionsComingSoon": "الإرشادات خطوة بخطوة هتيجي مع الموقع في الأسبوع الخامس.",
+        "learnMoreComingSoon": "صفحة تفاصيل المكان قريباً."
+      },
+      "hotspots": {
+        "gate-main": { "name": "البوابة الرئيسية", "sub": "مفتوحة ٢٤/٧ · كاميرات + نقطة أمن" },
+        "gate-north": { "name": "البوابة الشمالية", "sub": "للسكان فقط · ٦ ص – ١١ م" },
+        "gate-service": { "name": "بوابة الخدمات", "sub": "موظفين وتوصيلات · ٧ ص – ٩ م" },
+        "clubhouse": { "name": "النادي الرئيسي", "sub": "صالات · مساحات عمل · كافيه" },
+        "pool-adult": { "name": "حمام سباحة للكبار", "sub": "سباحة لاب · ٦ ص – ١٠ م" },
+        "pool-kids": { "name": "حمام سباحة للأطفال", "sub": "منطقة رش · ٩ ص – ٧ م" },
+        "gym-spa": { "name": "جيم وسبا", "sub": "The Wellness Lab · الثلاثاء–الأحد" },
+        "park": { "name": "الحديقة المركزية", "sub": "ممرات مشي · بحيرة" },
+        "playground": { "name": "ملعب الأطفال", "sub": "عمر ٣–١٢ · مظلل وآمن" },
+        "yoga-lawn": { "name": "ساحة اليوجا", "sub": "جلسات الغروب · يمكن الحجز" },
+        "outlets-plaza": { "name": "ساحة المحلات", "sub": "تجزئة · مطاعم · خدمات" },
+        "cafes-row": { "name": "شارع الكافيهات", "sub": "قهوة مختصة · مخابز" },
+        "pharmacy": { "name": "الصيدلية", "sub": "مفتوحة ٢٤/٧ · توصيل" },
+        "supermarket": { "name": "السوبر ماركت", "sub": "مفتوح ٧ ص – ١١ م" },
+        "petrol": { "name": "محطة البنزين", "sub": "٢٤/٧ · هواء وغسيل سيارات" }
+      },
+      "zoneLabels": {
+        "villas": "فيلات",
+        "apartments": "شقق",
+        "outlets": "محلات",
+        "future": "مرحلة قادمة"
+      }
+    },
+    "requests": {
+      "title": "طلباتي",
+      "empty": "مفيش طلبات لسه. اضغط على خدمة عشان تحجز.",
+      "activeTitle": "نشط",
+      "pastTitle": "السابقة",
+      "scheduledFor": "{{date}} · {{time}}",
+      "cancel": "إلغاء",
+      "status": {
+        "pending": "بانتظار التأكيد",
+        "confirmed": "مؤكد",
+        "in-progress": "جاري التنفيذ",
+        "completed": "تم",
+        "cancelled": "ملغي"
+      }
+    }
+  },
+  "discover": {
+    "title": "اكتشف",
+    "prospect": {
+      "heroTitle": "جولة في {{compound}}",
+      "heroSub": "مدينة متكاملة للحياة اليومية — شرق القاهرة الجديدة.",
+      "cta": {
+        "tour": "ابدأ الجولة الافتراضية",
+        "book": "احجز زيارة للموقع",
+        "signInPrompt": "سجل دخول عشان تحفظ المفضلة"
+      },
+      "exploreTitle": "اكتشف",
+      "explore": {
+        "tour": "جولة افتراضية",
+        "tourSub": "اتفسح في الفيلات والشقق بتقنية 3D",
+        "masterPlan": "المخطط العام",
+        "masterPlanSub": "مناطق · خدمات · مراحل مستقبلية",
+        "calculator": "حاسبة السعر",
+        "calculatorSub": "احسب سعر وحدتك والقسط الشهري",
+        "book": "احجز زيارة للموقع",
+        "bookSub": "كلم مستشار المبيعات في الـ Showroom"
+      },
+      "tourPreviewTitle": "نظرة على الجولة",
+      "stopMin": "{{count}} دقيقة",
+      "othersTitle": "مشاريع أخرى",
+      "eoiCta": "سجل اهتمامك"
+    },
+    "resident": {
+      "heroTitle": "فعاليات قريبة منك",
+      "heroSub": "حفلة بالحمام السبا الجمعة · يوجا السبت · سينما الخميس",
+      "tonightTitle": "الليلة",
+      "marketplaceTitle": "السوق",
+      "marketplaceRow": "مدينة مصر · المحلات",
+      "marketplaceSub": "مطاعم، كافيهات، خدمات"
+    },
+    "tour": {
+      "stopCounter": "{{current}} من {{total}}",
+      "close": "إغلاق الجولة",
+      "prev": "السابق",
+      "next": "التالي",
+      "hotspotsTitle": "نقاط الاهتمام",
+      "tapHint": "اضغط على نقطة لمعرفة المزيد",
+      "gate": {
+        "title": "البوابة الرئيسية",
+        "sub": "ساحة استقبال · أمن ٢٤/٧",
+        "hotspots": {
+          "security": {
+            "title": "أمن ٢٤/٧",
+            "desc": "نقطة أمن دائمة + كاميرات قراءة لوحات في كل مدخل."
+          },
+          "welcome": {
+            "title": "ساحة الاستقبال",
+            "desc": "ساحة وصول بمساحات خضراء، منطقة إنزال، وموقف زوار."
+          }
+        }
+      },
+      "park": {
+        "title": "الحديقة المركزية",
+        "sub": "ممرات مشي · منطقة أطفال",
+        "hotspots": {
+          "trails": {
+            "title": "ممرات المشي",
+            "desc": "٣ كم من الممرات المظللة مع نقاط راحة ونوافير مياه."
+          },
+          "kids": {
+            "title": "منطقة الأطفال",
+            "desc": "ملعب آمن لعمر ٣–١٢ سنة، مسوّر ومظلل."
+          },
+          "lake": {
+            "title": "البحيرة المركزية",
+            "desc": "بحيرة عاكسة مع ممشى للمشاة ومقاعد."
+          }
+        }
+      },
+      "clubhouse": {
+        "title": "النادي",
+        "sub": "حمامات سباحة · جيم · سبا",
+        "hotspots": {
+          "pool": {
+            "title": "حمامات سباحة للكبار والأطفال",
+            "desc": "حمام لاب مسخّن، حمام ترفيهي، ومنطقة رش للأطفال."
+          },
+          "gym": {
+            "title": "مركز اللياقة",
+            "desc": "كارديو، أوزان، استوديوهين، وخدمة المناشف."
+          },
+          "spa": {
+            "title": "The Wellness Lab",
+            "desc": "ساونا، بخار، غرف علاج، وبار عصائر."
+          }
+        }
+      },
+      "villa": {
+        "title": "فيلا نموذجية",
+        "sub": "٤ غرف نوم · حديقة خاصة",
+        "hotspots": {
+          "living": {
+            "title": "صالة Open-plan",
+            "desc": "سقف مزدوج الارتفاع وواجهات زجاجية كاملة على الحديقة."
+          },
+          "garden": {
+            "title": "حديقة خاصة",
+            "desc": "١٨٠ متر مربع منسّقة، مع باقة حمام سباحة اختيارية."
+          }
+        }
+      }
+    },
+    "zones": {
+      "villas": { "title": "منطقة الفيلات", "sub": "مستقلة · تاون هاوس" },
+      "apartments": { "title": "الشقق", "sub": "استوديو · ١–٣ غرف" },
+      "clubhouse": { "title": "النادي", "sub": "حمامات سباحة · جيم · سبا" },
+      "outlets": { "title": "المحلات", "sub": "تجزئة · مطاعم · خدمات" },
+      "future": { "title": "المرحلة الجاية", "sub": "افتتاح ٢٠٢٧" }
+    },
+    "book": {
+      "title": "احجز زيارة للموقع",
+      "subtitle": "اختار اليوم والوقت والمستشار — هنأكدلك بالـ SMS والإيميل.",
+      "close": "إغلاق النموذج",
+      "draftSaved": "تم حفظ المسودة",
+      "submit": "أكد الحجز",
+      "submitting": "جاري الحجز…",
+      "slotsTitle": "المواعيد المتاحة",
+      "slotsPickFirst": "اختار نوع الزيارة واليوم عشان تشوف المواعيد.",
+      "noSlots": "مفيش مواعيد في اليوم ده — جرب يوم تاني.",
+      "advisorTitle": "اختار مستشار",
+      "sections": {
+        "visit": "نوع الزيارة",
+        "date": "اختار اليوم",
+        "contact": "بياناتك"
+      },
+      "fields": {
+        "visitType": { "error": "اختار نوع الزيارة" },
+        "date": { "label": "اليوم", "error": "اختار يوم" },
+        "time": { "label": "الوقت", "error": "اختار ميعاد" },
+        "name": {
+          "label": "الاسم بالكامل",
+          "placeholder": "اسمك",
+          "error": "اكتب اسمك بالكامل (٢–٨٠ حرف)"
+        },
+        "email": {
+          "label": "الإيميل",
+          "placeholder": "you@example.com",
+          "error": "اكتب إيميل صحيح"
+        },
+        "phone": {
+          "label": "التليفون",
+          "placeholder": "+20 100 000 0000",
+          "error": "اكتب رقم تليفون صحيح"
+        },
+        "notes": {
+          "label": "في حاجة تحب تقولها؟",
+          "placeholder": "الوحدة المفضلة، احتياجات خاصة، أسئلة…"
+        },
+        "consent": {
+          "label": "موافق على التواصل لتأكيد الزيارة.",
+          "error": "لازم توافق على التواصل عشان تكمل"
+        }
+      },
+      "options": {
+        "visitTypes": {
+          "showroom": "زيارة الـ Showroom",
+          "showroomSub": "القاهرة الجديدة · الإثنين–الخميس، السبت",
+          "virtual": "مكالمة فيديو",
+          "virtualSub": "جولة فيديو مع مستشار المبيعات",
+          "onsite": "جولة في الموقع",
+          "onsiteSub": "اتفسح في الكمبوند · الإثنين–الخميس، السبت"
+        }
+      },
+      "advisors": {
+        "any": "أي مستشار",
+        "anySub": "هنطلعلك واحد"
+      },
+      "specialties": {
+        "villas": "متخصص فيلات",
+        "apartments": "متخصص شقق",
+        "investments": "خطط استثمار"
+      },
+      "success": {
+        "title": "تم حجز الزيارة!",
+        "body": "حجزنالك {{slot}} يوم {{date}} لـ {{visitType}}. هيتواصل معاك مستشار خلال ٢٤ ساعة للتأكيد.",
+        "cta": "ارجع لـ Discover"
+      }
+    },
+    "calculator": {
+      "title": "حاسبة السعر",
+      "subtitle": "احسب سعر وحدتك والقسط الشهري.",
+      "close": "إغلاق الحاسبة",
+      "fields": {
+        "unitType": "نوع الوحدة",
+        "area": "المساحة",
+        "downPayment": "المقدم",
+        "years": "مدة السداد"
+      },
+      "areaUnit": "م²",
+      "areaRange": "المدى: {{min}}–{{max}} م²",
+      "years": "{{count}} سنوات",
+      "summary": {
+        "totalPrice": "السعر الكلي",
+        "downPayment": "المقدم",
+        "monthly": "القسط الشهري",
+        "installments": "عدد الأقساط"
+      },
+      "interestNote": "بدون فوائد — شروط مدينة مصر المعتادة.",
+      "breakdownToggleShow": "اعرض تفاصيل السنين",
+      "breakdownToggleHide": "إخفاء التفاصيل",
+      "breakdown": {
+        "title": "التفاصيل سنة بسنة",
+        "year": "السنة",
+        "starting": "البداية",
+        "paid": "المدفوع",
+        "ending": "النهاية"
+      },
+      "save": "سجل اهتمامك بالخطة دي"
+    },
+    "eoi": {
+      "title": "سجل اهتمامك",
+      "subtitle": "قولنا بتدور على إيه — مستشار مبيعات هيتواصل معاك خلال ٢٤ ساعة.",
+      "close": "إغلاق النموذج",
+      "draftSaved": "تم حفظ المسودة",
+      "submit": "أرسل الاهتمام",
+      "submitting": "جاري الإرسال…",
+      "sections": {
+        "about": "بياناتك",
+        "interest": "بتدور على إيه",
+        "extras": "أي حاجة تانية"
+      },
+      "fields": {
+        "name": {
+          "label": "الاسم بالكامل",
+          "placeholder": "اسمك",
+          "error": "اكتب اسمك بالكامل (٢–٨٠ حرف)"
+        },
+        "email": {
+          "label": "الإيميل",
+          "placeholder": "you@example.com",
+          "error": "اكتب إيميل صحيح"
+        },
+        "phone": {
+          "label": "التليفون",
+          "placeholder": "+20 100 000 0000",
+          "error": "اكتب رقم تليفون صحيح"
+        },
+        "interestedIn": {
+          "label": "نوع الوحدة",
+          "error": "اختر نوع الوحدة"
+        },
+        "budget": {
+          "label": "الميزانية (جنيه)",
+          "error": "اختر مدى الميزانية"
+        },
+        "timeline": {
+          "label": "هتبدأ السكن إمتى؟",
+          "error": "اختر الوقت المتوقع"
+        },
+        "source": {
+          "label": "عرفت عنا منين؟",
+          "placeholder": "اختر واحد (اختياري)"
+        },
+        "notes": {
+          "label": "في حاجة تحب تقولها؟",
+          "placeholder": "الإطلالة المفضلة، شروط لازم تتحقق، أسئلة…"
+        },
+        "consent": {
+          "label": "موافق على التواصل معايا بخصوص اهتمامي.",
+          "error": "لازم توافق على التواصل عشان تكمل"
+        }
+      },
+      "options": {
+        "unitTypes": {
+          "villa": "فيلا",
+          "townhouse": "تاون هاوس",
+          "apartment": "شقة",
+          "studio": "استوديو"
+        },
+        "budgets": {
+          "under5m": "أقل من ٥ مليون",
+          "fiveToTen": "٥ – ١٠ مليون",
+          "tenToTwenty": "١٠ – ٢٠ مليون",
+          "twentyPlus": "٢٠ مليون+"
+        },
+        "timelines": {
+          "immediate": "فوراً",
+          "threeMonths": "خلال ٣ شهور",
+          "sixMonths": "خلال ٦ شهور",
+          "twelveMonths": "خلال سنة",
+          "exploring": "بستكشف بس"
+        },
+        "sources": {
+          "referral": "صديق / ترشيح",
+          "social": "سوشيال ميديا",
+          "website": "الموقع / البحث",
+          "agent": "وسيط عقاري",
+          "other": "غير ذلك"
+        }
+      },
+      "success": {
+        "title": "شكراً، استلمنا اهتمامك!",
+        "body": "مستشار مبيعات من {{compound}} هيتواصل معاك خلال ٢٤ ساعة. حفظنالك بياناتك — تقدر تكمل من حيث وقفت في أي وقت.",
+        "cta": "ارجع لـ Discover",
+        "bookCta": "عايز تشوفها بنفسك؟ احجز زيارة"
+      }
+    },
+    "stories": {
+      "morning": {
+        "label": "صباح",
+        "title": "صباح في مدينة مصر",
+        "sub": "قهوة في البلكونة، جري في الحديقة المركزية، الولاد على المدرسة في ٥ دقايق.",
+        "time": "حياة يومية"
+      },
+      "clubhouse": {
+        "label": "النادي",
+        "title": "وييك إندات على المسبح",
+        "sub": "سباحة قبل الفطار، منطقة رش للأطفال، وقعدة Sundowner على الـ deck.",
+        "time": "نهاية الأسبوع"
+      },
+      "families": {
+        "label": "العائلات",
+        "title": "مصمم للعائلات",
+        "sub": "شوارع للمشاة، مناطق لعب آمنة، ومدرستين دوليتين على ٥ دقايق.",
+        "time": "طول الوقت"
+      },
+      "cafes": {
+        "label": "كافيهات",
+        "title": "كافيهات ومحلات",
+        "sub": "قهوة مختصة، مخابز، وفود كورت — كله جوه الكمبوند.",
+        "time": "من ٧ صباحاً"
+      },
+      "sunset": {
+        "label": "الغروب",
+        "title": "الغروب على البحيرة",
+        "sub": "ممرات مشي حوالين البحيرة المركزية — ساعة سحرية كل يوم.",
+        "time": "٦–٧ مساءً"
+      },
+      "wellness": {
+        "label": "ويلنس",
+        "title": "The Wellness Lab",
+        "sub": "استوديوهات يوجا، سبا، حمام، وبار عصائر — للسكان بس.",
+        "time": "الثلاثاء–الأحد"
+      }
+    },
+    "masterPlan": {
+      "title": "المخطط العام",
+      "close": "إغلاق المخطط",
+      "tapHint": "اضغط على نقطة لمعرفة المزيد",
+      "legendTitle": "المفتاح",
+      "exploreZone": "استكشف المنطقة",
+      "comingSoon": "تفاصيل المنطقة هتيجي في الأسبوع التالت.",
+      "kinds": {
+        "all": "الكل",
+        "residential": "سكني",
+        "amenity": "خدمات",
+        "commercial": "تجاري",
+        "future": "مستقبلي"
+      }
+    },
+    "tonight": {
+      "cinema": { "title": "سينما تحت النجوم", "sub": "٩ مساءً · المسرح المفتوح · مجاناً" },
+      "spa": { "title": "عرض سبا للسكان", "sub": "خصم ٢٠٪ · The Wellness Lab" },
+      "yoga": { "title": "يوجا الغروب", "sub": "٦ مساءً · الحديقة المركزية · المراتب متوفرة" }
+    },
+    "others": {
+      "sahel": { "title": "الساحل · على البحر", "sub": "افتتاح صيف ٢٠٢٧" },
+      "gouna": { "title": "الجونة · مارينا", "sub": "تسجيل الاهتمام مفتوح" },
+      "intl": { "title": "عالمياً · ٤ مشاريع", "sub": "دبي · الرياض · أثينا · لشبونة" }
+    }
+  },
+  "profile": {
+    "title": "حسابي",
+    "signIn": "تسجيل الدخول",
+    "signOut": "تسجيل الخروج",
+    "signedInAs": "مسجل دخول بحساب {{email}}",
+    "anonymous": "تتصفح كزائر"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "subtitle": "تحديثات من وحدتك والبوابات والخدمات",
+    "back": "رجوع",
+    "live": "مباشر",
+    "offline": "غير متصل",
+    "empty": {
+      "title": "كل حاجة شفتها",
+      "subtitle": "هنبعتلك إشعار هنا أول ما تذكرتك تتحدث أو زائر يمسح الـ QR بتاعه.",
+      "emoji": "🔔"
+    },
+    "loading": "جاري تحميل الإشعارات…",
+    "markAllRead": "تعليم الكل كمقروء",
+    "newBadge": "جديد",
+    "relative": {
+      "justNow": "دلوقتي",
+      "mAgo": "من {{value}} د",
+      "hAgo": "من {{value}} س",
+      "dAgo": "من {{value}} ي"
+    }
+  },
+  "qr": {
+    "title": "QR والدخول",
+    "myQr": "الـ QR بتاعي",
+    "guestPass": "تصريح ضيف",
+    "scan": "امسح QR",
+    "activity": "سجل النشاط"
+  },
+  "voice": {
+    "title": "فرح",
+    "close": "إغلاق",
+    "status": {
+      "online": "متصلة",
+      "offline": "غير متصلة"
+    },
+    "tapToTalk": "اضغط للكلام",
+    "listening": "بسمعك…",
+    "mic": {
+      "idleHint": "اضغط لتبدأ المحادثة المباشرة",
+      "listeningHint": "مباشر · اتكلم بحرية · اضغط للإنهاء",
+      "processingHint": "ثانية واحدة…",
+      "respondingHint": "فرح بترد · ممكن تقاطعها · اضغط للإنهاء"
+    },
+    "mode": {
+      "switchToText": "كتابة",
+      "switchToVoice": "صوت"
+    },
+    "text": {
+      "placeholder": "اسأل فرح أي حاجة…",
+      "send": "ابعت"
+    },
+    "greeting": "أهلاً {{name}}! 👋  أقدر أساعدك في إيه النهارده؟",
+    "chips": {
+      "cleaning": {
+        "label": "احجز تنظيف",
+        "utterance": "احجزلي تنظيف عميق السبت",
+        "response": "تمام. هحجزلك Cairo Sparkle السبت — هفتحلك صفحة الحجز عشان تأكد الميعاد."
+      },
+      "weekend": {
+        "label": "إيه في الأسبوع ده؟",
+        "utterance": "إيه اللي بيحصل في الكمبوند في الويك إند ده؟",
+        "response": "بازار ليلة الجمعة في ساحة المحلات (٦–١١م)، سينما تحت النجوم الخميس ٩م، ويوجا السبت ٧ صباحاً."
+      },
+      "gate": {
+        "label": "افتح البوابة للضيف",
+        "utterance": "افتح البوابة لكريم",
+        "response": "هطلعلك الـ QR — وريهلهم على البوابة. تحب أعملك تصريح للمرة الجاية؟"
+      },
+      "fee": {
+        "label": "مصاريف الصيانة",
+        "utterance": "كام مصاريف الصيانة؟",
+        "response": "٤٨٠٠ جنيه مستحقة يوم ١٥. الدفع التلقائي يقدر يتعامل معاها — تحب أفعّله؟"
+      },
+      "lights": {
+        "label": "اطفي الأنوار",
+        "utterance": "اطفي كل الأنوار",
+        "response": "تمام — هفتح البيت الذكي عشان تأكد أو تعدل السيناريو."
+      },
+      "spa": {
+        "label": "احجز جلسة سبا",
+        "utterance": "احجزلي جلسة سبا السبت",
+        "response": "تمام. هفتح صفحة السبا عشان تختار النوع والوقت."
+      },
+      "pass": {
+        "label": "تصريح زائر جديد",
+        "utterance": "اعمل تصريح زائر",
+        "response": "هفتحلك صفحة التصريح — ابعت الـ QR للضيف بعد ما تأكد."
+      },
+      "pool": {
+        "label": "حمام السباحة شغال؟",
+        "utterance": "حمام السباحة شغال النهارده؟",
+        "response": "أيوه — حمام الكبار مفتوح لحد ١٠م والزحمة خفيفة دلوقتي. تحب أحجزلك حارة؟"
+      }
+    },
+    "utterances": {
+      "first": "إيه اللي بيحصل في الكمبوند النهارده؟",
+      "second": "احجزلي تنظيف عميق السبت",
+      "third": "في حفلات الليلة؟"
+    },
+    "fallbacks": {
+      "generic": "تمام، هشوفلك ده وأرجعلك في ثانية."
+    },
+    "empty": {
+      "title": "ابدأ المحادثة",
+      "hint": "اضغط على اقتراح تحت أو الميكروفون عشان تبدأ."
+    }
+  },
+  "auth": {
+    "signInTitle": "أهلاً بيك تاني",
+    "signInSubtitle": "سجل دخول لحسابك",
+    "signUpTitle": "اعمل حسابك",
+    "email": "الإيميل",
+    "password": "الباسورد",
+    "submit": "متابعة",
+    "switchToSignUp": "أول مرة هنا؟ اعمل حساب",
+    "switchToSignIn": "عندك حساب؟ سجل دخول",
+    "skipForNow": "كمل كضيف"
+  }
+}

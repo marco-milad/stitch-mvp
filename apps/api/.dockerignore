@@ -1,0 +1,32 @@
+# Keep the image lean + never bake secrets into a layer.
+.env
+.env.*
+!.env.example
+
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+tests/
+docs/
+
+# Local dev artefacts
+*.log
+*.sqlite
+*.sqlite3
+
+# IDE / editor noise
+.vscode/
+.idea/
+.DS_Store
+
+# Git data — Render builds from a fresh clone anyway
+.git/
+.gitignore
+
+# Big things we don't need at runtime
+node_modules/

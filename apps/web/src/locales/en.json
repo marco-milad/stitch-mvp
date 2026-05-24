@@ -1,0 +1,1242 @@
+{
+  "app": {
+    "name": "Stitch",
+    "tagline": "Your community, in one app"
+  },
+  "tabs": {
+    "home": "Home",
+    "community": "Community",
+    "services": "Services",
+    "discover": "Discover",
+    "profile": "Profile"
+  },
+  "neighbors": {
+    "title": "Neighbors",
+    "subtitle": "Find people in your compound",
+    "back": "Back",
+    "entry": {
+      "title": "Find Neighbors",
+      "subtitle": "Connect with residents in your zone"
+    },
+    "summary": "{{total}} neighbors · {{immediate}} in your zone",
+    "search": {
+      "placeholder": "Search by name, unit, or interest"
+    },
+    "filters": {
+      "all": "All",
+      "rolesTitle": "Role",
+      "interestsTitle": "Interests"
+    },
+    "roles": {
+      "owner": "Owners",
+      "tenant": "Tenants",
+      "family-member": "Family"
+    },
+    "roleSingular": {
+      "owner": "Owner",
+      "tenant": "Tenant",
+      "family-member": "Family"
+    },
+    "zones": {
+      "phase1": "Phase 1",
+      "sarai": "Sarai",
+      "tajSultan": "Taj Sultan",
+      "sahel": "Sahel"
+    },
+    "interests": {
+      "football": "Football",
+      "padel": "Padel",
+      "cycling": "Cycling",
+      "yoga": "Yoga",
+      "pets": "Pets",
+      "tech": "Tech",
+      "cars": "Cars",
+      "cooking": "Cooking",
+      "music": "Music",
+      "photography": "Photography",
+      "books": "Books",
+      "fitness": "Fitness"
+    },
+    "card": {
+      "immediateNeighbor": "Immediate",
+      "privateProfile": "Private resident",
+      "unitHidden": "Unit hidden",
+      "sendMessage": "Message",
+      "messagesDisabled": "Messages off",
+      "comingSoon": "Direct messaging lands with the messaging integration."
+    },
+    "empty": "No neighbors match your search.",
+    "clearFilters": "Clear filters"
+  },
+  "family": {
+    "entry": {
+      "title": "Family",
+      "subtitle": "{{count}} members"
+    },
+    "title": "Family",
+    "back": "Back",
+    "summary": {
+      "members": "{{count}} members",
+      "pending": "{{count}} pending"
+    },
+    "sections": {
+      "active": "Active",
+      "pending": "Pending invitations",
+      "permissions": "Permissions"
+    },
+    "empty": "No family members yet. Tap +Invite to add the first one.",
+    "permissionsSummary": "{{n}} of {{total}} permissions enabled",
+    "inviteSent": "Invite sent",
+    "roles": {
+      "co-owner": "Co-owner",
+      "resident": "Resident",
+      "child": "Child",
+      "guest": "Guest"
+    },
+    "permissions": {
+      "bookServices": "Book services",
+      "controlSmartHome": "Control smart home",
+      "issueVisitorPasses": "Issue visitor passes",
+      "makePayments": "Make payments",
+      "viewFinancials": "View financials",
+      "manageMembers": "Manage members"
+    },
+    "status": {
+      "active": "Active",
+      "pending": "Pending",
+      "expired": "Expired"
+    },
+    "actions": {
+      "invite": "Invite member",
+      "resend": "Resend",
+      "cancel": "Cancel",
+      "remove": "Remove",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "sendWhatsApp": "Send via WhatsApp",
+      "done": "Done"
+    },
+    "invite": {
+      "title": "Invite a member",
+      "close": "Close",
+      "submit": "Send invite",
+      "submitting": "Sending…",
+      "sections": {
+        "member": "Member details",
+        "role": "Role",
+        "permissions": "Permissions"
+      },
+      "permissionsHint": "Auto-filled from the selected role. You can customize before sending.",
+      "fields": {
+        "fullName": {
+          "label": "Full name",
+          "placeholder": "Full name as on ID",
+          "error": "Enter the full name (2–80 characters)"
+        },
+        "phoneNumber": {
+          "label": "Phone number",
+          "placeholder": "+20 100 000 0000",
+          "error": "Enter a valid phone number"
+        },
+        "email": {
+          "label": "Email (optional)",
+          "placeholder": "they@example.com",
+          "error": "Enter a valid email address"
+        },
+        "role": {
+          "label": "Role",
+          "error": "Pick a role"
+        }
+      },
+      "success": {
+        "title": "Invite sent!",
+        "body": "{{name}} will receive an activation link on {{phone}}.",
+        "linkLabel": "Activation link",
+        "comingSoon": "WhatsApp delivery lands with the messaging integration."
+      }
+    }
+  },
+  "smartHome": {
+    "title": "Smart Home",
+    "subtitle": "Devices · Scenes · Live usage",
+    "back": "Back",
+    "emptyDevices": "No devices connected yet — handover is pending for this unit.",
+    "live": {
+      "title": "Live now",
+      "thisMonth": "This month",
+      "trendUp": "↑ {{pct}}% vs last month",
+      "trendDown": "↓ {{pct}}% vs last month",
+      "trendFlat": "Flat vs last month",
+      "weekLabel": "Last 7 days",
+      "electricity": "Electricity",
+      "water": "Water"
+    },
+    "scenes": {
+      "title": "Quick scenes",
+      "welcome": "Welcome Home",
+      "movie": "Movie Night",
+      "sleep": "Sleep",
+      "away": "Away"
+    },
+    "rooms": {
+      "living": "Living Room",
+      "kitchen": "Kitchen",
+      "master": "Master Bedroom",
+      "kids": "Kids' Room",
+      "guest": "Guest Room",
+      "garden": "Garden"
+    },
+    "devices": {
+      "livingAc": "Living AC",
+      "livingCeiling": "Ceiling Lights",
+      "livingBlinds": "Smart Blinds",
+      "kitchenPendants": "Pendant Lights",
+      "masterAc": "Master AC",
+      "masterBedlamp": "Bedside Lamp",
+      "masterLock": "Bedroom Lock",
+      "kidsAc": "Kids' AC",
+      "kidsNight": "Night Light",
+      "guestLock": "Guest Door",
+      "gardenLights": "Garden Lights",
+      "waterHeater": "Water Heater"
+    },
+    "controls": {
+      "on": "On",
+      "off": "Off",
+      "locked": "Locked",
+      "unlocked": "Unlocked",
+      "cooling": "Cooling",
+      "heating": "Heating",
+      "idle": "Idle",
+      "target": "Target",
+      "current": "Current",
+      "brightness": "Brightness",
+      "openness": "Open",
+      "powerToggle": "Power",
+      "lockToggle": "Lock"
+    }
+  },
+  "parking": {
+    "title": "Parking",
+    "subtitle": "Your slots + visitor passes",
+    "back": "Back",
+    "sections": {
+      "mySlots": "Your assigned slots",
+      "passes": "Visitor passes"
+    },
+    "empty": {
+      "slots": "No assigned slots yet — handover is pending for this unit.",
+      "passes": "No visitor passes yet. Tap +New Pass to issue one."
+    },
+    "slot": {
+      "zone": "Zone {{zone}}",
+      "covered": "Covered",
+      "open": "Open-air",
+      "ev": "EV charger",
+      "underground": "Underground"
+    },
+    "pass": {
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "used": "Used"
+      },
+      "validUntil": "Valid until {{date}}",
+      "expiredOn": "Expired {{date}}",
+      "showQr": "Show QR",
+      "revoke": "Revoke"
+    },
+    "newPass": {
+      "cta": "New Pass",
+      "title": "New visitor pass",
+      "close": "Close",
+      "submit": "Issue pass",
+      "submitting": "Issuing…",
+      "sections": {
+        "guest": "Your guest",
+        "validity": "Valid until"
+      },
+      "fields": {
+        "guestName": {
+          "label": "Guest name",
+          "placeholder": "Full name as on ID",
+          "error": "Enter the guest's name (2–80 characters)"
+        },
+        "plateNumber": {
+          "label": "Plate number",
+          "placeholder": "ABC 1234 or ا ب ج ١٢٣٤",
+          "error": "Enter a plate number (2–20 characters)"
+        },
+        "validUntil": {
+          "label": "Valid until",
+          "error": "Pick a valid-until date"
+        },
+        "notes": {
+          "label": "Notes",
+          "placeholder": "Gate preference, expected arrival time…"
+        }
+      },
+      "success": {
+        "title": "Pass issued!",
+        "body": "Share the QR with {{guest}}. They can scan it at the gate to enter.",
+        "showQr": "Show QR",
+        "back": "Back to Parking"
+      }
+    }
+  },
+  "wellness": {
+    "title": "Wellness",
+    "subtitle": "Gym · Spa · Group classes — all inside the compound.",
+    "back": "Back",
+    "facilities": {
+      "gym": {
+        "name": "Gym",
+        "sub": "Strength · Cardio · Personal Training"
+      },
+      "spa": {
+        "name": "Spa & Wellness",
+        "sub": "Massage · Hammam · Facials"
+      },
+      "classes": {
+        "name": "Group Classes",
+        "sub": "Yoga · Pilates · HIIT · Dance"
+      }
+    },
+    "facility": {
+      "sessionsTitle": "Available sessions",
+      "bookSession": "Request",
+      "noSessions": "No sessions in this facility yet."
+    },
+    "session": {
+      "instructorWith": "with {{name}}",
+      "noInstructor": "No instructor required"
+    },
+    "instructors": {
+      "omar": "Coach Omar",
+      "tarek": "Coach Tarek",
+      "nada": "Therapist Nada",
+      "layla": "Layla"
+    },
+    "schedule": {
+      "byAppointment": "By appointment",
+      "daily": "Daily",
+      "dailyMornings": "Daily mornings",
+      "mwf18": "Mon · Wed · Fri 6 PM",
+      "tueThu7": "Tue · Thu 7 AM",
+      "tueSun": "Tue – Sun",
+      "weekday10": "Weekdays 10 AM",
+      "satEvening": "Sat 7 PM",
+      "sunFri": "Sun · Fri"
+    }
+  },
+  "properties": {
+    "switcher": {
+      "title": "Switch unit",
+      "close": "Close",
+      "current": "Current"
+    },
+    "unitTypes": {
+      "villa": "Villa",
+      "townhouse": "Townhouse",
+      "apartment": "Apartment",
+      "studio": "Studio"
+    },
+    "ownership": {
+      "owner": "Owner",
+      "tenant": "Tenant",
+      "family-member": "Family"
+    },
+    "bedrooms": "{{count}} BR",
+    "handover": {
+      "eta": "Handover {{date}}"
+    },
+    "construction": {
+      "title": "Construction progress",
+      "sub": "Photos · milestones · ETA"
+    }
+  },
+  "homeParking": {
+    "title": "Visitors & Parking",
+    "subtitle": "Issue passes and book a slot",
+    "back": "Back",
+    "tabs": {
+      "visitor": "Visitor pass",
+      "parking": "Parking"
+    },
+    "visitor": {
+      "form": {
+        "title": "Pre-authorise a visitor",
+        "subtitle": "Generate a one-time QR — gate accepts it on arrival",
+        "name": "Visitor name",
+        "namePlaceholder": "Ahmed, Crave delivery, …",
+        "kind": "Vehicle",
+        "validFrom": "From",
+        "validTo": "Until",
+        "note": "Note (optional)",
+        "issue": "Issue QR pass",
+        "issuing": "Issuing…"
+      },
+      "kinds": {
+        "car": "Car",
+        "delivery": "Delivery",
+        "rideshare": "Uber / Bolt"
+      },
+      "result": {
+        "title": "Pass is live",
+        "subtitle": "Share this with your visitor",
+        "code": "Code",
+        "validity": "{{from}} → {{to}}",
+        "share": "Share via WhatsApp",
+        "issueAnother": "Issue another",
+        "whatsappText": "أهلاً {{name}} 🤝 ده QR pass للدخول من بوابة مدينة مصر — كود {{code}} — صالح من {{from}} لـ {{to}}. أبعتله/ها ده على الباب."
+      },
+      "history": {
+        "title": "Recent passes",
+        "empty": "No passes issued yet today."
+      },
+      "errors": {
+        "createFailed": "Could not issue pass — {{message}}"
+      }
+    },
+    "parking": {
+      "intro": "Reserve a slot in your zone. Reservations release on the time you choose.",
+      "zones": {
+        "all": "All zones",
+        "phase1": "Phase 1",
+        "sarai": "Sarai",
+        "tajSultan": "Taj Sultan"
+      },
+      "status": {
+        "free": "Free",
+        "reserved_self": "Yours",
+        "reserved_other": "Taken"
+      },
+      "book": {
+        "title": "Reserve {{label}}",
+        "until": "Hold until",
+        "confirm": "Reserve slot",
+        "booking": "Reserving…",
+        "release": "Release",
+        "releasing": "Releasing…"
+      },
+      "mine": {
+        "title": "Your active reservations",
+        "empty": "No active reservations.",
+        "until": "Until {{time}}"
+      },
+      "errors": {
+        "bookFailed": "Could not reserve — {{message}}",
+        "loadFailed": "Could not load slots — {{message}}"
+      }
+    }
+  },
+  "myTickets": {
+    "title": "Active maintenance tickets",
+    "subtitle": "Live updates from the operations team",
+    "empty": "No active maintenance tickets.",
+    "loading": "Loading tickets…",
+    "live": "LIVE",
+    "offline": "OFFLINE",
+    "newRequest": "+ New request",
+    "create": {
+      "title": "Open a new ticket",
+      "subtitle": "Tell us what's wrong — we'll dispatch a technician.",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "ticketTitle": "Title",
+      "ticketTitlePlaceholder": "e.g. Leaking pipe under kitchen sink",
+      "description": "Description",
+      "descriptionPlaceholder": "Add details that help the technician arrive prepared.",
+      "urgency": "Urgency",
+      "cancel": "Cancel",
+      "submit": "Submit request",
+      "submitting": "Submitting…"
+    },
+    "toast": {
+      "created": "Ticket submitted — we'll keep you posted."
+    },
+    "errors": {
+      "createFailed": "Could not submit — {{message}}"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "resolved": "Resolved"
+    },
+    "statusAr": {
+      "pending": "قيد الانتظار",
+      "in_progress": "جاري الإصلاح",
+      "resolved": "تم حل المشكلة"
+    },
+    "category": {
+      "ac": "AC",
+      "plumbing": "Plumbing",
+      "electrical": "Electrical",
+      "cleaning": "Cleaning",
+      "pest": "Pest control",
+      "other": "Other"
+    },
+    "urgency": {
+      "routine": "Routine",
+      "priority": "Priority",
+      "urgent": "Urgent"
+    },
+    "assignee": {
+      "label": "Assigned to",
+      "specialty": "{{specialty}} · {{name}}"
+    },
+    "opened": "Opened {{time}}",
+    "updated": "Updated {{time}}"
+  },
+  "home": {
+    "roleOwner": "Owner",
+    "forYou": "For You",
+    "aiPersonalized": "AI · Personalized",
+    "cta": {
+      "openGate": "Open Gate",
+      "openGateSub": "Show QR · {{unit}}",
+      "farah": "Talk to Farah",
+      "farahSub": "AI concierge · 24/7",
+      "invite": "Invite Guest",
+      "inviteSub": "Generate QR pass",
+      "report": "Report Issue",
+      "reportSub": "Maintenance request"
+    },
+    "openRequests": "Open requests",
+    "viewAll": "View all",
+    "duePayments": "Due payments",
+    "payNow": "Pay now",
+    "latest": "Latest",
+    "seeAll": "See all",
+    "suggested": {
+      "title": "Suggested services",
+      "viewAll": "View all"
+    },
+    "activeRequest": {
+      "title": "In progress",
+      "scheduledFor": "{{date}} · {{time}}",
+      "view": "View"
+    }
+  },
+  "community": {
+    "title": "Community",
+    "comingSoon": "Posts, reels, and stories will live here.",
+    "filters": {
+      "all": "All",
+      "announcements": "Announcements",
+      "general": "General",
+      "marketplace": "Marketplace",
+      "lostFound": "Lost & Found",
+      "sports": "Sports",
+      "events": "Events",
+      "saved": "Saved"
+    }
+  },
+  "feed": {
+    "official": "Official"
+  },
+  "post": {
+    "detail": {
+      "back": "Back",
+      "share": "Share",
+      "more": "More",
+      "loading": "Loading…",
+      "notFound": "Post not found"
+    }
+  },
+  "comments": {
+    "title": "Comments",
+    "count_one": "{{n}} comment",
+    "count_other": "{{n}} comments",
+    "empty": "Be the first to comment.",
+    "placeholder": "Write a comment…",
+    "send": "Send",
+    "likes_one": "{{n}} like",
+    "likes_other": "{{n}} likes",
+    "relative": {
+      "justNow": "Just now",
+      "mAgo": "{{value}}m",
+      "hAgo": "{{value}}h",
+      "dAgo": "{{value}}d",
+      "wAgo": "{{value}}w"
+    }
+  },
+  "services": {
+    "title": "Services",
+    "comingSoon": "Maintenance, bookings, payments — coming Week 2.",
+    "myRequestsBanner": {
+      "title": "My active requests",
+      "subtitle": "Track tickets you've opened with the ops team"
+    },
+    "tiles": {
+      "gardening": "Gardening",
+      "gardeningSub": "Maintenance · Landscaping · Trees",
+      "securityGuard": "Security Guard",
+      "securityGuardSub": "Event · Patrol · Escort"
+    },
+    "category": {
+      "providersTitle": "Available providers",
+      "infoOnly": "This service is information-only. Choose an action below to continue.",
+      "infoAction": "Open",
+      "filters": {
+        "topRated": "Top rated",
+        "fastest": "Fastest",
+        "cheapest": "Cheapest"
+      },
+      "empty": "No providers found in this category yet."
+    },
+    "providers": {
+      "rating": "{{rating}} ★",
+      "reviews": "{{n}} reviews",
+      "responseTime": "{{min}} min response",
+      "priceFrom": "from EGP {{price}}",
+      "requestService": "Request service",
+      "offeringsTitle": "Choose what you need",
+      "offeringDuration": "{{min}} min",
+      "badges": {
+        "verified": "Verified",
+        "topRated": "Top rated",
+        "new": "New"
+      }
+    },
+    "offerings": {
+      "cleaning": {
+        "regular": "Regular clean",
+        "deep": "Deep clean",
+        "postEvent": "Post-event clean"
+      },
+      "laundry": {
+        "regular": "Wash & fold",
+        "delicate": "Delicate / dry-clean",
+        "bulk": "Bulk laundry"
+      },
+      "delivery": {
+        "express": "Express delivery",
+        "scheduled": "Scheduled delivery"
+      },
+      "pet": {
+        "walk": "Dog walk",
+        "grooming": "Grooming",
+        "vet": "Vet visit"
+      },
+      "home": {
+        "plumbing": "Plumbing",
+        "electrical": "Electrical",
+        "pest": "Pest control",
+        "handyman": "Handyman"
+      },
+      "gardening": {
+        "maintenance": "Garden maintenance",
+        "landscaping": "Landscaping",
+        "treeCare": "Tree care"
+      },
+      "securityGuard": {
+        "event": "Event security (6h)",
+        "patrol": "Compound patrol (4h)",
+        "escort": "Personal escort (1h)"
+      },
+      "wellness-sessions": {
+        "personal-training": "Personal Training",
+        "group-strength": "Group Strength",
+        "cardio-coaching": "Cardio Coaching",
+        "hot-stone-massage": "Hot Stone Massage",
+        "hammam": "Hammam",
+        "facial": "Facial",
+        "couples-massage": "Couples Massage",
+        "hatha-yoga": "Hatha Yoga",
+        "vinyasa-flow": "Vinyasa Flow",
+        "hiit": "HIIT",
+        "pilates": "Pilates",
+        "zumba": "Zumba",
+        "aqua-aerobics": "Aqua Aerobics"
+      }
+    },
+    "book": {
+      "title": "Book service",
+      "close": "Close",
+      "submit": "Confirm booking",
+      "submitting": "Booking…",
+      "draftSaved": "Saved",
+      "sections": {
+        "when": "Pick a date and time",
+        "notes": "Anything we should know?"
+      },
+      "fields": {
+        "date": { "label": "Date", "error": "Pick a date" },
+        "time": { "label": "Time", "error": "Pick a time slot" },
+        "notes": {
+          "label": "Notes",
+          "placeholder": "Access instructions, special requests…"
+        },
+        "consent": {
+          "label": "I agree to share my contact details with this provider.",
+          "error": "Please agree to proceed"
+        }
+      },
+      "slotsTitle": "Available times",
+      "summary": {
+        "provider": "Provider",
+        "offering": "Service",
+        "duration": "Duration",
+        "price": "Price",
+        "property": "For"
+      },
+      "success": {
+        "title": "Request sent!",
+        "body": "{{provider}} will confirm within {{min}} minutes. You can track it any time from the requests screen.",
+        "viewRequests": "View my requests",
+        "backToServices": "Back to Services"
+      }
+    },
+    "compoundMap": {
+      "title": "Compound Map",
+      "back": "Back",
+      "tapHint": "Tap a dot to see details",
+      "drawerTitle": "Place details",
+      "close": "Close",
+      "legendTitle": "Legend",
+      "filters": {
+        "all": "All",
+        "amenity": "Amenities",
+        "gate": "Gates",
+        "commercial": "Commercial"
+      },
+      "actions": {
+        "directions": "Get Directions",
+        "call": "Call Security",
+        "book": "Book Facility",
+        "learnMore": "Learn more",
+        "directionsComingSoon": "Turn-by-turn directions land with geolocation in Week 5.",
+        "learnMoreComingSoon": "Detailed place page coming soon."
+      },
+      "hotspots": {
+        "gate-main": { "name": "Main Gate", "sub": "Open 24/7 · ANPR + manned booth" },
+        "gate-north": { "name": "North Gate", "sub": "Residents only · 6 AM – 11 PM" },
+        "gate-service": { "name": "Service Gate", "sub": "Staff & deliveries · 7 AM – 9 PM" },
+        "clubhouse": { "name": "Main Clubhouse", "sub": "Lounges · Co-working · Café" },
+        "pool-adult": { "name": "Adult Pool", "sub": "Lap swim · 6 AM – 10 PM" },
+        "pool-kids": { "name": "Kids Pool", "sub": "Splash pad · 9 AM – 7 PM" },
+        "gym-spa": { "name": "Gym & Spa", "sub": "The Wellness Lab · Tue–Sun" },
+        "park": { "name": "Central Park", "sub": "Walking trails · Lake" },
+        "playground": { "name": "Playground", "sub": "Ages 3–12 · Shaded soft-fall" },
+        "yoga-lawn": { "name": "Yoga Lawn", "sub": "Sunset classes · Bookable" },
+        "outlets-plaza": { "name": "Outlets Plaza", "sub": "Retail · Dining · Services" },
+        "cafes-row": { "name": "Cafés Row", "sub": "Specialty coffee · Bakeries" },
+        "pharmacy": { "name": "Pharmacy", "sub": "Open 24/7 · Delivery available" },
+        "supermarket": { "name": "Supermarket", "sub": "Open 7 AM – 11 PM" },
+        "petrol": { "name": "Petrol Station", "sub": "24/7 · Air & car wash" }
+      },
+      "zoneLabels": {
+        "villas": "VILLAS",
+        "apartments": "APARTMENTS",
+        "outlets": "OUTLETS",
+        "future": "FUTURE PHASE"
+      }
+    },
+    "requests": {
+      "title": "My requests",
+      "empty": "No requests yet. Tap a service to book your first one.",
+      "activeTitle": "Active",
+      "pastTitle": "Past",
+      "scheduledFor": "{{date}} · {{time}}",
+      "cancel": "Cancel",
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "in-progress": "In progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      }
+    }
+  },
+  "discover": {
+    "title": "Discover",
+    "prospect": {
+      "heroTitle": "Tour {{compound}}",
+      "heroSub": "A city built for everyday life — east of New Cairo.",
+      "cta": {
+        "tour": "Start virtual tour",
+        "book": "Book a site visit",
+        "signInPrompt": "Sign in to save your favorites"
+      },
+      "exploreTitle": "Explore",
+      "explore": {
+        "tour": "Virtual tour",
+        "tourSub": "Walk through villas and apartments in 3D",
+        "masterPlan": "Master plan",
+        "masterPlanSub": "Zones · Amenities · Future phases",
+        "calculator": "Price calculator",
+        "calculatorSub": "Estimate your unit price + monthly payment",
+        "book": "Book a site visit",
+        "bookSub": "Speak to a sales advisor at the showroom"
+      },
+      "tourPreviewTitle": "Tour preview",
+      "stopMin": "{{count}} min",
+      "othersTitle": "Other projects",
+      "eoiCta": "Register your interest"
+    },
+    "resident": {
+      "heroTitle": "Events near you",
+      "heroSub": "Pool party Friday · Yoga Saturday · Cinema Thursday",
+      "tonightTitle": "Tonight",
+      "marketplaceTitle": "Marketplace",
+      "marketplaceRow": "Madinet Masr · Outlets",
+      "marketplaceSub": "Restaurants, cafes, services"
+    },
+    "tour": {
+      "stopCounter": "{{current}} of {{total}}",
+      "close": "Close tour",
+      "prev": "Previous",
+      "next": "Next",
+      "hotspotsTitle": "Points of interest",
+      "tapHint": "Tap a dot to learn more",
+      "gate": {
+        "title": "Main gate",
+        "sub": "Welcome plaza · 24/7 security",
+        "hotspots": {
+          "security": {
+            "title": "24/7 security",
+            "desc": "Manned booth + ANPR cameras at every entry lane."
+          },
+          "welcome": {
+            "title": "Welcome plaza",
+            "desc": "Landscaped arrival with drop-off bay and visitor parking."
+          }
+        }
+      },
+      "park": {
+        "title": "Central park",
+        "sub": "Walking trails · Kids zone",
+        "hotspots": {
+          "trails": {
+            "title": "Walking trails",
+            "desc": "3 km of shaded loops with rest stops and water fountains."
+          },
+          "kids": {
+            "title": "Kids zone",
+            "desc": "Soft-fall playground for ages 3–12, fenced and shaded."
+          },
+          "lake": {
+            "title": "Central lake",
+            "desc": "Reflecting pool with a pedestrian boardwalk and benches."
+          }
+        }
+      },
+      "clubhouse": {
+        "title": "Clubhouse",
+        "sub": "Pools · Gym · Spa",
+        "hotspots": {
+          "pool": {
+            "title": "Adult & kids pools",
+            "desc": "Heated lap pool, free-form leisure pool, splash pad."
+          },
+          "gym": {
+            "title": "Fitness center",
+            "desc": "Cardio floor, weights, two studios, towel service."
+          },
+          "spa": {
+            "title": "The Wellness Lab",
+            "desc": "Sauna, steam room, treatment suites, juice bar."
+          }
+        }
+      },
+      "villa": {
+        "title": "Model villa",
+        "sub": "4 bedrooms · Private garden",
+        "hotspots": {
+          "living": {
+            "title": "Open-plan living",
+            "desc": "Double-height ceiling, floor-to-ceiling glazing to the garden."
+          },
+          "garden": {
+            "title": "Private garden",
+            "desc": "180 m² landscaped lawn with optional pool package."
+          }
+        }
+      }
+    },
+    "zones": {
+      "villas": { "title": "Villas district", "sub": "Standalone · Townhouse" },
+      "apartments": { "title": "Apartments", "sub": "Studio · 1–3 BR" },
+      "clubhouse": { "title": "Clubhouse", "sub": "Pools · Gym · Spa" },
+      "outlets": { "title": "Outlets", "sub": "Retail · Dining · Services" },
+      "future": { "title": "Future phase", "sub": "Launching 2027" }
+    },
+    "book": {
+      "title": "Book a site visit",
+      "subtitle": "Pick a date, time, and advisor — we'll confirm by text and email.",
+      "close": "Close form",
+      "draftSaved": "Draft saved",
+      "submit": "Confirm booking",
+      "submitting": "Booking…",
+      "slotsTitle": "Available times",
+      "slotsPickFirst": "Pick a visit type and date to see times.",
+      "noSlots": "No slots on this day — try another date.",
+      "advisorTitle": "Choose an advisor",
+      "sections": {
+        "visit": "Visit type",
+        "date": "Pick a date",
+        "contact": "Your details"
+      },
+      "fields": {
+        "visitType": { "error": "Pick a visit type" },
+        "date": { "label": "Date", "error": "Pick a date" },
+        "time": { "label": "Time", "error": "Pick a time slot" },
+        "name": {
+          "label": "Full name",
+          "placeholder": "Your name",
+          "error": "Enter your full name (2–80 characters)"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "you@example.com",
+          "error": "Enter a valid email address"
+        },
+        "phone": {
+          "label": "Phone",
+          "placeholder": "+20 100 000 0000",
+          "error": "Enter a valid phone number"
+        },
+        "notes": {
+          "label": "Anything we should know?",
+          "placeholder": "Preferred unit, accessibility needs, questions…"
+        },
+        "consent": {
+          "label": "I agree to be contacted to confirm this visit.",
+          "error": "Please agree to be contacted to continue"
+        }
+      },
+      "options": {
+        "visitTypes": {
+          "showroom": "Showroom visit",
+          "showroomSub": "New Cairo · Mon–Thu, Sat",
+          "virtual": "Virtual call",
+          "virtualSub": "Video tour with a sales advisor",
+          "onsite": "On-site tour",
+          "onsiteSub": "Walk the compound · Mon–Thu, Sat"
+        }
+      },
+      "advisors": {
+        "any": "Any advisor",
+        "anySub": "We'll match you"
+      },
+      "specialties": {
+        "villas": "Villas specialist",
+        "apartments": "Apartments specialist",
+        "investments": "Investment plans"
+      },
+      "success": {
+        "title": "Visit booked!",
+        "body": "We've reserved {{slot}} on {{date}} for your {{visitType}}. An advisor will reach out within 24 hours to confirm.",
+        "cta": "Back to Discover"
+      }
+    },
+    "calculator": {
+      "title": "Price calculator",
+      "subtitle": "Estimate your unit price and monthly payment.",
+      "close": "Close calculator",
+      "fields": {
+        "unitType": "Unit type",
+        "area": "Area",
+        "downPayment": "Down payment",
+        "years": "Plan length"
+      },
+      "areaUnit": "m²",
+      "areaRange": "Range: {{min}}–{{max}} m²",
+      "years": "{{count}} years",
+      "summary": {
+        "totalPrice": "Total price",
+        "downPayment": "Down payment",
+        "monthly": "Monthly",
+        "installments": "Installments"
+      },
+      "interestNote": "0% interest — Madinet Masr standard developer terms.",
+      "breakdownToggleShow": "Show year-by-year breakdown",
+      "breakdownToggleHide": "Hide breakdown",
+      "breakdown": {
+        "title": "Year-by-year breakdown",
+        "year": "Year",
+        "starting": "Starting",
+        "paid": "Paid",
+        "ending": "Ending"
+      },
+      "save": "Register interest in this plan"
+    },
+    "eoi": {
+      "title": "Register your interest",
+      "subtitle": "Tell us what you're looking for — a sales advisor will reach out within 24 hours.",
+      "close": "Close form",
+      "draftSaved": "Draft saved",
+      "submit": "Submit interest",
+      "submitting": "Submitting…",
+      "sections": {
+        "about": "About you",
+        "interest": "What you're looking for",
+        "extras": "Anything else"
+      },
+      "fields": {
+        "name": {
+          "label": "Full name",
+          "placeholder": "Your name",
+          "error": "Enter your full name (2–80 characters)"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "you@example.com",
+          "error": "Enter a valid email address"
+        },
+        "phone": {
+          "label": "Phone",
+          "placeholder": "+20 100 000 0000",
+          "error": "Enter a valid phone number"
+        },
+        "interestedIn": {
+          "label": "Unit type",
+          "error": "Pick a unit type"
+        },
+        "budget": {
+          "label": "Budget (EGP)",
+          "error": "Pick a budget range"
+        },
+        "timeline": {
+          "label": "When are you looking to move?",
+          "error": "Pick a timeline"
+        },
+        "source": {
+          "label": "How did you hear about us?",
+          "placeholder": "Select one (optional)"
+        },
+        "notes": {
+          "label": "Anything we should know?",
+          "placeholder": "Preferred view, must-haves, questions…"
+        },
+        "consent": {
+          "label": "I agree to be contacted about my interest.",
+          "error": "Please agree to be contacted to continue"
+        }
+      },
+      "options": {
+        "unitTypes": {
+          "villa": "Villa",
+          "townhouse": "Townhouse",
+          "apartment": "Apartment",
+          "studio": "Studio"
+        },
+        "budgets": {
+          "under5m": "Under 5M",
+          "fiveToTen": "5M – 10M",
+          "tenToTwenty": "10M – 20M",
+          "twentyPlus": "20M+"
+        },
+        "timelines": {
+          "immediate": "Immediately",
+          "threeMonths": "Within 3 months",
+          "sixMonths": "Within 6 months",
+          "twelveMonths": "Within a year",
+          "exploring": "Just exploring"
+        },
+        "sources": {
+          "referral": "Friend / referral",
+          "social": "Social media",
+          "website": "Website / search",
+          "agent": "Real-estate agent",
+          "other": "Other"
+        }
+      },
+      "success": {
+        "title": "Thanks, we got your interest!",
+        "body": "A sales advisor from {{compound}} will reach out within 24 hours. We've saved your details — you can pick up where you left off any time.",
+        "cta": "Back to Discover",
+        "bookCta": "Want to see it in person? Book a visit"
+      }
+    },
+    "stories": {
+      "morning": {
+        "label": "A morning",
+        "title": "Mornings at Madinet Masr",
+        "sub": "Coffee on the balcony, jog through the central park, kids off to school in five minutes.",
+        "time": "Daily life"
+      },
+      "clubhouse": {
+        "label": "Clubhouse",
+        "title": "Weekends by the pool",
+        "sub": "Lap swim before brunch, kids splash pad, sundowners on the deck.",
+        "time": "Weekends"
+      },
+      "families": {
+        "label": "Families",
+        "title": "Built for family life",
+        "sub": "Pedestrian-first streets, safe play areas, two international schools 5 minutes away.",
+        "time": "Always-on"
+      },
+      "cafes": {
+        "label": "Cafes",
+        "title": "Cafes & outlets",
+        "sub": "Specialty coffee, bakeries, and a casual food court — all inside the gates.",
+        "time": "From 7 AM"
+      },
+      "sunset": {
+        "label": "Sunset",
+        "title": "Sunsets at the lake",
+        "sub": "Walking trail loops around the central lake — magic hour every evening.",
+        "time": "6–7 PM"
+      },
+      "wellness": {
+        "label": "Wellness",
+        "title": "The Wellness Lab",
+        "sub": "Yoga studios, spa treatments, hammam, and a juice bar — residents only.",
+        "time": "Tue–Sun"
+      }
+    },
+    "masterPlan": {
+      "title": "Master plan",
+      "close": "Close master plan",
+      "tapHint": "Tap a dot to learn more",
+      "legendTitle": "Legend",
+      "exploreZone": "Explore this zone",
+      "comingSoon": "Detailed zone view lands in Week 3.",
+      "kinds": {
+        "all": "All",
+        "residential": "Residential",
+        "amenity": "Amenity",
+        "commercial": "Commercial",
+        "future": "Future"
+      }
+    },
+    "tonight": {
+      "cinema": { "title": "Cinema Under the Stars", "sub": "9 PM · Amphitheater · Free" },
+      "spa": { "title": "Resident-only spa offer", "sub": "20% off · The Wellness Lab" },
+      "yoga": { "title": "Sunset yoga", "sub": "6 PM · Central park · Mats provided" }
+    },
+    "others": {
+      "sahel": { "title": "Sahel · Beachfront", "sub": "Summer 2027 launch" },
+      "gouna": { "title": "El Gouna · Marina", "sub": "EOI open now" },
+      "intl": { "title": "International · 4 projects", "sub": "Dubai · Riyadh · Athens · Lisbon" }
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {{email}}",
+    "anonymous": "Browsing as guest"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Updates from your unit, gates and services",
+    "back": "Back",
+    "live": "LIVE",
+    "offline": "OFFLINE",
+    "empty": {
+      "title": "You're all caught up",
+      "subtitle": "We'll ping you here when a ticket moves or a visitor scans your pass.",
+      "emoji": "🔔"
+    },
+    "loading": "Loading notifications…",
+    "markAllRead": "Mark all as read",
+    "newBadge": "NEW",
+    "relative": {
+      "justNow": "Just now",
+      "mAgo": "{{value}}m ago",
+      "hAgo": "{{value}}h ago",
+      "dAgo": "{{value}}d ago"
+    }
+  },
+  "qr": {
+    "title": "QR & Access",
+    "myQr": "My QR",
+    "guestPass": "Guest Pass",
+    "scan": "Scan QR",
+    "activity": "Activity Log"
+  },
+  "voice": {
+    "title": "Farah",
+    "close": "Close",
+    "status": {
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "tapToTalk": "Tap to talk",
+    "listening": "Listening…",
+    "mic": {
+      "idleHint": "Tap to start a live conversation",
+      "listeningHint": "Live · talk freely · tap to end",
+      "processingHint": "Thinking…",
+      "respondingHint": "Farah is replying · interrupt anytime · tap to end"
+    },
+    "mode": {
+      "switchToText": "Text mode",
+      "switchToVoice": "Voice mode"
+    },
+    "text": {
+      "placeholder": "Ask Farah anything…",
+      "send": "Send"
+    },
+    "greeting": "Hi {{name}}! 👋  How can I help you today?",
+    "chips": {
+      "cleaning": {
+        "label": "Book cleaning",
+        "utterance": "Book a deep cleaning for Saturday",
+        "response": "On it. I'll line up Cairo Sparkle for Saturday — opening the booking form so you can lock the time."
+      },
+      "weekend": {
+        "label": "What's on this weekend?",
+        "utterance": "What's happening at the compound this weekend?",
+        "response": "Friday Night Bazaar at the Outlets Plaza (6–11 PM), Cinema Under the Stars Thursday at 9 PM, and a Saturday Yoga at 7 AM."
+      },
+      "gate": {
+        "label": "Open gate for guest",
+        "utterance": "Open the gate for Karim",
+        "response": "Pulling up your access QR — show it at the gate. Want me to issue a visitor pass for next time?"
+      },
+      "fee": {
+        "label": "Maintenance fee",
+        "utterance": "How much is my maintenance fee?",
+        "response": "EGP 4,800 due on the 15th. Auto-pay can handle this for you — want me to set it up?"
+      },
+      "lights": {
+        "label": "Lights off",
+        "utterance": "Turn off all the lights",
+        "response": "Done — opening Smart Home so you can confirm or tweak the scene."
+      },
+      "spa": {
+        "label": "Book spa session",
+        "utterance": "احجزلي جلسة سبا السبت",
+        "response": "تمام. هفتح صفحة السبا عشان تختار النوع والوقت."
+      },
+      "pass": {
+        "label": "New visitor pass",
+        "utterance": "Issue a visitor pass",
+        "response": "Opening the pass form — share the QR with your guest once you confirm."
+      },
+      "pool": {
+        "label": "Pool open today?",
+        "utterance": "Is the pool open today?",
+        "response": "Yes — the adult pool is open until 10 PM and the crowd is light right now. Want me to reserve a lane?"
+      }
+    },
+    "utterances": {
+      "first": "What's happening at the compound today?",
+      "second": "Book me a deep clean for Saturday",
+      "third": "Are there any events tonight?"
+    },
+    "fallbacks": {
+      "generic": "Got it. I'll look into that and get back to you in a moment."
+    },
+    "empty": {
+      "title": "Start a conversation",
+      "hint": "Tap a chip below or the mic to begin."
+    }
+  },
+  "auth": {
+    "signInTitle": "Welcome back",
+    "signInSubtitle": "Sign in to your Stitch account",
+    "signUpTitle": "Create your account",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Continue",
+    "switchToSignUp": "New here? Create an account",
+    "switchToSignIn": "Already have an account? Sign in",
+    "skipForNow": "Continue as guest"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop; \"killed PID $_\" } catch {} }; Get-Process -Name \"ngrok\" -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force; \"killed ngrok PID $\\($_.Id\\)\" }; \"---done---\")"
+    ]
+  }
+}

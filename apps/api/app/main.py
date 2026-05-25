@@ -49,7 +49,7 @@ app.state.limiter = limiter
 # that matches every Vercel deployment (production alias + per-PR previews).
 # CORSMiddleware ORs the two: origin matches if it's in the list OR the regex.
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
-VERCEL_ORIGIN_REGEX = r"https://.*\.vercel\.app$"
+VERCEL_ORIGIN_REGEX = r"https://stitch-mvp-web(-[a-z0-9-]+)?\.vercel\.app$"
 
 app.add_middleware(
     CORSMiddleware,

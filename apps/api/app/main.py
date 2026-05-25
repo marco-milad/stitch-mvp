@@ -45,13 +45,16 @@ app = FastAPI(
 app.state.limiter = limiter
 
 
-# CORS — comma-separated allow-list from the `ALLOWED_ORIGINS` env var.
-# Example: ALLOWED_ORIGINS="https://stitch.app,http://localhost:5173"
+# CORS — explicit allow-list from `ALLOWED_ORIGINS` env var, plus a regex
+# that matches every Vercel deployment (production alias + per-PR previews).
+# CORSMiddleware ORs the two: origin matches if it's in the list OR the regex.
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+VERCEL_ORIGIN_REGEX = r"https://.*\.vercel\.app$"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=VERCEL_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

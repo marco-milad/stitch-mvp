@@ -135,10 +135,10 @@ export function ServiceRequests() {
               type="button"
               onClick={() => setFilter(f)}
               className={[
-                'px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap',
+                'px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap backdrop-blur-sm transition-all duration-300',
                 filter === f
-                  ? 'bg-ink-900 border-ink-900 text-white'
-                  : 'bg-white border-ink-200 text-ink-700 hover:bg-ink-50',
+                  ? 'bg-gradient-to-br from-ink-800 to-ink-900 border-ink-900 text-white shadow-lg shadow-ink-900/30 scale-105'
+                  : 'bg-white/60 border-white/50 text-ink-700 hover:bg-white/80 hover:scale-[1.04]',
               ].join(' ')}
             >
               {t(FILTER_LABEL_KEY[f])}
@@ -157,9 +157,9 @@ export function ServiceRequests() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-ink-100 overflow-hidden">
+      <div className="bg-white/60 backdrop-blur-md rounded-2xl border border-white/40 shadow-2xl shadow-ink-900/5 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wider">
+          <thead className="bg-white/40 text-ink-500 text-xs uppercase tracking-wider">
             <tr>
               <th className="text-start font-semibold px-4 py-3">{t('requests.table.id')}</th>
               <th className="text-start font-semibold px-4 py-3">{t('requests.table.resident')}</th>
@@ -193,7 +193,10 @@ export function ServiceRequests() {
                 const tech = r.assigneeId ? techsById.get(r.assigneeId) : null;
                 const isResolving = resolvingId === r.id;
                 return (
-                  <tr key={r.id} className="border-t border-ink-100 align-top">
+                  <tr
+                    key={r.id}
+                    className="border-t border-white/40 align-top hover:bg-white/40 transition-colors duration-200"
+                  >
                     <td className="px-4 py-3 font-mono text-[11px] text-ink-500">{r.id}</td>
                     <td className="px-4 py-3 font-medium text-ink-900">
                       {r.residentName}
@@ -226,7 +229,7 @@ export function ServiceRequests() {
                             <button
                               type="button"
                               onClick={() => setAssignTarget(r)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-brand-500 text-brand-700 hover:bg-brand-50"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-brand-400/60 bg-white/50 text-brand-700 hover:bg-brand-50 hover:scale-105 hover:shadow-md hover:shadow-brand-500/30 active:scale-95 transition-all duration-200"
                             >
                               <UserCheck size={12} />
                               {t('requests.actions.dispatch')}
@@ -235,7 +238,7 @@ export function ServiceRequests() {
                               type="button"
                               onClick={() => handleResolve(r.id)}
                               disabled={isResolving}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-emerald-500 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-emerald-400/60 bg-white/50 text-emerald-700 hover:bg-emerald-50 hover:scale-105 hover:shadow-md hover:shadow-emerald-500/30 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                             >
                               {isResolving ? <Loader2 size={12} className="animate-spin" /> : null}
                               {isResolving

@@ -118,7 +118,7 @@ export function ContentManagement() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6">
       <PageHeader
         title={t('content.title')}
         subtitle={t('content.subtitle')}
@@ -126,7 +126,7 @@ export function ContentManagement() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold"
+            className="inline-flex items-center justify-center gap-2 min-h-[44px] md:min-h-0 px-4 md:py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-all duration-200 ease-smooth active:scale-95"
           >
             <Plus size={16} />
             <span>{t('content.newPost')}</span>
@@ -135,66 +135,73 @@ export function ContentManagement() {
       />
 
       <div className="bg-white rounded-2xl border border-ink-100 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wider">
-            <tr>
-              <th className="text-start font-semibold px-4 py-3">{t('content.table.title')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('content.table.kind')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('content.table.category')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('content.table.status')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('content.table.published')}</th>
-              <th className="text-end font-semibold px-4 py-3">{t('content.table.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.length === 0 ? (
+        {/* Horizontal scroll wrapper for narrow viewports */}
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wider">
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-ink-500">
-                  {t('common.empty')}
-                </td>
+                <th className="text-start font-semibold px-4 py-3">{t('content.table.title')}</th>
+                <th className="text-start font-semibold px-4 py-3">{t('content.table.kind')}</th>
+                <th className="text-start font-semibold px-4 py-3">
+                  {t('content.table.category')}
+                </th>
+                <th className="text-start font-semibold px-4 py-3">{t('content.table.status')}</th>
+                <th className="text-start font-semibold px-4 py-3">
+                  {t('content.table.published')}
+                </th>
+                <th className="text-end font-semibold px-4 py-3">{t('content.table.actions')}</th>
               </tr>
-            ) : (
-              sorted.map((item) => {
-                const title =
-                  item.kind === 'reel' ? item.title : (item as AdminPost).slides[0]?.title;
-                return (
-                  <tr key={item.id} className="border-t border-ink-100">
-                    <td className="px-4 py-3 font-medium text-ink-900 max-w-xs truncate">
-                      {title}
-                    </td>
-                    <td className="px-4 py-3 text-ink-700">
-                      {item.kind === 'reel'
-                        ? t('content.kind.reel')
-                        : (item as AdminPost).isEvent
-                          ? t('content.kind.event')
-                          : t('content.kind.post')}
-                    </td>
-                    <td className="px-4 py-3 text-ink-700">
-                      {t(`content.categories.${item.category}`)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusPill tone={item.status === 'live' ? 'success' : 'warning'}>
-                        {t(`content.status.${item.status}`)}
-                      </StatusPill>
-                    </td>
-                    <td className="px-4 py-3 text-ink-500 tabular-nums">
-                      {fmt(item.publishedAt, i18n.language)}
-                    </td>
-                    <td className="px-4 py-3 text-end">
-                      <button
-                        type="button"
-                        onClick={() => remove(item.id)}
-                        className="inline-flex items-center gap-1 text-xs text-danger hover:underline"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sorted.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-ink-500">
+                    {t('common.empty')}
+                  </td>
+                </tr>
+              ) : (
+                sorted.map((item) => {
+                  const title =
+                    item.kind === 'reel' ? item.title : (item as AdminPost).slides[0]?.title;
+                  return (
+                    <tr key={item.id} className="border-t border-ink-100">
+                      <td className="px-4 py-3 font-medium text-ink-900 max-w-xs truncate">
+                        {title}
+                      </td>
+                      <td className="px-4 py-3 text-ink-700">
+                        {item.kind === 'reel'
+                          ? t('content.kind.reel')
+                          : (item as AdminPost).isEvent
+                            ? t('content.kind.event')
+                            : t('content.kind.post')}
+                      </td>
+                      <td className="px-4 py-3 text-ink-700">
+                        {t(`content.categories.${item.category}`)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusPill tone={item.status === 'live' ? 'success' : 'warning'}>
+                          {t(`content.status.${item.status}`)}
+                        </StatusPill>
+                      </td>
+                      <td className="px-4 py-3 text-ink-500 tabular-nums">
+                        {fmt(item.publishedAt, i18n.language)}
+                      </td>
+                      <td className="px-4 py-3 text-end">
+                        <button
+                          type="button"
+                          onClick={() => remove(item.id)}
+                          className="inline-flex items-center gap-1 text-xs text-danger hover:underline"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {open && (

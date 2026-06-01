@@ -156,7 +156,7 @@ export function ServiceRequests() {
   const resolvingId = resolveMutation.isPending ? resolveMutation.variables : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6">
       <PageHeader title={t('requests.title')} subtitle={t('requests.subtitle')} />
 
       {actionError && (
@@ -173,7 +173,7 @@ export function ServiceRequests() {
               type="button"
               onClick={() => setFilter(f)}
               className={[
-                'px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap backdrop-blur-sm transition-all duration-300',
+                'inline-flex items-center min-h-[44px] md:min-h-0 px-4 md:px-3 md:py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap backdrop-blur-sm transition-all duration-300 ease-smooth',
                 filter === f
                   ? 'bg-gradient-to-br from-ink-800 to-ink-900 border-ink-900 text-white shadow-lg shadow-ink-900/30 scale-105'
                   : 'bg-white/60 border-white/50 text-ink-700 hover:bg-white/80 hover:scale-[1.04]',
@@ -196,111 +196,128 @@ export function ServiceRequests() {
       </div>
 
       <div className="bg-white/60 backdrop-blur-md rounded-2xl border border-white/40 shadow-2xl shadow-ink-900/5 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-white/40 text-ink-500 text-xs uppercase tracking-wider">
-            <tr>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.id')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.resident')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.unit')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.category')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.urgency')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.status')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.assignee')}</th>
-              <th className="text-start font-semibold px-4 py-3">{t('requests.table.openedAt')}</th>
-              <th className="text-end font-semibold px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
+        {/* Horizontal scroll wrapper — keeps the dense 9-col table from
+            blowing out narrow viewports. Cells stay readable; the user
+            swipes the table itself. */}
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[860px] text-sm">
+            <thead className="bg-white/40 text-ink-500 text-xs uppercase tracking-wider">
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-ink-500">
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 size={14} className="animate-spin" />
-                    {t('requests.empty_loading')}
-                  </span>
-                </td>
+                <th className="text-start font-semibold px-4 py-3">{t('requests.table.id')}</th>
+                <th className="text-start font-semibold px-4 py-3">
+                  {t('requests.table.resident')}
+                </th>
+                <th className="text-start font-semibold px-4 py-3">{t('requests.table.unit')}</th>
+                <th className="text-start font-semibold px-4 py-3">
+                  {t('requests.table.category')}
+                </th>
+                <th className="text-start font-semibold px-4 py-3">
+                  {t('requests.table.urgency')}
+                </th>
+                <th className="text-start font-semibold px-4 py-3">{t('requests.table.status')}</th>
+                <th className="text-start font-semibold px-4 py-3">
+                  {t('requests.table.assignee')}
+                </th>
+                <th className="text-start font-semibold px-4 py-3">
+                  {t('requests.table.openedAt')}
+                </th>
+                <th className="text-end font-semibold px-4 py-3" />
               </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-ink-500">
-                  {t('requests.empty')}
-                </td>
-              </tr>
-            ) : (
-              filtered.map((r) => {
-                const tech = r.assigneeId ? techsById.get(r.assigneeId) : null;
-                const isResolving = resolvingId === r.id;
-                const justDispatched = recentDispatch.has(r.id);
-                const justResolved = recentResolve.has(r.id);
-                const rowChoreography = justResolved
-                  ? 'animate-row-resolve'
-                  : justDispatched
-                    ? 'shadow-[inset_0_0_24px_rgba(34,211,238,0.18)]'
-                    : '';
-                return (
-                  <tr
-                    key={r.id}
-                    className={`border-t border-white/40 align-top hover:bg-white/40 transition-colors duration-200 ${rowChoreography}`}
-                  >
-                    <td className="px-4 py-3 font-mono text-[11px] text-ink-500">{r.id}</td>
-                    <td className="px-4 py-3 font-medium text-ink-900">
-                      {r.residentName}
-                      <div className="text-[11px] text-ink-500 mt-0.5 line-clamp-2 max-w-[220px]">
-                        {r.summary}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-ink-700">{r.unit}</td>
-                    <td className="px-4 py-3 text-ink-700">
-                      {t(`requests.categories.${r.category}`)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusPill tone={urgencyTone(r.urgency)}>
-                        {t(`requests.urgency.${r.urgency}`)}
-                      </StatusPill>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusPill tone={statusTone(r.status)}>
-                        {t(`requests.status.${r.status}`)}
-                      </StatusPill>
-                    </td>
-                    <td className="px-4 py-3 text-ink-700">{tech ? tech.name : '—'}</td>
-                    <td className="px-4 py-3 text-ink-500 tabular-nums">
-                      {fmt(r.openedAt, i18n.language)}
-                    </td>
-                    <td className="px-4 py-3 text-end">
-                      <div className="inline-flex items-center gap-2">
-                        {justResolved && <DrawCheck size={16} withRing />}
-                        {r.status !== 'resolved' && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setAssignTarget(r)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-brand-400/60 bg-white/50 text-brand-700 hover:bg-brand-50 hover:scale-105 hover:shadow-md hover:shadow-brand-500/30 active:scale-95 transition-all duration-200 ease-smooth"
-                            >
-                              <UserCheck size={12} />
-                              {t('requests.actions.dispatch')}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleResolve(r.id)}
-                              disabled={isResolving}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-emerald-400/60 bg-white/50 text-emerald-700 hover:bg-emerald-50 hover:scale-105 hover:shadow-md hover:shadow-emerald-500/30 active:scale-95 transition-all duration-200 ease-smooth disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
-                            >
-                              {isResolving ? <Loader2 size={12} className="animate-spin" /> : null}
-                              {isResolving
-                                ? t('requests.actions.resolving')
-                                : t('requests.actions.resolve')}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-ink-500">
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 size={14} className="animate-spin" />
+                      {t('requests.empty_loading')}
+                    </span>
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-ink-500">
+                    {t('requests.empty')}
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((r) => {
+                  const tech = r.assigneeId ? techsById.get(r.assigneeId) : null;
+                  const isResolving = resolvingId === r.id;
+                  const justDispatched = recentDispatch.has(r.id);
+                  const justResolved = recentResolve.has(r.id);
+                  const rowChoreography = justResolved
+                    ? 'animate-row-resolve'
+                    : justDispatched
+                      ? 'shadow-[inset_0_0_24px_rgba(34,211,238,0.18)]'
+                      : '';
+                  return (
+                    <tr
+                      key={r.id}
+                      className={`border-t border-white/40 align-top hover:bg-white/40 transition-colors duration-200 ${rowChoreography}`}
+                    >
+                      <td className="px-4 py-3 font-mono text-[11px] text-ink-500">{r.id}</td>
+                      <td className="px-4 py-3 font-medium text-ink-900">
+                        {r.residentName}
+                        <div className="text-[11px] text-ink-500 mt-0.5 line-clamp-2 max-w-[220px]">
+                          {r.summary}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-ink-700">{r.unit}</td>
+                      <td className="px-4 py-3 text-ink-700">
+                        {t(`requests.categories.${r.category}`)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusPill tone={urgencyTone(r.urgency)}>
+                          {t(`requests.urgency.${r.urgency}`)}
+                        </StatusPill>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusPill tone={statusTone(r.status)}>
+                          {t(`requests.status.${r.status}`)}
+                        </StatusPill>
+                      </td>
+                      <td className="px-4 py-3 text-ink-700">{tech ? tech.name : '—'}</td>
+                      <td className="px-4 py-3 text-ink-500 tabular-nums">
+                        {fmt(r.openedAt, i18n.language)}
+                      </td>
+                      <td className="px-4 py-3 text-end">
+                        <div className="inline-flex items-center gap-2">
+                          {justResolved && <DrawCheck size={16} withRing />}
+                          {r.status !== 'resolved' && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setAssignTarget(r)}
+                                className="inline-flex items-center justify-center gap-1 min-h-[44px] md:min-h-0 px-3 md:px-2.5 md:py-1 rounded-md text-[11px] font-semibold border border-brand-400/60 bg-white/50 text-brand-700 hover:bg-brand-50 hover:scale-105 hover:shadow-md hover:shadow-brand-500/30 active:scale-95 transition-all duration-200 ease-smooth"
+                              >
+                                <UserCheck size={12} />
+                                {t('requests.actions.dispatch')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResolve(r.id)}
+                                disabled={isResolving}
+                                className="inline-flex items-center justify-center gap-1 min-h-[44px] md:min-h-0 px-3 md:px-2.5 md:py-1 rounded-md text-[11px] font-semibold border border-emerald-400/60 bg-white/50 text-emerald-700 hover:bg-emerald-50 hover:scale-105 hover:shadow-md hover:shadow-emerald-500/30 active:scale-95 transition-all duration-200 ease-smooth disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                              >
+                                {isResolving ? (
+                                  <Loader2 size={12} className="animate-spin" />
+                                ) : null}
+                                {isResolving
+                                  ? t('requests.actions.resolving')
+                                  : t('requests.actions.resolve')}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {assignTarget && (

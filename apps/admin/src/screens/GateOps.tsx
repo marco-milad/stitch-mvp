@@ -126,9 +126,7 @@ function StatCard({
         ? 'from-accent/15 to-accent/0 text-accent ring-accent/30'
         : 'from-red-500/15 to-red-500/0 text-red-700 ring-red-500/30';
   return (
-    <div
-      className={`flex-1 min-w-[220px] rounded-2xl border border-ink-100 bg-white p-4 relative overflow-hidden`}
-    >
+    <div className={`rounded-2xl border border-ink-100 bg-white p-4 relative overflow-hidden`}>
       <div className={`absolute inset-0 bg-gradient-to-br ${accent} pointer-events-none`} />
       <div className="relative flex items-start justify-between">
         <div className="flex flex-col gap-1">
@@ -299,7 +297,10 @@ function LiveStream() {
         />
       </div>
 
-      <div className="flex flex-row flex-wrap gap-3">
+      {/* Stat board — single column on phone, two on small tablet, three
+          on laptop+. The fixed-min-width flex-wrap above caused awkward
+          two-line breaks on narrow widths; explicit grid handles cleaner. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <StatCard
           icon={<LogIn size={18} />}
           label={t('gate.live.scoreboard.entriesToday')}
@@ -358,7 +359,7 @@ export function GateOps() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6">
       <PageHeader title={t('gate.title')} subtitle={t('gate.subtitle')} />
 
       <div className="inline-flex gap-1 p-1 bg-ink-100 rounded-lg self-start">
@@ -368,8 +369,8 @@ export function GateOps() {
             type="button"
             onClick={() => setTab(k)}
             className={[
-              'px-4 py-1.5 rounded-md text-xs font-semibold',
-              tab === k ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500',
+              'inline-flex items-center justify-center min-h-[44px] md:min-h-0 px-4 md:py-1.5 rounded-md text-xs font-semibold transition-all duration-200 ease-smooth',
+              tab === k ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500 hover:text-ink-700',
             ].join(' ')}
           >
             {t(`gate.tabs.${k}`)}

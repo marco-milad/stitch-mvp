@@ -10,8 +10,11 @@ Endpoints:
     GET    /me/requests               this resident's maintenance tickets
     WS     /me/requests/stream        push channel for ticket status flips
 
-Auth is intentionally not enforced yet — the demo identity is the
-hard-coded resident in `visitor_passes_hub`.
+Every route enforces a verified Clerk JWT — see `app.core.auth`. The
+demo-data hubs still filter on a resident display-name string;
+`resident_identity()` projects the JWT down to that string. Unit info
+isn't on the JWT, so the create path uses `_todo_resident_unit()` as a
+placeholder until a Clerk-id → resident-record table exists.
 """
 
 from __future__ import annotations
@@ -19,10 +22,11 @@ from __future__ import annotations
 import asyncio
 import json
 from contextlib import suppress
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 
+from app.core.auth import AuthUser, get_current_user, get_current_user_ws, resident_identity
 from app.core.logging import logger
 from app.schemas.notifications import NotificationsList
 from app.schemas.parking import (
@@ -45,13 +49,13 @@ from app.services import (
 
 router = APIRouter()
 
-
-def _demo_resident() -> str:
-    """Single source of truth for who 'me' is in the demo."""
-    return visitor_passes_hub.DEMO_HOST_NAME
+CurrentUser = Annotated[AuthUser, Depends(get_current_user)]
 
 
-def _demo_resident_unit() -> str:
+def _todo_resident_unit(user: AuthUser) -> str:
+    """Placeholder until Clerk-id → unit mapping exists. Falls back to the
+    demo unit so the create path can run end-to-end."""
+    _ = user
     return visitor_passes_hub.DEMO_HOST_UNIT
 
 
@@ -63,12 +67,14 @@ def _demo_resident_unit() -> str:
     response_model=VisitorPass,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_visitor_pass(payload: VisitorPassCreate) -> VisitorPass:
+async def create_visitor_pass(payload: VisitorPassCreate, user: CurrentUser) -> VisitorPass:
+    _ = user
     return await visitor_passes_hub.create_pass(payload)
 
 
 @router.get("/me/visitor-passes", response_model=VisitorPassList)
-async def list_visitor_passes() -> VisitorPassList:
+async def list_visitor_passes(user: CurrentUser) -> VisitorPassList:
+    _ = user
     items = await visitor_passes_hub.list_passes()
     return VisitorPassList(items=items)
 
@@ -77,8 +83,8 @@ async def list_visitor_passes() -> VisitorPassList:
 
 
 @router.get("/me/parking/slots", response_model=ParkingSlotsList)
-async def list_parking_slots() -> ParkingSlotsList:
-    items = await parking_hub.list_slots(_demo_resident())
+async def list_parking_slots(user: CurrentUser) -> ParkingSlotsList:
+    items = await parking_hub.list_slots(resident_identity(user))
     return ParkingSlotsList(items=items)
 
 
@@ -87,9 +93,9 @@ async def list_parking_slots() -> ParkingSlotsList:
     response_model=ParkingBooking,
     status_code=status.HTTP_201_CREATED,
 )
-async def book_parking_slot(payload: ParkingBookingCreate) -> ParkingBooking:
+async def book_parking_slot(payload: ParkingBookingCreate, user: CurrentUser) -> ParkingBooking:
     try:
-        return await parking_hub.create_booking(_demo_resident(), payload)
+        return await parking_hub.create_booking(resident_identity(user), payload)
     except parking_hub.SlotNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Slot not found") from exc
     except parking_hub.SlotUnavailableError as exc:
@@ -97,25 +103,25 @@ async def book_parking_slot(payload: ParkingBookingCreate) -> ParkingBooking:
 
 
 @router.delete("/me/parking/bookings/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def release_parking_booking(booking_id: str) -> None:
+async def release_parking_booking(booking_id: str, user: CurrentUser) -> None:
     try:
-        await parking_hub.release_booking(_demo_resident(), booking_id)
+        await parking_hub.release_booking(resident_identity(user), booking_id)
     except parking_hub.BookingNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Booking not found") from exc
 
 
 @router.get("/me/parking/bookings", response_model=list[ParkingBooking])
-async def list_my_bookings() -> list[ParkingBooking]:
-    return await parking_hub.my_bookings(_demo_resident())
+async def list_my_bookings(user: CurrentUser) -> list[ParkingBooking]:
+    return await parking_hub.my_bookings(resident_identity(user))
 
 
 # ─── Requests (read-only for the resident view) ────────────────────────────
 
 
 @router.get("/me/requests", response_model=list[ServiceRequest])
-async def list_my_requests() -> list[ServiceRequest]:
+async def list_my_requests(user: CurrentUser) -> list[ServiceRequest]:
     all_requests = await requests_hub.list_requests()
-    me = _demo_resident()
+    me = resident_identity(user)
     return [r for r in all_requests if r.residentName == me]
 
 
@@ -124,10 +130,10 @@ async def list_my_requests() -> list[ServiceRequest]:
     response_model=ServiceRequest,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_my_request(payload: RequestCreateInput) -> ServiceRequest:
+async def create_my_request(payload: RequestCreateInput, user: CurrentUser) -> ServiceRequest:
     return await requests_hub.create_request(
-        resident_name=_demo_resident(),
-        unit=_demo_resident_unit(),
+        resident_name=resident_identity(user),
+        unit=_todo_resident_unit(user),
         payload=payload,
     )
 
@@ -138,7 +144,10 @@ async def my_requests_stream(websocket: WebSocket) -> None:
     filtered to this resident. Subsequent `request.updated` events arrive
     for ALL requests; the client filters by id against its snapshot."""
     await websocket.accept()
-    me = _demo_resident()
+    user = await get_current_user_ws(websocket)
+    if user is None:
+        return
+    me = resident_identity(user)
     logger.info("me.requests.ws.connected", peer=str(websocket.client))
 
     all_requests = await requests_hub.list_requests()
@@ -196,8 +205,8 @@ async def _receiver(websocket: WebSocket) -> None:
 
 
 @router.get("/me/notifications", response_model=NotificationsList)
-async def list_my_notifications() -> NotificationsList:
-    items = await notifications_hub.list_for(_demo_resident())
+async def list_my_notifications(user: CurrentUser) -> NotificationsList:
+    items = await notifications_hub.list_for(resident_identity(user))
     return NotificationsList(items=items)
 
 
@@ -208,7 +217,10 @@ async def my_notifications_stream(websocket: WebSocket) -> None:
     via the hub's per-resident subscriber map.
     """
     await websocket.accept()
-    me = _demo_resident()
+    user = await get_current_user_ws(websocket)
+    if user is None:
+        return
+    me = resident_identity(user)
     logger.info("me.notifications.ws.connected", peer=str(websocket.client))
 
     items = [n.model_dump() for n in await notifications_hub.list_for(me)]

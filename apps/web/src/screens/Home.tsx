@@ -152,7 +152,7 @@ function SuggestionCard({ s }: { s: Suggestion }) {
       <button
         type="button"
         onClick={s.onClick}
-        className="group relative w-full overflow-hidden bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-4 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+        className="group relative w-full overflow-hidden bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-4 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
       >
         {/* Cursor-tracking specular highlight */}
         <span
@@ -200,7 +200,7 @@ function CtaTile({ cta }: { cta: Cta }) {
       <button
         type="button"
         onClick={cta.onClick}
-        className="group relative w-full overflow-hidden bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-4 flex flex-row items-center border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+        className="group relative w-full overflow-hidden bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-4 flex flex-row items-center border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
       >
         <span
           aria-hidden
@@ -240,7 +240,7 @@ function StatusPill({
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 flex flex-row items-center bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+      className="flex-1 flex flex-row items-center bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
     >
       <div
         className="w-9 h-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40"
@@ -437,8 +437,8 @@ export function Home() {
           </button>
         </div>
 
-        {/* Weather — ground tier glass (subtle, ambient) */}
-        <div className="flex flex-row items-center bg-white/55 dark:bg-ink-700/55 backdrop-blur-md rounded-2xl p-3 mb-5 border border-white/40 dark:border-white/10 shadow-md shadow-ink-900/5">
+        {/* Weather — Ground tier glass (ambient, recedes against the mesh) */}
+        <div className="flex flex-row items-center bg-white/40 dark:bg-ink-700/40 backdrop-blur-md rounded-2xl p-3 mb-5 border border-white/40 dark:border-white/10 shadow-md shadow-ink-900/5">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40 shadow-md"
             style={{ backgroundColor: weatherBg, boxShadow: `0 0 18px ${weatherBg}50` }}
@@ -542,7 +542,7 @@ export function Home() {
           <button
             type="button"
             onClick={() => navigate('/services/requests')}
-            className="vt-ticket-card w-full flex flex-row items-center bg-white/80 dark:bg-ink-700/80 backdrop-blur-xl rounded-2xl p-3 mb-5 border border-white/60 dark:border-white/10 shadow-2xl shadow-violet-500/10 ring-1 ring-white/40 text-left hover:scale-[1.01] hover:shadow-violet-500/20 active:scale-[0.98] transition-all duration-300 ease-smooth"
+            className="vt-ticket-card w-full flex flex-row items-center bg-white/80 dark:bg-ink-700/80 backdrop-blur-xl rounded-2xl p-3 mb-5 border border-white/60 dark:border-white/10 shadow-2xl shadow-purple-500/10 ring-1 ring-white/40 text-left hover:scale-[1.01] hover:shadow-purple-500/20 active:scale-[0.98] transition-all duration-300 ease-smooth"
           >
             <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center me-3 flex-shrink-0">
               <Clock color="#7C3AED" size={18} />

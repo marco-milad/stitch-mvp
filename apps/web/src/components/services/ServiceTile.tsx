@@ -50,7 +50,7 @@ function ServiceTileImpl({ tile, highlight, onClick }: Props) {
       ref={tilt.ref}
       onMouseMove={tilt.onMouseMove}
       onMouseLeave={tilt.onMouseLeave}
-      className="group relative flex-1 m-1.5 bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left tilt-surface overflow-hidden hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+      className="group relative flex-1 m-1.5 bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left tilt-surface overflow-hidden hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
       style={{ ...tilt.style, minHeight: 130 }}
     >
       {/* Cursor-tracking specular highlight */}

@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AnimatedCount } from '@/components/AnimatedCount';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusPill } from '@/components/StatusPill';
 import { useGateStream } from '@/lib/useGateStream';
@@ -135,7 +136,7 @@ function StatCard({
             {label}
           </div>
           <div className="text-3xl font-extrabold text-ink-900 tabular-nums leading-none">
-            {value}
+            {typeof value === 'number' ? <AnimatedCount value={value} /> : value}
           </div>
         </div>
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ring-1 ${accent}`}>

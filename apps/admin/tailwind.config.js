@@ -30,6 +30,13 @@ export default {
         warning: '#D97706',
         success: '#16A34A',
       },
+      transitionTimingFunction: {
+        // Mirrors apps/web/tailwind.config.js — duplicated rather than shared
+        // to keep each workspace's config self-contained for now.
+        smooth: 'cubic-bezier(0.32, 0.72, 0, 1)',
+        spring: 'cubic-bezier(0.5, 1.5, 0.6, 1)',
+        snap: 'cubic-bezier(0.2, 0, 0, 1.2)',
+      },
       keyframes: {
         // Row enter — every new scan slides + fades in.
         scanSlideIn: {
@@ -63,6 +70,38 @@ export default {
             boxShadow: '0 0 0 0 rgba(34, 211, 238, 0), 0 0 0 0 rgba(34, 211, 238, 0)',
           },
         },
+        // Stagger entrance — duplicated from web config.
+        riseIn: {
+          '0%': { transform: 'translateY(12px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        // Dispatch puck — travels button → tech card.
+        puckGlide: {
+          '0%': {
+            transform: 'translate(var(--puck-from-x, 0px), var(--puck-from-y, 0px)) scale(0.4)',
+            opacity: '0',
+          },
+          '15%': {
+            opacity: '1',
+            transform: 'translate(var(--puck-from-x, 0px), var(--puck-from-y, 0px)) scale(1)',
+          },
+          '85%': { opacity: '1' },
+          '100%': {
+            transform: 'translate(var(--puck-to-x, 0px), var(--puck-to-y, 0px)) scale(0.6)',
+            opacity: '0',
+          },
+        },
+        // Resolve row fade — dims to 60% then settles.
+        rowResolve: {
+          '0%': { opacity: '1' },
+          '50%': { opacity: '0.55' },
+          '100%': { opacity: '1' },
+        },
+        // Stroke-draw check (mirrors web's checkDraw).
+        checkDraw: {
+          '0%': { strokeDashoffset: '40' },
+          '100%': { strokeDashoffset: '0' },
+        },
       },
       animation: {
         'scan-slide-in': 'scanSlideIn 240ms ease-out',
@@ -70,6 +109,10 @@ export default {
         'alert-pulse': 'alertPulse 0.9s ease-in-out infinite',
         'alert-flash': 'alertFlash 1.5s ease-out forwards',
         wave: 'wave 2s ease-out infinite',
+        'rise-in': 'riseIn 420ms cubic-bezier(0.32, 0.72, 0, 1) both',
+        'puck-glide': 'puckGlide 1100ms cubic-bezier(0.32, 0.72, 0, 1) forwards',
+        'row-resolve': 'rowResolve 900ms cubic-bezier(0.32, 0.72, 0, 1)',
+        'check-draw': 'checkDraw 520ms cubic-bezier(0.32, 0.72, 0, 1) forwards',
       },
     },
   },

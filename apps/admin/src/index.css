@@ -26,3 +26,20 @@
     scrollbar-width: none;
   }
 }
+
+/* Reduced-motion respect — duplicates apps/web/src/index.css guard. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-iteration-count: 1 !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 120ms !important;
+  }
+  .animate-glint,
+  .animate-alert-pulse,
+  .animate-wave,
+  .animate-pulse {
+    animation: none !important;
+  }
+}

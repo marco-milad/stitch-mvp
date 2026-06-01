@@ -1,7 +1,8 @@
 import { Loader2, Radio, UserCheck, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { DrawCheck } from '@/components/DrawCheck';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusPill } from '@/components/StatusPill';
 import { useDispatchRequest, useResolveRequest, useServiceRequests } from '@/lib/useRequests';
@@ -78,6 +79,40 @@ export function ServiceRequests() {
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [assignTarget, setAssignTarget] = useState<ServiceRequest | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Track rows that JUST flipped to dispatched / resolved so the
+  // choreography (puck halo, DrawCheck stamp) only fires for the
+  // actual transition, then clears. ~1.4s window matches the keyframe
+  // durations + a small buffer.
+  const [recentDispatch, setRecentDispatch] = useState<Set<string>>(() => new Set());
+  const [recentResolve, setRecentResolve] = useState<Set<string>>(() => new Set());
+  const clearTimers = useRef<Map<string, number>>(new Map());
+  useEffect(() => {
+    const timers = clearTimers.current;
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+      timers.clear();
+    };
+  }, []);
+  const markRecent = (set: 'dispatch' | 'resolve', requestId: string) => {
+    const updater = set === 'dispatch' ? setRecentDispatch : setRecentResolve;
+    updater((prev) => {
+      const next = new Set(prev);
+      next.add(requestId);
+      return next;
+    });
+    const key = `${set}:${requestId}`;
+    const existing = clearTimers.current.get(key);
+    if (existing) window.clearTimeout(existing);
+    const id = window.setTimeout(() => {
+      updater((prev) => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+      clearTimers.current.delete(key);
+    }, 1400);
+    clearTimers.current.set(key, id);
+  };
 
   const techsById = useMemo(() => {
     const m = new Map<string, Technician>();
@@ -93,11 +128,13 @@ export function ServiceRequests() {
   const handleDispatch = async (techId: string) => {
     if (!assignTarget) return;
     setActionError(null);
+    const targetId = assignTarget.id;
     try {
       await dispatchMutation.mutateAsync({
-        requestId: assignTarget.id,
+        requestId: targetId,
         technicianId: techId,
       });
+      markRecent('dispatch', targetId);
       setAssignTarget(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'unknown error';
@@ -109,6 +146,7 @@ export function ServiceRequests() {
     setActionError(null);
     try {
       await resolveMutation.mutateAsync(requestId);
+      markRecent('resolve', requestId);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'unknown error';
       setActionError(t('requests.errors.resolve', { message: msg }));
@@ -192,10 +230,17 @@ export function ServiceRequests() {
               filtered.map((r) => {
                 const tech = r.assigneeId ? techsById.get(r.assigneeId) : null;
                 const isResolving = resolvingId === r.id;
+                const justDispatched = recentDispatch.has(r.id);
+                const justResolved = recentResolve.has(r.id);
+                const rowChoreography = justResolved
+                  ? 'animate-row-resolve'
+                  : justDispatched
+                    ? 'shadow-[inset_0_0_24px_rgba(34,211,238,0.18)]'
+                    : '';
                 return (
                   <tr
                     key={r.id}
-                    className="border-t border-white/40 align-top hover:bg-white/40 transition-colors duration-200"
+                    className={`border-t border-white/40 align-top hover:bg-white/40 transition-colors duration-200 ${rowChoreography}`}
                   >
                     <td className="px-4 py-3 font-mono text-[11px] text-ink-500">{r.id}</td>
                     <td className="px-4 py-3 font-medium text-ink-900">
@@ -223,13 +268,14 @@ export function ServiceRequests() {
                       {fmt(r.openedAt, i18n.language)}
                     </td>
                     <td className="px-4 py-3 text-end">
-                      <div className="inline-flex gap-2">
+                      <div className="inline-flex items-center gap-2">
+                        {justResolved && <DrawCheck size={16} withRing />}
                         {r.status !== 'resolved' && (
                           <>
                             <button
                               type="button"
                               onClick={() => setAssignTarget(r)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-brand-400/60 bg-white/50 text-brand-700 hover:bg-brand-50 hover:scale-105 hover:shadow-md hover:shadow-brand-500/30 active:scale-95 transition-all duration-200"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-brand-400/60 bg-white/50 text-brand-700 hover:bg-brand-50 hover:scale-105 hover:shadow-md hover:shadow-brand-500/30 active:scale-95 transition-all duration-200 ease-smooth"
                             >
                               <UserCheck size={12} />
                               {t('requests.actions.dispatch')}
@@ -238,7 +284,7 @@ export function ServiceRequests() {
                               type="button"
                               onClick={() => handleResolve(r.id)}
                               disabled={isResolving}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-emerald-400/60 bg-white/50 text-emerald-700 hover:bg-emerald-50 hover:scale-105 hover:shadow-md hover:shadow-emerald-500/30 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-emerald-400/60 bg-white/50 text-emerald-700 hover:bg-emerald-50 hover:scale-105 hover:shadow-md hover:shadow-emerald-500/30 active:scale-95 transition-all duration-200 ease-smooth disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                             >
                               {isResolving ? <Loader2 size={12} className="animate-spin" /> : null}
                               {isResolving
@@ -304,9 +350,9 @@ function DispatchModal({
   }, [technicians, target.category]);
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md bg-white rounded-2xl border border-ink-200 shadow-xl">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-ink-100">
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-rise-in">
+      <div className="relative w-full max-w-md bg-white/85 backdrop-blur-xl rounded-2xl border border-white/60 shadow-2xl shadow-ink-900/20 ring-1 ring-white/30">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/40">
           <h2 className="text-sm font-bold text-ink-900">
             {t('requests.assign.title')} · {target.id}
           </h2>
@@ -332,10 +378,11 @@ function DispatchModal({
                 onClick={() => onPick(tech.id)}
                 disabled={isPending}
                 className={[
-                  'flex items-center justify-between px-3 py-2.5 rounded-lg border text-start',
+                  'relative flex items-center justify-between px-3 py-2.5 rounded-lg border text-start transition-all duration-200 ease-smooth',
                   isLoading
-                    ? 'border-brand-500 bg-brand-50'
-                    : 'border-ink-100 hover:border-brand-500 hover:bg-brand-50',
+                    ? // Dispatch puck arriving — brand glow halo + animated ring
+                      'border-brand-500 bg-brand-50 shadow-[0_0_24px_rgba(6,182,212,0.45)] scale-[1.02]'
+                    : 'border-ink-100 hover:border-brand-500 hover:bg-brand-50 hover:scale-[1.02] hover:shadow-md hover:shadow-brand-500/20',
                   disabled ? 'opacity-50 cursor-not-allowed' : '',
                 ].join(' ')}
               >

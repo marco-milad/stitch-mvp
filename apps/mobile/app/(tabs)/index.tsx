@@ -1,4 +1,5 @@
 import { useUser } from '@clerk/clerk-expo';
+import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import {
   Award,
@@ -20,6 +21,7 @@ import {
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TopBar } from '@/components/TopBar';
@@ -265,6 +267,8 @@ function CtaTile({ cta }: { cta: Cta }) {
 // Status pills
 // ============================================================================
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 function StatusPill({
   count,
   label,
@@ -280,26 +284,56 @@ function StatusPill({
   bg: string;
   onPress: () => void;
 }) {
+  const scale = useSharedValue(1);
+  const pillStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
-      className="flex-1 flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700"
+      onPressIn={() => {
+        scale.value = withSpring(0.96, { damping: 18, stiffness: 260 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 14, stiffness: 220 });
+      }}
+      style={[
+        pillStyle,
+        {
+          flex: 1,
+          borderRadius: 16,
+          shadowColor: '#0F172A',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          elevation: 3,
+        },
+      ]}
     >
-      <View
-        className="w-9 h-9 rounded-lg items-center justify-center mr-3"
-        style={{ backgroundColor: bg }}
-      >
-        <Text style={{ color: tint }} className="font-bold text-base">
-          {count}
-        </Text>
-      </View>
-      <View className="flex-1 min-w-0">
-        <Text className="text-xs font-semibold text-ink-900 dark:text-white" numberOfLines={1}>
-          {label}
-        </Text>
-        <Text className="text-[11px] text-ink-500 dark:text-ink-100">{action}</Text>
-      </View>
-    </Pressable>
+      <BlurView intensity={35} tint="light" style={{ borderRadius: 16, overflow: 'hidden' }}>
+        <View className="flex-row items-center p-3 bg-white/65 border border-white/50 rounded-2xl">
+          <View
+            className="w-9 h-9 rounded-lg items-center justify-center mr-3"
+            style={{
+              backgroundColor: bg,
+              shadowColor: tint,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.5,
+              shadowRadius: 6,
+              elevation: 4,
+            }}
+          >
+            <Text style={{ color: tint }} className="font-bold text-base">
+              {count}
+            </Text>
+          </View>
+          <View className="flex-1 min-w-0">
+            <Text className="text-xs font-semibold text-ink-900" numberOfLines={1}>
+              {label}
+            </Text>
+            <Text className="text-[11px] text-ink-500">{action}</Text>
+          </View>
+        </View>
+      </BlurView>
+    </AnimatedPressable>
   );
 }
 

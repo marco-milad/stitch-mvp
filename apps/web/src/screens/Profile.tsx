@@ -22,7 +22,7 @@ import {
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,6 +33,7 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { ACTIVITY_TONE, PROFILE_ACTIVITY } from '@/lib/mock/activities';
 import { useUnreadCount } from '@/lib/useNotifications';
 import { completionPercent, useProfileStore } from '@/stores/profileStore';
+import { useThemeStore } from '@/stores/themeStore';
 
 const MOCK_UNIT = { name: 'Villa 12', project: 'New Cairo' };
 const MOCK_STATS = { requests: 12, active: 3, points: 2450 };
@@ -55,24 +56,16 @@ const placeholder =
     window.alert(`${title}\n\n${body}`);
   };
 
-function useDarkMode() {
-  const [isDark, setIsDark] = useState<boolean>(
-    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'),
-  );
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) root.classList.add('dark');
-    else root.classList.remove('dark');
-  }, [isDark]);
-  return [isDark, setIsDark] as const;
-}
+// Dark-mode state lives in `useThemeStore` so the TopBar toggle and this
+// row stay in sync. Local hook removed in favour of the shared store.
 
 export function Profile() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { isSignedIn, signOut } = useAuth();
   const { user } = useUser();
-  const [isDark, setIsDark] = useDarkMode();
+  const isDark = useThemeStore((s) => s.isDark);
+  const setDark = useThemeStore((s) => s.setDark);
   const completion = useProfileStore((s) => s.completion);
   const unreadCount = useUnreadCount();
 
@@ -227,7 +220,7 @@ export function Profile() {
                 <input
                   type="checkbox"
                   checked={isDark}
-                  onChange={(e) => setIsDark(e.target.checked)}
+                  onChange={(e) => setDark(e.target.checked)}
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-ink-100 dark:bg-ink-900 peer-checked:bg-brand-500 rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5" />

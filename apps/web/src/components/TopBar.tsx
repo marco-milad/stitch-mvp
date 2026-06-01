@@ -1,5 +1,6 @@
 import { Bell, User } from 'lucide-react';
 
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useNavigateWithTransition } from '@/lib/viewTransition';
 import { colors } from '@/lib/theme';
 
@@ -20,6 +21,7 @@ export function TopBar({ title, unreadCount }: TopBarProps) {
       <span className="text-xl font-semibold text-ink-900 dark:text-white">{title}</span>
 
       <div className="flex flex-row items-center gap-3">
+        <ThemeToggle />
         <button
           type="button"
           onClick={() => navigate('/notifications')}

@@ -24,6 +24,7 @@ from typing import Annotated
 import jwt
 from fastapi import Header, HTTPException, WebSocket, status
 from jwt import PyJWKClient
+from jwt.exceptions import PyJWKClientError
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -101,7 +102,9 @@ async def get_current_user(
             detail="Token expired",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
-    except jwt.InvalidTokenError as exc:
+    except (jwt.InvalidTokenError, PyJWKClientError) as exc:
+        # PyJWKClientError covers unknown `kid` and JWKS-fetch failures —
+        # neither subclasses InvalidTokenError, so they need a separate arm.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -130,7 +133,7 @@ async def get_current_user_ws(websocket: WebSocket) -> AuthUser | None:
         return None
     try:
         claims = _verify_token(token)
-    except jwt.InvalidTokenError:
+    except (jwt.InvalidTokenError, PyJWKClientError):
         await websocket.close(code=4401, reason="Invalid token")
         return None
     try:

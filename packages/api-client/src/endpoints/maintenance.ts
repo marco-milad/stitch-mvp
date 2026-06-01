@@ -1,22 +1,16 @@
 import { z } from 'zod';
-import { MaintenanceRequestSchema, RequestUrgencySchema, UuidSchema } from '@stitch/types';
+import { MaintenanceRequestCreateSchema, MaintenanceRequestSchema } from '@stitch/types';
 import { endpoint, endpointNoInput } from '../client';
 
 export const listMyRequests = endpointNoInput({
   method: 'GET',
-  path: '/maintenance/mine',
+  path: '/me/requests',
   outputSchema: z.array(MaintenanceRequestSchema),
 });
 
-export const createMaintenanceRequest = endpoint({
+export const createMyRequest = endpoint({
   method: 'POST',
-  path: '/maintenance',
-  inputSchema: z.object({
-    category: z.string(),
-    urgency: RequestUrgencySchema,
-    description: z.string().nullable(),
-    photoUrl: z.string().url().nullable(),
-    unitId: UuidSchema.optional(),
-  }),
+  path: '/me/requests',
+  inputSchema: MaintenanceRequestCreateSchema,
   outputSchema: MaintenanceRequestSchema,
 });

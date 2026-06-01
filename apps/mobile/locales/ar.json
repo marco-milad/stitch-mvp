@@ -62,6 +62,38 @@
     "scan": "امسح QR",
     "activity": "سجل النشاط"
   },
+  "requests": {
+    "title": "طلباتي",
+    "openCount": "{{count}} مفتوح",
+    "empty": {
+      "headline": "لسه مفيش طلبات",
+      "body": "لما تبلغ عن مشكلة هتلاقيها هنا."
+    },
+    "error": {
+      "headline": "معرفناش نجيب طلباتك",
+      "body": "اتأكد من النت وحاول تاني."
+    },
+    "retry": "حاول تاني",
+    "openedAt": "اتفتح {{when}}",
+    "status": {
+      "pending": "في الانتظار",
+      "in_progress": "شغالين عليه",
+      "resolved": "اتحل"
+    },
+    "urgency": {
+      "routine": "عادي",
+      "priority": "مهم",
+      "urgent": "مستعجل"
+    },
+    "category": {
+      "ac": "تكييف",
+      "plumbing": "سباكة",
+      "electrical": "كهرباء",
+      "cleaning": "نظافة",
+      "pest": "مكافحة حشرات",
+      "other": "تاني"
+    }
+  },
   "voice": {
     "title": "فرح",
     "tapToTalk": "اضغط للكلام",

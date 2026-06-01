@@ -20,36 +20,41 @@ export type Booking = z.infer<typeof BookingSchema>;
 export const RequestUrgencySchema = z.enum(['routine', 'priority', 'urgent']);
 export type RequestUrgency = z.infer<typeof RequestUrgencySchema>;
 
-export const RequestStatusSchema = z.enum([
-  'submitted',
-  'scheduled',
-  'in_progress',
-  'completed',
-  'cancelled',
-]);
+export const RequestStatusSchema = z.enum(['pending', 'in_progress', 'resolved']);
 export type RequestStatus = z.infer<typeof RequestStatusSchema>;
 
-export const TimelineEntrySchema = z.object({
-  at: IsoDateTimeSchema,
-  status: RequestStatusSchema,
-  note: z.string().optional(),
-  byUserId: UuidSchema.optional(),
-});
-export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;
+export const RequestCategorySchema = z.enum([
+  'ac',
+  'plumbing',
+  'electrical',
+  'cleaning',
+  'pest',
+  'other',
+]);
+export type RequestCategory = z.infer<typeof RequestCategorySchema>;
 
 export const MaintenanceRequestSchema = z.object({
-  id: UuidSchema,
-  userId: UuidSchema,
-  unitId: UuidSchema.nullable(),
-  category: z.string(),
+  id: z.string(),
+  residentName: z.string(),
+  unit: z.string(),
+  category: RequestCategorySchema,
   urgency: RequestUrgencySchema,
-  description: z.string().nullable(),
-  photoUrl: z.string().url().nullable(),
+  title: z.string().nullable(),
+  summary: z.string(),
   status: RequestStatusSchema,
-  timeline: z.array(TimelineEntrySchema),
-  createdAt: IsoDateTimeSchema,
+  assigneeId: z.string().nullable(),
+  openedAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
 });
 export type MaintenanceRequest = z.infer<typeof MaintenanceRequestSchema>;
+
+export const MaintenanceRequestCreateSchema = z.object({
+  category: RequestCategorySchema,
+  title: z.string().min(1).max(80),
+  description: z.string().min(1).max(2000),
+  urgency: RequestUrgencySchema.default('routine'),
+});
+export type MaintenanceRequestCreate = z.infer<typeof MaintenanceRequestCreateSchema>;
 
 export const InvoiceStatusSchema = z.enum(['due', 'paid', 'overdue', 'cancelled']);
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>;

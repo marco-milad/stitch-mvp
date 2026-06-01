@@ -458,7 +458,7 @@ export default function Home() {
             action={t('home.viewAll')}
             tint="#7C3AED"
             bg="#EDE9FE"
-            onPress={() => router.push('/(tabs)/services')}
+            onPress={() => router.push('/requests')}
           />
           <StatusPill
             count={MOCK_DUE_PAYMENTS}

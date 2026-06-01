@@ -62,6 +62,38 @@
     "scan": "Scan QR",
     "activity": "Activity Log"
   },
+  "requests": {
+    "title": "My Requests",
+    "openCount": "{{count}} open",
+    "empty": {
+      "headline": "No requests yet",
+      "body": "When you report an issue, it'll show up here."
+    },
+    "error": {
+      "headline": "Couldn't load your requests",
+      "body": "Check your connection and try again."
+    },
+    "retry": "Try again",
+    "openedAt": "Opened {{when}}",
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "resolved": "Resolved"
+    },
+    "urgency": {
+      "routine": "Routine",
+      "priority": "Priority",
+      "urgent": "Urgent"
+    },
+    "category": {
+      "ac": "AC",
+      "plumbing": "Plumbing",
+      "electrical": "Electrical",
+      "cleaning": "Cleaning",
+      "pest": "Pest control",
+      "other": "Other"
+    }
+  },
   "voice": {
     "title": "Farah",
     "tapToTalk": "Tap to talk",

@@ -31,6 +31,7 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
               <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
               <Stack.Screen name="qr" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="requests" />
               <Stack.Screen name="voice" />
               <Stack.Screen
                 name="story/[id]"

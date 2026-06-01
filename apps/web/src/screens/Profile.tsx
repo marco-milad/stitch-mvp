@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { CompletionBar } from '@/components/profile/CompletionBar';
 import { ProfileRow } from '@/components/profile/ProfileRow';
 import { TopBar } from '@/components/TopBar';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { ACTIVITY_TONE, PROFILE_ACTIVITY } from '@/lib/mock/activities';
 import { useUnreadCount } from '@/lib/useNotifications';
 import { completionPercent, useProfileStore } from '@/stores/profileStore';
@@ -295,12 +296,12 @@ export function Profile() {
             </div>
           </div>
 
-          <div className="flex flex-row mt-5 pt-4 border-t border-ink-100 dark:border-ink-700">
-            <Stat label="Requests" value={MOCK_STATS.requests.toString()} />
-            <div className="w-px bg-ink-100 dark:bg-ink-700" />
-            <Stat label="Active" value={MOCK_STATS.active.toString()} />
-            <div className="w-px bg-ink-100 dark:bg-ink-700" />
-            <Stat label="Points" value={MOCK_STATS.points.toLocaleString()} />
+          <div className="flex flex-row mt-5 pt-4 border-t border-white/40 dark:border-white/10">
+            <Stat label="Requests" value={MOCK_STATS.requests} />
+            <div className="w-px bg-white/40 dark:bg-white/10" />
+            <Stat label="Active" value={MOCK_STATS.active} />
+            <div className="w-px bg-white/40 dark:bg-white/10" />
+            <Stat label="Points" value={MOCK_STATS.points} />
           </div>
         </div>
 
@@ -377,10 +378,12 @@ export function Profile() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex-1 flex flex-col items-center">
-      <span className="text-xl font-bold text-ink-900 dark:text-white">{value}</span>
+      <span className="text-xl font-bold text-ink-900 dark:text-white tabular-nums">
+        <AnimatedCount value={value} />
+      </span>
       <span className="text-[11px] text-ink-500 dark:text-ink-100 mt-0.5">{label}</span>
     </div>
   );

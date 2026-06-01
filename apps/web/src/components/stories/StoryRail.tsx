@@ -1,3 +1,4 @@
+import { resolveIcon } from '@/components/ui/ContextIcon';
 import { VISUAL_PALETTE } from '@/lib/mock/feedStories';
 
 import type { ResolvedStory } from './types';
@@ -40,6 +41,7 @@ export function StoryRail({ stories, viewedIds, onSelect }: Props) {
 
 function Ring({ story, viewed }: { story: ResolvedStory; viewed: boolean }) {
   const palette = VISUAL_PALETTE[story.visual];
+  const Icon = resolveIcon(story.emoji);
   if (viewed) {
     return (
       <div className="w-[68px] h-[68px] rounded-full bg-ink-100 dark:bg-ink-700 flex items-center justify-center">
@@ -48,7 +50,7 @@ function Ring({ story, viewed }: { story: ResolvedStory; viewed: boolean }) {
             className="w-[54px] h-[54px] rounded-full flex items-center justify-center opacity-60"
             style={{ background: palette.from }}
           >
-            <span className="text-2xl">{story.emoji}</span>
+            <Icon size={24} className="text-white" />
           </div>
         </div>
       </div>
@@ -61,10 +63,10 @@ function Ring({ story, viewed }: { story: ResolvedStory; viewed: boolean }) {
     >
       <div className="w-[60px] h-[60px] rounded-full bg-white dark:bg-ink-900 flex items-center justify-center">
         <div
-          className="w-[54px] h-[54px] rounded-full flex items-center justify-center"
+          className="w-[54px] h-[54px] rounded-full flex items-center justify-center shadow-lg"
           style={{ background: `linear-gradient(135deg, ${palette.from}, ${palette.to})` }}
         >
-          <span className="text-2xl">{story.emoji}</span>
+          <Icon size={24} className="text-white" />
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Heart,
   MoreHorizontal,
+  Search,
   Send,
   Share2,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ReelCanvasBg } from '@/components/community/ReelCanvasBg';
+import { resolveIcon } from '@/components/ui/ContextIcon';
 import { UnsplashImage } from '@/components/ui/UnsplashImage';
 import { formatNumber } from '@/lib/format';
 import { FEED_POSTS } from '@/lib/mock/feedPosts';
@@ -58,7 +60,12 @@ export function PostDetail() {
   if (!post && !reel) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 py-20 text-center">
-        <span className="text-5xl mb-3">🔍</span>
+        <div className="relative mb-4">
+          <span aria-hidden className="absolute inset-0 rounded-full bg-brand-300/40 blur-2xl" />
+          <div className="relative w-14 h-14 rounded-2xl bg-white/65 dark:bg-ink-700/65 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-lg flex items-center justify-center">
+            <Search size={24} className="text-brand-500" />
+          </div>
+        </div>
         <p className="text-sm text-ink-500 mb-4">{t('post.detail.notFound')}</p>
         <button
           type="button"
@@ -158,28 +165,35 @@ export function PostDetail() {
                 className="flex flex-row overflow-x-auto snap-x snap-mandatory no-scrollbar"
                 style={{ height: SLIDE_H }}
               >
-                {post.slides.map((slide, i) => (
-                  <div
-                    key={i}
-                    className="relative flex-shrink-0 w-full snap-center flex flex-col items-center justify-center p-4 overflow-hidden"
-                    style={{ height: SLIDE_H, backgroundColor: slide.bg }}
-                  >
-                    {slide.imageUrl && (
-                      <UnsplashImage
-                        src={slide.imageUrl}
-                        alt={slide.title}
-                        fill
-                        loading="lazy"
-                        overlayClassName="bg-gradient-to-t from-black/70 via-black/30 to-black/40"
-                      />
-                    )}
-                    <span className="relative text-7xl mb-2">{slide.emoji}</span>
-                    <span className="relative text-white text-2xl font-bold mb-1 text-center">
-                      {slide.title}
-                    </span>
-                    <span className="relative text-white/80 text-xs text-center">{slide.sub}</span>
-                  </div>
-                ))}
+                {post.slides.map((slide, i) => {
+                  const SlideIcon = resolveIcon(slide.emoji);
+                  return (
+                    <div
+                      key={i}
+                      className="relative flex-shrink-0 w-full snap-center flex flex-col items-center justify-center p-4 overflow-hidden"
+                      style={{ height: SLIDE_H, backgroundColor: slide.bg }}
+                    >
+                      {slide.imageUrl && (
+                        <UnsplashImage
+                          src={slide.imageUrl}
+                          alt={slide.title}
+                          fill
+                          loading="lazy"
+                          overlayClassName="bg-gradient-to-t from-black/70 via-black/30 to-black/40"
+                        />
+                      )}
+                      <span className="relative mb-3 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/30 shadow-lg">
+                        <SlideIcon size={32} className="text-white" />
+                      </span>
+                      <span className="relative text-white text-2xl font-bold mb-1 text-center">
+                        {slide.title}
+                      </span>
+                      <span className="relative text-white/80 text-xs text-center">
+                        {slide.sub}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
               {post.slides.length > 1 && (
                 <div className="absolute bottom-3 left-0 right-0 flex flex-row justify-center pointer-events-none">

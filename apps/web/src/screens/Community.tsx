@@ -1,4 +1,4 @@
-import { ChevronRight, Users } from 'lucide-react';
+import { Bookmark, ChevronRight, Inbox, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { ReelCard } from '@/components/community/ReelCard';
 import { StoryBar } from '@/components/community/StoryBar';
 import { TopBar } from '@/components/TopBar';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { staggerStyle } from '@/components/ui/stagger';
 import { useLiveFeed } from '@/lib/useLiveFeed';
 import { useUnreadCount } from '@/lib/useNotifications';
 import { FEED_POSTS, type FeedPost } from '@/lib/mock/feedPosts';
@@ -97,7 +98,20 @@ export function Community() {
         <FeedSkeleton />
       ) : items.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-16">
-          <span className="text-5xl mb-3">🔖</span>
+          {/* Geometric empty-state: glass medallion + Lucide icon — no emoji */}
+          <div className="relative mb-4">
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-brand-300/40 blur-2xl motion-safe:animate-pulse"
+            />
+            <div className="relative w-16 h-16 rounded-2xl bg-white/65 dark:bg-ink-700/65 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 flex items-center justify-center">
+              {filter === 'saved' ? (
+                <Bookmark size={28} className="text-brand-500" />
+              ) : (
+                <Inbox size={28} className="text-brand-500" />
+              )}
+            </div>
+          </div>
           <p className="text-base text-ink-500 text-center">
             {filter === 'saved'
               ? 'Nothing saved yet — tap the bookmark icon on any post.'
@@ -106,13 +120,11 @@ export function Community() {
         </div>
       ) : (
         <div className="pb-6">
-          {items.map((item) =>
-            item.kind === 'post' ? (
-              <PostCard key={item.id} post={item} />
-            ) : (
-              <ReelCard key={item.id} reel={item} />
-            ),
-          )}
+          {items.map((item, idx) => (
+            <div key={item.id} className="animate-rise-in" style={staggerStyle(idx)}>
+              {item.kind === 'post' ? <PostCard post={item} /> : <ReelCard reel={item} />}
+            </div>
+          ))}
         </div>
       )}
     </>

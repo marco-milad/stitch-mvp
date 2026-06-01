@@ -1,6 +1,7 @@
 import { Star } from 'lucide-react';
 import { memo, useState } from 'react';
 
+import { useTilt } from '@/components/ui/useTilt';
 import { TONE_BG, TONE_FG, type ServiceTile as ServiceTileData } from '@/lib/mock/services';
 import { useServicesStore } from '@/stores/servicesStore';
 
@@ -27,6 +28,7 @@ function ServiceTileImpl({ tile, highlight, onClick }: Props) {
   const fav = useServicesStore((s) => s.favorites.has(tile.id));
   const toggleFavorite = useServicesStore((s) => s.toggleFavorite);
   const [pop, setPop] = useState(false);
+  const tilt = useTilt<HTMLButtonElement>();
 
   const onFavClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -45,9 +47,17 @@ function ServiceTileImpl({ tile, highlight, onClick }: Props) {
       type="button"
       onClick={onClick}
       aria-label={tile.name}
-      className="relative flex-1 m-1.5 bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700 text-left active:scale-[0.98] transition-transform"
-      style={{ minHeight: 130 }}
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      className="group relative flex-1 m-1.5 bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left tilt-surface overflow-hidden hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+      style={{ ...tilt.style, minHeight: 130 }}
     >
+      {/* Cursor-tracking specular highlight */}
+      <span
+        aria-hidden
+        className="absolute inset-0 tilt-sheen opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      />
       {/* Favorite star (top-right) */}
       <button
         type="button"

@@ -36,4 +36,71 @@
   .safe-bottom {
     padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
   }
+  /* Tilt hover surface — set --tx / --ty from JS (0..1) to drive the
+     rotation. Falls back to flat when JS hasn't set vars. */
+  .tilt-surface {
+    transform: perspective(900px) rotateX(calc((var(--ty, 0.5) - 0.5) * -8deg))
+      rotateY(calc((var(--tx, 0.5) - 0.5) * 8deg));
+    transition: transform 320ms cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+  }
+  /* Specular highlight that follows the cursor across a tilted card. */
+  .tilt-sheen {
+    background: radial-gradient(
+      600px circle at calc(var(--tx, 0.5) * 100%) calc(var(--ty, 0.5) * 100%),
+      rgba(255, 255, 255, 0.35),
+      transparent 40%
+    );
+    pointer-events: none;
+  }
+}
+
+/* View Transitions API — fade old → new on every cross-route navigation.
+   Chromium + Safari implement this natively; Firefox is a no-op. */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 240ms;
+    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  /* Shared-element morph targets — give an element the matching name on
+     both screens and the browser auto-interpolates position/size. */
+  .vt-status-badge {
+    view-transition-name: status-badge;
+  }
+  .vt-ticket-card {
+    view-transition-name: ticket-card;
+  }
+}
+
+/* Reduced-motion respect — kills every infinite animation + suppresses
+   parallax/tilt drift. Single-shot eases (rise-in, ticket-in, badge-flip)
+   still run because they're informative, not decorative. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-iteration-count: 1 !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 120ms !important;
+  }
+  .tilt-surface {
+    transform: none !important;
+  }
+  .animate-mesh-a,
+  .animate-mesh-b,
+  .animate-mesh-c,
+  .animate-orb-breathe,
+  .animate-orbit-slow,
+  .animate-water-flow,
+  .animate-zen-pulse,
+  .animate-fire-flicker,
+  .animate-leaves-drift,
+  .animate-sparkle-a,
+  .animate-sparkle-b,
+  .animate-orb-pulse,
+  .animate-qr-shimmer,
+  .animate-pulse {
+    animation: none !important;
+  }
 }

@@ -1,6 +1,7 @@
 import { Briefcase, Compass, Home, QrCode, User, Users, type LucideIcon } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
+import { MeshBackground } from '@/components/ui/MeshBackground';
 import { colors } from '@/lib/theme';
 
 interface TabDef {
@@ -58,13 +59,10 @@ export function TabsLayout() {
 
   return (
     <>
-      {/* Pastel gradient backdrop — fixed so it stays put during scroll, and
-          sits below content so glass cards have something to blur over. The
-          dark variant flips to the same hues but darker so contrast holds. */}
-      <div
-        aria-hidden
-        className="fixed inset-0 -z-10 bg-gradient-to-br from-sky-100 via-violet-100 to-pink-100 dark:from-ink-900 dark:via-violet-950 dark:to-ink-900"
-      />
+      {/* Animated mesh backdrop — three blurred blobs drifting on independent
+          eases give the whole app a living, never-quite-repeating wash for
+          the glass cards to blur over. */}
+      <MeshBackground tone="pastel" />
 
       {/* Screen content fills above the tab bar */}
       <div className="flex-1 overflow-y-auto pb-20">

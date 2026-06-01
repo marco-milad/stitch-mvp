@@ -19,10 +19,13 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+
+import { useNavigateWithTransition } from '@/lib/viewTransition';
 
 import { UnitSwitcher } from '@/components/property/UnitSwitcher';
 import { TopBar } from '@/components/TopBar';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { useTilt } from '@/components/ui/useTilt';
 import { SERVICE_TILES, TONE_BG, TONE_FG } from '@/lib/mock/services';
 import { getProviderById, offeringLabelKey } from '@/lib/mock/serviceProviders';
 import { colors } from '@/lib/theme';
@@ -137,26 +140,40 @@ const TONE_CHIP: Record<Tone, { bg: string; fg: string }> = {
 
 function SuggestionCard({ s }: { s: Suggestion }) {
   const tone = TONE_CHIP[s.tone];
+  const tilt = useTilt();
   return (
-    <button
-      type="button"
-      onClick={s.onClick}
-      className="flex-shrink-0 w-64 mr-3 bg-white dark:bg-ink-700 rounded-2xl p-4 border border-ink-100 dark:border-ink-700 text-left active:scale-[0.98] transition-transform"
+    <div
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      style={tilt.style}
+      className="flex-shrink-0 w-64 mr-3 tilt-surface"
     >
-      <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center mb-3"
-        style={{ backgroundColor: tone.bg }}
+      <button
+        type="button"
+        onClick={s.onClick}
+        className="group relative w-full overflow-hidden bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-4 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
       >
-        <s.Icon color={tone.fg} size={18} />
-      </div>
-      <p className="text-sm font-semibold text-ink-900 dark:text-white mb-1 line-clamp-2">
-        {s.title}
-      </p>
-      <p className="text-xs text-ink-500 dark:text-ink-100 mb-3 line-clamp-2">{s.sub}</p>
-      <span className="text-xs font-semibold" style={{ color: tone.fg }}>
-        {s.cta} ›
-      </span>
-    </button>
+        {/* Cursor-tracking specular highlight */}
+        <span
+          aria-hidden
+          className="absolute inset-0 tilt-sheen opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        />
+        <div
+          className="relative w-9 h-9 rounded-lg flex items-center justify-center mb-3 ring-1 ring-white/40"
+          style={{ backgroundColor: tone.bg }}
+        >
+          <s.Icon color={tone.fg} size={18} />
+        </div>
+        <p className="relative text-sm font-semibold text-ink-900 dark:text-white mb-1 line-clamp-2">
+          {s.title}
+        </p>
+        <p className="relative text-xs text-ink-500 dark:text-ink-100 mb-3 line-clamp-2">{s.sub}</p>
+        <span className="relative text-xs font-semibold" style={{ color: tone.fg }}>
+          {s.cta} ›
+        </span>
+      </button>
+    </div>
   );
 }
 
@@ -171,23 +188,36 @@ interface Cta {
 }
 
 function CtaTile({ cta }: { cta: Cta }) {
+  const tilt = useTilt();
   return (
-    <button
-      type="button"
-      onClick={cta.onClick}
-      className="flex-1 bg-white dark:bg-ink-700 rounded-2xl p-4 flex flex-row items-center border border-ink-100 dark:border-ink-700 text-left active:scale-[0.98] transition-transform"
+    <div
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      style={tilt.style}
+      className="flex-1 tilt-surface"
     >
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
-        style={{ backgroundColor: cta.bg }}
+      <button
+        type="button"
+        onClick={cta.onClick}
+        className="group relative w-full overflow-hidden bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-4 flex flex-row items-center border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
       >
-        <cta.Icon color={cta.fg} size={20} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">{cta.title}</p>
-        <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">{cta.sub}</p>
-      </div>
-    </button>
+        <span
+          aria-hidden
+          className="absolute inset-0 tilt-sheen opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        />
+        <div
+          className="relative w-10 h-10 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40"
+          style={{ backgroundColor: cta.bg }}
+        >
+          <cta.Icon color={cta.fg} size={20} />
+        </div>
+        <div className="relative flex-1 min-w-0">
+          <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">{cta.title}</p>
+          <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">{cta.sub}</p>
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -210,14 +240,17 @@ function StatusPill({
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700 text-left active:scale-[0.98] transition-transform"
+      className="flex-1 flex flex-row items-center bg-white/65 dark:bg-ink-700/65 backdrop-blur-md rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
     >
       <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
-        style={{ backgroundColor: bg }}
+        className="w-9 h-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40"
+        style={{
+          backgroundColor: bg,
+          boxShadow: `0 0 14px ${tint}40`,
+        }}
       >
-        <span style={{ color: tint }} className="font-bold text-base">
-          {count}
+        <span style={{ color: tint }} className="font-bold text-base tabular-nums">
+          <AnimatedCount value={count} />
         </span>
       </div>
       <div className="flex-1 min-w-0">
@@ -231,7 +264,10 @@ function StatusPill({
 export function Home() {
   const { t } = useTranslation();
   const { user } = useUser();
-  const navigate = useNavigate();
+  // `useNavigateWithTransition` wraps the navigation in
+  // `document.startViewTransition` when supported, falling back to a
+  // plain navigate otherwise. Drop-in identical API.
+  const navigate = useNavigateWithTransition();
   const property = useCurrentProperty();
   const activeRequests = useActiveRequests();
   const unreadCount = useUnreadCount();
@@ -401,11 +437,11 @@ export function Home() {
           </button>
         </div>
 
-        {/* Weather */}
-        <div className="flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 mb-5 border border-ink-100 dark:border-ink-700">
+        {/* Weather — ground tier glass (subtle, ambient) */}
+        <div className="flex flex-row items-center bg-white/55 dark:bg-ink-700/55 backdrop-blur-md rounded-2xl p-3 mb-5 border border-white/40 dark:border-white/10 shadow-md shadow-ink-900/5">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 flex-shrink-0"
-            style={{ backgroundColor: weatherBg }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40 shadow-md"
+            style={{ backgroundColor: weatherBg, boxShadow: `0 0 18px ${weatherBg}50` }}
           >
             <WeatherIcon color="#fff" size={18} />
           </div>
@@ -501,12 +537,12 @@ export function Home() {
           />
         </div>
 
-        {/* Active request card — shown only when something is in-flight */}
+        {/* Active request card — lifted tier (this is the loudest "track me!" CTA) */}
         {latestActiveRequest && (
           <button
             type="button"
             onClick={() => navigate('/services/requests')}
-            className="w-full flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 mb-5 border border-ink-100 dark:border-ink-700 text-left active:scale-[0.98] transition-transform"
+            className="vt-ticket-card w-full flex flex-row items-center bg-white/80 dark:bg-ink-700/80 backdrop-blur-xl rounded-2xl p-3 mb-5 border border-white/60 dark:border-white/10 shadow-2xl shadow-violet-500/10 ring-1 ring-white/40 text-left hover:scale-[1.01] hover:shadow-violet-500/20 active:scale-[0.98] transition-all duration-300 ease-smooth"
           >
             <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center me-3 flex-shrink-0">
               <Clock color="#7C3AED" size={18} />

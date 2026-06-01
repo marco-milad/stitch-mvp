@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { AudioVisualizer } from '@/components/voice/AudioVisualizer';
+import { BreathingOrb } from '@/components/voice/BreathingOrb';
 import { MessageBubble } from '@/components/voice/MessageBubble';
 import { MicButton } from '@/components/voice/MicButton';
 import { SuggestionChips } from '@/components/voice/SuggestionChips';
 import { TextInputBar } from '@/components/voice/TextInputBar';
+import { MeshBackground } from '@/components/ui/MeshBackground';
 import { SCRIPTED_UTTERANCE_KEYS } from '@/lib/mock/voicePrompts';
 import type { SuggestionChip } from '@/lib/schemas/voice';
 import { useCurrentProperty } from '@/stores/propertyStore';
@@ -219,9 +221,10 @@ export function Voice() {
   // ─── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex-1 flex flex-col bg-ink-50 dark:bg-ink-900">
+    <div className="relative flex-1 flex flex-col">
+      <MeshBackground tone="warm" dim />
       {/* Header */}
-      <div className="flex flex-row items-center gap-3 px-4 py-3 border-b border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900">
+      <div className="flex flex-row items-center gap-3 px-4 py-3 border-b border-white/40 dark:border-white/10 bg-white/55 dark:bg-ink-900/55 backdrop-blur-lg">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -236,6 +239,13 @@ export function Voice() {
           </h1>
           <ConnectionPill connection={connection} />
         </div>
+      </div>
+
+      {/* Farah orb — state-driven centrepiece. Hugs the top of the
+          messages area so it's always visible even as the conversation
+          grows. */}
+      <div className="flex items-center justify-center pt-4 pb-1 pointer-events-none">
+        <BreathingOrb state={state} size={160} />
       </div>
 
       {/* Messages */}

@@ -1,8 +1,17 @@
-import { Bookmark, BookmarkCheck, CheckCircle2, Heart, MessageSquare, Share2 } from 'lucide-react';
+import {
+  Bookmark,
+  BookmarkCheck,
+  CheckCircle2,
+  Heart,
+  MessageSquare,
+  Pin,
+  Share2,
+} from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { resolveIcon } from '@/components/ui/ContextIcon';
 import { UnsplashImage } from '@/components/ui/UnsplashImage';
 import { formatNumber } from '@/lib/format';
 import type { FeedPost } from '@/lib/mock/feedPosts';
@@ -57,9 +66,10 @@ function PostCardImpl({ post }: { post: FeedPost }) {
       className={`mx-4 mb-4 bg-white dark:bg-ink-700 rounded-2xl overflow-hidden cursor-pointer active:scale-[0.997] transition-transform ${cardBorder}`}
     >
       {post.pinned && (
-        <div className="px-4 py-1.5 bg-amber-400 flex flex-row items-center">
+        <div className="px-4 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 flex flex-row items-center gap-1.5">
+          <Pin size={11} className="text-ink-900" />
           <span className="text-[10px] font-bold text-ink-900 tracking-wide">
-            📌 PINNED BY MANAGEMENT
+            PINNED BY MANAGEMENT
           </span>
         </div>
       )}
@@ -100,28 +110,34 @@ function PostCardImpl({ post }: { post: FeedPost }) {
           className="flex flex-row overflow-x-auto snap-x snap-mandatory no-scrollbar"
           style={{ height: SLIDE_H }}
         >
-          {post.slides.map((slide, i) => (
-            <div
-              key={i}
-              className="relative flex-shrink-0 w-full snap-center flex flex-col items-center justify-center p-4 overflow-hidden"
-              style={{ height: SLIDE_H, backgroundColor: slide.bg }}
-            >
-              {slide.imageUrl && (
-                <UnsplashImage
-                  src={slide.imageUrl}
-                  alt={slide.title}
-                  fill
-                  loading="lazy"
-                  overlayClassName="bg-gradient-to-t from-black/70 via-black/30 to-black/40"
-                />
-              )}
-              <span className="relative text-6xl mb-2">{slide.emoji}</span>
-              <span className="relative text-white text-xl font-bold mb-1 text-center">
-                {slide.title}
-              </span>
-              <span className="relative text-white/80 text-xs text-center">{slide.sub}</span>
-            </div>
-          ))}
+          {post.slides.map((slide, i) => {
+            const SlideIcon = resolveIcon(slide.emoji);
+            return (
+              <div
+                key={i}
+                className="relative flex-shrink-0 w-full snap-center flex flex-col items-center justify-center p-4 overflow-hidden"
+                style={{ height: SLIDE_H, backgroundColor: slide.bg }}
+              >
+                {slide.imageUrl && (
+                  <UnsplashImage
+                    src={slide.imageUrl}
+                    alt={slide.title}
+                    fill
+                    loading="lazy"
+                    overlayClassName="bg-gradient-to-t from-black/70 via-black/30 to-black/40"
+                  />
+                )}
+                {/* Glass-pill icon medallion — replaces the raw emoji hero */}
+                <span className="relative mb-3 inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/30 shadow-lg">
+                  <SlideIcon size={28} className="text-white" />
+                </span>
+                <span className="relative text-white text-xl font-bold mb-1 text-center">
+                  {slide.title}
+                </span>
+                <span className="relative text-white/80 text-xs text-center">{slide.sub}</span>
+              </div>
+            );
+          })}
         </div>
 
         {post.slides.length > 1 && (
@@ -202,13 +218,14 @@ function PostCardImpl({ post }: { post: FeedPost }) {
               toggleRsvp(post.id);
             }}
             aria-label={rsvped ? 'Cancel RSVP' : 'RSVP'}
-            className={`ms-auto px-4 py-1.5 rounded-full ${
-              rsvped ? 'bg-emerald-500' : 'bg-brand-500'
+            className={`ms-auto inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 ease-spring ${
+              rsvped
+                ? 'bg-emerald-500 shadow-md shadow-emerald-500/40'
+                : 'bg-brand-500 shadow-md shadow-brand-500/40'
             }`}
           >
-            <span className="text-white text-xs font-bold">
-              {rsvped ? "You're going ✓" : 'RSVP'}
-            </span>
+            {rsvped && <CheckCircle2 size={12} className="text-white" />}
+            <span className="text-white text-xs font-bold">{rsvped ? "You're going" : 'RSVP'}</span>
           </button>
         )}
       </div>

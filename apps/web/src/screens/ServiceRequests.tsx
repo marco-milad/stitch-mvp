@@ -37,13 +37,13 @@ export function ServiceRequests() {
 
   return (
     <>
-      <div className="bg-white dark:bg-ink-900 border-b border-ink-100 dark:border-ink-700">
+      <div className="sticky top-0 z-10 bg-white/55 dark:bg-ink-900/55 backdrop-blur-lg border-b border-white/40 dark:border-white/10 shadow-[0_4px_24px_rgba(15,23,42,0.04)]">
         <div className="flex flex-row items-center gap-3 px-4 py-3">
           <button
             type="button"
             onClick={() => navigate('/services')}
             aria-label="Back"
-            className="p-2 -ms-2 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-700"
+            className="p-2 -ms-2 rounded-lg hover:bg-white/40 dark:hover:bg-ink-700/60 hover:scale-105 active:scale-95 transition-all duration-200"
           >
             <ArrowLeft size={22} className="text-ink-700 dark:text-white rtl:rotate-180" />
           </button>
@@ -113,7 +113,7 @@ function RequestCard({
   const dateLabel = dateObj ? formatFullDate(dateObj, i18n.language) : request.dateIso;
 
   return (
-    <div className="bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700">
+    <div className="bg-white/60 dark:bg-ink-700/60 backdrop-blur-md rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10 transition-all duration-300">
       <div className="flex flex-row items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-ink-900 dark:text-white truncate">

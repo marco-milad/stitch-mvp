@@ -58,14 +58,22 @@ export function TabsLayout() {
 
   return (
     <>
+      {/* Pastel gradient backdrop — fixed so it stays put during scroll, and
+          sits below content so glass cards have something to blur over. The
+          dark variant flips to the same hues but darker so contrast holds. */}
+      <div
+        aria-hidden
+        className="fixed inset-0 -z-10 bg-gradient-to-br from-sky-100 via-violet-100 to-pink-100 dark:from-ink-900 dark:via-violet-950 dark:to-ink-900"
+      />
+
       {/* Screen content fills above the tab bar */}
       <div className="flex-1 overflow-y-auto pb-20">
         <Outlet />
       </div>
 
-      {/* Bottom tab bar */}
+      {/* Bottom tab bar — frosted glass */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40">
-        <div className="flex flex-row bg-white dark:bg-ink-900 border-t border-ink-100 dark:border-ink-700 safe-bottom h-16">
+        <div className="flex flex-row bg-white/60 dark:bg-ink-900/60 backdrop-blur-lg border-t border-white/40 dark:border-white/10 shadow-[0_-8px_32px_rgba(15,23,42,0.08)] safe-bottom h-16">
           {renderTab(TABS[0]!, 0)}
           {renderTab(TABS[1]!, 1)}
 
@@ -75,7 +83,7 @@ export function TabsLayout() {
               type="button"
               onClick={() => navigate('/qr')}
               aria-label="Open QR & access"
-              className="rounded-full bg-brand-500 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+              className="rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-xl shadow-brand-500/40 ring-1 ring-white/40 hover:scale-[1.04] active:scale-95 transition-all duration-200"
               style={{
                 width: FAB_SIZE,
                 height: FAB_SIZE,

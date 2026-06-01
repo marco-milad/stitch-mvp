@@ -31,21 +31,28 @@ import {
   type TicketUrgency,
 } from '@/lib/residentApi';
 
-const STATUS_TONE: Record<TicketStatus, { bg: string; fg: string; ring: string }> = {
+// Glass badges with a tinted colored glow per status. The shadow uses the
+// tone colour at low alpha so the badge reads as "lit" against the glass
+// card behind it. Don't drop the `ring` — it stops the chip from looking
+// flat on light glass.
+const STATUS_TONE: Record<TicketStatus, { bg: string; fg: string; ring: string; glow: string }> = {
   pending: {
-    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    bg: 'bg-amber-100/80 dark:bg-amber-900/40 backdrop-blur-sm',
     fg: 'text-amber-700 dark:text-amber-300',
-    ring: 'ring-amber-200/60',
+    ring: 'ring-amber-300/70',
+    glow: 'shadow-[0_0_16px_rgba(245,158,11,0.45)]',
   },
   in_progress: {
-    bg: 'bg-violet-100 dark:bg-violet-900/30',
-    fg: 'text-violet-700 dark:text-violet-300',
-    ring: 'ring-violet-200/60',
+    bg: 'bg-sky-100/80 dark:bg-sky-900/40 backdrop-blur-sm',
+    fg: 'text-sky-700 dark:text-sky-300',
+    ring: 'ring-sky-300/70',
+    glow: 'shadow-[0_0_16px_rgba(14,165,233,0.5)]',
   },
   resolved: {
-    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+    bg: 'bg-emerald-100/80 dark:bg-emerald-900/40 backdrop-blur-sm',
     fg: 'text-emerald-700 dark:text-emerald-300',
-    ring: 'ring-emerald-200/60',
+    ring: 'ring-emerald-300/70',
+    glow: 'shadow-[0_0_16px_rgba(16,185,129,0.5)]',
   },
 };
 
@@ -161,21 +168,21 @@ export function MyMaintenanceTickets() {
       <button
         type="button"
         onClick={() => setCreatorOpen(true)}
-        className="mb-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold shadow-md shadow-brand-500/30 active:scale-[0.99] transition-transform"
+        className="mb-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 hover:from-brand-500 hover:to-brand-700 text-white text-sm font-bold shadow-lg shadow-brand-500/40 ring-1 ring-white/30 hover:scale-[1.02] hover:shadow-xl hover:shadow-brand-500/50 active:scale-[0.98] transition-all duration-300"
       >
         <Plus size={16} />
         <span>{t('myTickets.newRequest')}</span>
       </button>
 
       {toast && (
-        <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-200 text-xs font-semibold animate-ticket-in">
+        <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-900/30 backdrop-blur-md border border-emerald-200/70 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-200 text-xs font-semibold shadow-lg shadow-emerald-500/15 animate-ticket-in">
           <CheckCircle2 size={14} />
           <span className="flex-1">{toast}</span>
           <button
             type="button"
             onClick={() => setToast(null)}
             aria-label="Dismiss"
-            className="opacity-70 hover:opacity-100"
+            className="opacity-70 hover:opacity-100 hover:scale-110 active:scale-95 transition-all duration-200"
           >
             <X size={12} />
           </button>
@@ -187,7 +194,7 @@ export function MyMaintenanceTickets() {
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className="bg-white dark:bg-ink-700 rounded-2xl p-3.5 border border-ink-100 dark:border-ink-700 flex flex-row items-start gap-3"
+              className="bg-white/55 dark:bg-ink-700/60 backdrop-blur-md rounded-2xl p-3.5 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 flex flex-row items-start gap-3"
             >
               <Skeleton className="w-10 h-10 rounded-xl" />
               <div className="flex-1 flex flex-col gap-2">
@@ -203,8 +210,18 @@ export function MyMaintenanceTickets() {
           ))}
         </div>
       ) : activeTickets.length === 0 ? (
-        <div className="bg-white dark:bg-ink-700 rounded-2xl p-6 text-center text-xs text-ink-500">
-          {t('myTickets.empty')}
+        <div className="relative bg-white/55 dark:bg-ink-700/60 backdrop-blur-md rounded-2xl px-6 py-10 text-center border border-white/40 dark:border-white/10 shadow-xl shadow-ink-900/5 overflow-hidden">
+          {/* Subtle glow blob behind the empty-state text */}
+          <div
+            aria-hidden
+            className="absolute -top-12 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-brand-300/40 blur-3xl animate-pulse"
+          />
+          <div className="relative">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-lg shadow-brand-500/40 ring-1 ring-white/40 mb-3 animate-pulse">
+              <Wrench size={22} />
+            </div>
+            <p className="text-xs text-ink-600 dark:text-ink-100">{t('myTickets.empty')}</p>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -238,13 +255,13 @@ function LivePill({ connected }: { connected: boolean }) {
   return (
     <span
       className={[
-        'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider border',
+        'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider border backdrop-blur-sm transition-all duration-300',
         connected
-          ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-          : 'bg-ink-100 border-ink-200 text-ink-500',
+          ? 'bg-emerald-50/70 border-emerald-300/60 text-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+          : 'bg-ink-100/60 border-ink-200/60 text-ink-500',
       ].join(' ')}
     >
-      <Radio size={10} />
+      <Radio size={10} className={connected ? 'animate-pulse' : undefined} />
       {connected ? t('myTickets.live') : t('myTickets.offline')}
     </span>
   );
@@ -286,10 +303,10 @@ function TicketCard({
     : '';
 
   return (
-    <div className="bg-white dark:bg-ink-700 rounded-2xl p-3.5 border border-ink-100 dark:border-ink-700 animate-ticket-in">
+    <div className="group bg-white/60 dark:bg-ink-700/60 backdrop-blur-md rounded-2xl p-3.5 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10 transition-all duration-300 animate-ticket-in">
       <div className="flex flex-row items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-700/30 flex items-center justify-center flex-shrink-0">
-          <Wrench size={18} className="text-brand-600 dark:text-brand-400" />
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-brand-300 dark:from-brand-700/40 dark:to-brand-900/40 ring-1 ring-white/40 shadow-md shadow-brand-500/20 flex items-center justify-center flex-shrink-0 group-hover:shadow-brand-500/40 transition-shadow duration-300">
+          <Wrench size={18} className="text-brand-700 dark:text-brand-300" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-row items-start justify-between gap-2">
@@ -313,6 +330,7 @@ function TicketCard({
                 statusTone.bg,
                 statusTone.fg,
                 statusTone.ring,
+                statusTone.glow,
                 flipClass,
               ].join(' ')}
             >
@@ -334,9 +352,9 @@ function TicketCard({
           {tech && ticket.status === 'in_progress' && (
             <div
               key={tech.id}
-              className="mt-3 flex flex-row items-center gap-2.5 px-3 py-2 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/50 animate-tech-reveal"
+              className="mt-3 flex flex-row items-center gap-2.5 px-3 py-2 rounded-xl bg-sky-50/70 dark:bg-sky-900/30 backdrop-blur-sm border border-sky-200/60 dark:border-sky-700/50 shadow-[0_0_18px_rgba(14,165,233,0.18)] animate-tech-reveal"
             >
-              <div className="w-7 h-7 rounded-full bg-violet-200 dark:bg-violet-700 flex items-center justify-center text-violet-700 dark:text-violet-200 text-[11px] font-bold flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-200 to-sky-400 dark:from-sky-700 dark:to-sky-900 ring-1 ring-white/50 shadow-md shadow-sky-500/30 flex items-center justify-center text-sky-800 dark:text-sky-100 text-[11px] font-bold flex-shrink-0">
                 {tech.name
                   .split(' ')
                   .map((p) => p[0])
@@ -345,7 +363,7 @@ function TicketCard({
                   .toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">
                   {t('myTickets.assignee.label')}
                 </div>
                 <div className="text-xs font-semibold text-ink-900 dark:text-white truncate">
@@ -418,7 +436,7 @@ function NewRequestModal({ onClose, onCreated }: NewRequestModalProps) {
         if (e.target === e.currentTarget && !mutation.isPending) onClose();
       }}
     >
-      <div className="w-full max-w-md bg-white dark:bg-ink-900 rounded-2xl border border-ink-200 dark:border-ink-700 shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-md bg-white/85 dark:bg-ink-900/85 backdrop-blur-xl rounded-2xl border border-white/50 dark:border-white/10 shadow-2xl shadow-ink-900/20 ring-1 ring-white/30 flex flex-col max-h-[90vh]">
         <header className="flex items-center justify-between px-5 py-4 border-b border-ink-100 dark:border-ink-700">
           <div className="flex flex-col">
             <h2 className="text-base font-extrabold text-ink-900 dark:text-white leading-tight">
@@ -521,7 +539,7 @@ function NewRequestModal({ onClose, onCreated }: NewRequestModalProps) {
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold disabled:opacity-40"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 hover:from-brand-500 hover:to-brand-700 text-white text-sm font-bold shadow-lg shadow-brand-500/40 ring-1 ring-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
           >
             {mutation.isPending && <Loader2 size={14} className="animate-spin" />}
             {mutation.isPending ? t('myTickets.create.submitting') : t('myTickets.create.submit')}

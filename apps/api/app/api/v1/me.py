@@ -11,10 +11,9 @@ Endpoints:
     WS     /me/requests/stream        push channel for ticket status flips
 
 Every route enforces a verified Clerk JWT — see `app.core.auth`. The
-demo-data hubs still filter on a resident display-name string;
-`resident_identity()` projects the JWT down to that string. Unit info
-isn't on the JWT, so the create path uses `_todo_resident_unit()` as a
-placeholder until a Clerk-id → resident-record table exists.
+requests routes are SQL-backed via `requests_hub`; the other hubs are
+still in-memory and use the auth user's display name as identity until
+they get the same treatment.
 """
 
 from __future__ import annotations
@@ -25,8 +24,10 @@ from contextlib import suppress
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import AuthUser, get_current_user, get_current_user_ws, resident_identity
+from app.core.auth import AuthUser, get_current_user, get_current_user_ws
+from app.core.database import AsyncSessionLocal, get_db
 from app.core.logging import logger
 from app.schemas.notifications import NotificationsList
 from app.schemas.parking import (
@@ -50,13 +51,13 @@ from app.services import (
 router = APIRouter()
 
 CurrentUser = Annotated[AuthUser, Depends(get_current_user)]
+DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
-def _todo_resident_unit(user: AuthUser) -> str:
-    """Placeholder until Clerk-id → unit mapping exists. Falls back to the
-    demo unit so the create path can run end-to-end."""
-    _ = user
-    return visitor_passes_hub.DEMO_HOST_UNIT
+def _display_name(user: AuthUser) -> str:
+    """For the not-yet-DB-backed hubs (parking, notifications, visitor passes)
+    which still key on a string identifier. Drop when those hubs migrate."""
+    return user.full_name or user.email or user.user_id
 
 
 # ─── Visitor passes ────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ async def list_visitor_passes(user: CurrentUser) -> VisitorPassList:
 
 @router.get("/me/parking/slots", response_model=ParkingSlotsList)
 async def list_parking_slots(user: CurrentUser) -> ParkingSlotsList:
-    items = await parking_hub.list_slots(resident_identity(user))
+    items = await parking_hub.list_slots(_display_name(user))
     return ParkingSlotsList(items=items)
 
 
@@ -95,7 +96,7 @@ async def list_parking_slots(user: CurrentUser) -> ParkingSlotsList:
 )
 async def book_parking_slot(payload: ParkingBookingCreate, user: CurrentUser) -> ParkingBooking:
     try:
-        return await parking_hub.create_booking(resident_identity(user), payload)
+        return await parking_hub.create_booking(_display_name(user), payload)
     except parking_hub.SlotNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Slot not found") from exc
     except parking_hub.SlotUnavailableError as exc:
@@ -105,24 +106,22 @@ async def book_parking_slot(payload: ParkingBookingCreate, user: CurrentUser) ->
 @router.delete("/me/parking/bookings/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def release_parking_booking(booking_id: str, user: CurrentUser) -> None:
     try:
-        await parking_hub.release_booking(resident_identity(user), booking_id)
+        await parking_hub.release_booking(_display_name(user), booking_id)
     except parking_hub.BookingNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Booking not found") from exc
 
 
 @router.get("/me/parking/bookings", response_model=list[ParkingBooking])
 async def list_my_bookings(user: CurrentUser) -> list[ParkingBooking]:
-    return await parking_hub.my_bookings(resident_identity(user))
+    return await parking_hub.my_bookings(_display_name(user))
 
 
 # ─── Requests (read-only for the resident view) ────────────────────────────
 
 
 @router.get("/me/requests", response_model=list[ServiceRequest])
-async def list_my_requests(user: CurrentUser) -> list[ServiceRequest]:
-    all_requests = await requests_hub.list_requests()
-    me = resident_identity(user)
-    return [r for r in all_requests if r.residentName == me]
+async def list_my_requests(user: CurrentUser, session: DbSession) -> list[ServiceRequest]:
+    return await requests_hub.list_requests(session, user_id=user.db_user_id)
 
 
 @router.post(
@@ -130,10 +129,14 @@ async def list_my_requests(user: CurrentUser) -> list[ServiceRequest]:
     response_model=ServiceRequest,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_my_request(payload: RequestCreateInput, user: CurrentUser) -> ServiceRequest:
+async def create_my_request(
+    payload: RequestCreateInput, user: CurrentUser, session: DbSession
+) -> ServiceRequest:
+    unit_id = await requests_hub.primary_unit_id_for(session, user.db_user_id)
     return await requests_hub.create_request(
-        resident_name=resident_identity(user),
-        unit=_todo_resident_unit(user),
+        session,
+        user_id=user.db_user_id,
+        unit_id=unit_id,
         payload=payload,
     )
 
@@ -142,20 +145,22 @@ async def create_my_request(payload: RequestCreateInput, user: CurrentUser) -> S
 async def my_requests_stream(websocket: WebSocket) -> None:
     """Same envelope as `/admin/requests/stream`, but the snapshot is pre-
     filtered to this resident. Subsequent `request.updated` events arrive
-    for ALL requests; the client filters by id against its snapshot."""
+    for ALL requests; the sender filters by residentName against the
+    resident's display name (snapshot stays user_id-filtered)."""
     await websocket.accept()
     user = await get_current_user_ws(websocket)
     if user is None:
         return
-    me = resident_identity(user)
+    me_name = _display_name(user)
     logger.info("me.requests.ws.connected", peer=str(websocket.client))
 
-    all_requests = await requests_hub.list_requests()
-    my_items = [r.model_dump() for r in all_requests if r.residentName == me]
+    async with AsyncSessionLocal() as session:
+        items = await requests_hub.list_requests(session, user_id=user.db_user_id)
+    my_items = [r.model_dump() for r in items]
     await websocket.send_text(json.dumps({"type": "snapshot", "items": my_items}))
 
     async with requests_hub.subscribe() as queue:
-        sender = asyncio.create_task(_sender(websocket, queue, me))
+        sender = asyncio.create_task(_sender(websocket, queue, me_name))
         receiver = asyncio.create_task(_receiver(websocket))
         _, pending = await asyncio.wait({sender, receiver}, return_when=asyncio.FIRST_COMPLETED)
         for task in pending:
@@ -166,19 +171,23 @@ async def my_requests_stream(websocket: WebSocket) -> None:
     logger.info("me.requests.ws.disconnected", peer=str(websocket.client))
 
 
-def _is_for_me(msg: dict[str, Any], me: str) -> bool:
-    """Filter so the resident only receives events for their own tickets."""
+def _is_for_me(msg: dict[str, Any], me_name: str) -> bool:
+    """Filter so the resident only receives events for their own tickets.
+
+    Broadcast envelopes carry the projected `residentName` (display
+    string), so we filter on that. Switching the broadcast payload to
+    carry `user_id` would let us key on the UUID instead — TODO."""
     item = msg.get("item")
     if not isinstance(item, dict):
         return True  # let snapshots / other envelopes through
-    return item.get("residentName") == me
+    return item.get("residentName") == me_name
 
 
-async def _sender(websocket: WebSocket, queue: asyncio.Queue[dict[str, Any]], me: str) -> None:
+async def _sender(websocket: WebSocket, queue: asyncio.Queue[dict[str, Any]], me_name: str) -> None:
     try:
         while True:
             msg = await queue.get()
-            if not _is_for_me(msg, me):
+            if not _is_for_me(msg, me_name):
                 continue
             await websocket.send_text(json.dumps(msg))
     except WebSocketDisconnect:
@@ -206,7 +215,7 @@ async def _receiver(websocket: WebSocket) -> None:
 
 @router.get("/me/notifications", response_model=NotificationsList)
 async def list_my_notifications(user: CurrentUser) -> NotificationsList:
-    items = await notifications_hub.list_for(resident_identity(user))
+    items = await notifications_hub.list_for(_display_name(user))
     return NotificationsList(items=items)
 
 
@@ -220,7 +229,7 @@ async def my_notifications_stream(websocket: WebSocket) -> None:
     user = await get_current_user_ws(websocket)
     if user is None:
         return
-    me = resident_identity(user)
+    me = _display_name(user)
     logger.info("me.notifications.ws.connected", peer=str(websocket.client))
 
     items = [n.model_dump() for n in await notifications_hub.list_for(me)]

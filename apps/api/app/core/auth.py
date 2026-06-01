@@ -1,36 +1,40 @@
-"""Clerk JWT verification.
+"""Clerk JWT verification + just-in-time user provisioning.
 
-Strict bearer-token auth. The token signature is verified against Clerk's
-JWKS (cached by PyJWKClient). No demo bypass — a missing or invalid token
-is always 401.
+Strict bearer-token auth — the JWT is verified against Clerk's JWKS
+(cached by PyJWKClient). A missing or invalid token is always 401.
 
-Identity model:
-    AuthUser.user_id    Clerk `sub` claim — stable per-Clerk-user identifier
-    AuthUser.email      `email` claim if present
-    AuthUser.full_name  `name` / `full_name` claim if present in the JWT template
-
-The legacy /me/* routes filter demo data by `residentName` (a display name
-string). `resident_identity()` projects the JWT down to that string so the
-existing hubs keep working unchanged. Today the projection is full_name →
-email → user_id, which means a user only sees demo tickets if their Clerk
-profile name happens to match the demo resident (e.g. "Lina Mostafa"). The
-proper fix — a Clerk-id → resident-record mapping table — is downstream.
+On every successful verify, the `users` table is upserted by
+`clerk_id`. The row that comes back is the canonical resident identity
+for the rest of the request: filter `maintenance_requests.user_id`
+against `current_user.db_user_id`, etc.
 """
 
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
 import jwt
-from fastapi import Header, HTTPException, WebSocket, status
+from fastapi import Depends, Header, HTTPException, WebSocket, status
 from jwt import PyJWKClient
 from jwt.exceptions import PyJWKClientError
 from pydantic import BaseModel
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.database import AsyncSessionLocal, get_db
+from app.models.user import User, UserRole
 
 
 class AuthUser(BaseModel):
+    """Identity for one verified request.
+
+    `db_user_id` is the `users.id` PK — what every domain table FKs to.
+    `user_id` keeps the Clerk `sub` for audit logs and JWT-only flows.
+    """
+
+    db_user_id: uuid.UUID
     user_id: str
     email: str | None = None
     full_name: str | None = None
@@ -41,30 +45,11 @@ _jwks_client = PyJWKClient(settings.CLERK_JWKS_URL)
 
 def _verify_token(token: str) -> dict[str, object]:
     signing_key = _jwks_client.get_signing_key_from_jwt(token).key
-    # `aud` isn't set by Clerk's default session template; verifying it
-    # would break valid tokens. `iss` we could pin to the Clerk frontend
-    # API host, but that requires another config var — defer.
     return jwt.decode(
         token,
         signing_key,
         algorithms=["RS256"],
         options={"verify_aud": False},
-    )
-
-
-def _user_from_claims(claims: dict[str, object]) -> AuthUser:
-    sub = claims.get("sub")
-    if not isinstance(sub, str) or not sub:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing `sub` claim",
-        )
-    email = claims.get("email")
-    name = claims.get("name") or claims.get("full_name")
-    return AuthUser(
-        user_id=sub,
-        email=email if isinstance(email, str) else None,
-        full_name=name if isinstance(name, str) else None,
     )
 
 
@@ -85,13 +70,90 @@ def _extract_bearer(authorization: str | None) -> str:
     return parts[1].strip()
 
 
+def _claims_identity(claims: dict[str, object]) -> tuple[str, str | None, str | None]:
+    """Pull (sub, email, full_name) out of the verified JWT."""
+    sub = claims.get("sub")
+    if not isinstance(sub, str) or not sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing `sub` claim",
+        )
+    email = claims.get("email")
+    name = claims.get("name") or claims.get("full_name")
+    return (
+        sub,
+        email if isinstance(email, str) else None,
+        name if isinstance(name, str) else None,
+    )
+
+
+async def _upsert_user(
+    session: AsyncSession,
+    clerk_sub: str,
+    email: str | None,
+    full_name: str | None,
+) -> User:
+    """Idempotent: upsert by clerk_id, return the row.
+
+    First-time sign-in lands here with no existing row — INSERT. Repeat
+    sign-ins refresh email/name in case the user changed them in Clerk.
+    Concurrent first-time calls race safely via ON CONFLICT.
+    """
+    first, last = _split_name(full_name)
+    # Email must be non-null per the User model; fall back to a stable
+    # synthetic value when Clerk didn't put it on the token. The user can
+    # always re-link later when a real email lands in the claims.
+    safe_email = email or f"{clerk_sub}@no-email.clerk"
+
+    stmt = (
+        pg_insert(User)
+        .values(
+            clerk_id=clerk_sub,
+            email=safe_email,
+            first_name=first,
+            last_name=last,
+            role=UserRole.resident,
+        )
+        .on_conflict_do_update(
+            index_elements=["clerk_id"],
+            set_={"email": safe_email, "first_name": first, "last_name": last},
+        )
+        .returning(User)
+    )
+    result = await session.execute(stmt)
+    user = result.scalar_one()
+    await session.commit()
+    return user
+
+
+def _split_name(full_name: str | None) -> tuple[str | None, str | None]:
+    if not full_name:
+        return (None, None)
+    parts = full_name.strip().split(None, 1)
+    if len(parts) == 1:
+        return (parts[0], None)
+    return (parts[0], parts[1])
+
+
+def _to_auth_user(row: User) -> AuthUser:
+    full = " ".join(p for p in (row.first_name, row.last_name) if p) or None
+    return AuthUser(
+        db_user_id=row.id,
+        user_id=row.clerk_id,
+        email=row.email,
+        full_name=full,
+    )
+
+
 async def get_current_user(
     authorization: Annotated[str | None, Header()] = None,
+    session: AsyncSession = Depends(get_db),
 ) -> AuthUser:
-    """FastAPI dependency: verify the bearer token and return the caller.
+    """FastAPI dependency: verify the bearer token, upsert by `clerk_id`,
+    return the resolved DB user.
 
-    Raises 401 on any failure — missing header, malformed header, expired
-    token, bad signature, missing `sub`. No fallbacks.
+    Raises 401 on missing/malformed header, expired token, bad signature,
+    missing `sub`. JIT-provisions the `users` row on first sign-in.
     """
     token = _extract_bearer(authorization)
     try:
@@ -103,22 +165,24 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
     except (jwt.InvalidTokenError, PyJWKClientError) as exc:
-        # PyJWKClientError covers unknown `kid` and JWKS-fetch failures —
-        # neither subclasses InvalidTokenError, so they need a separate arm.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
-    return _user_from_claims(claims)
+
+    sub, email, full_name = _claims_identity(claims)
+    row = await _upsert_user(session, sub, email, full_name)
+    return _to_auth_user(row)
 
 
 async def get_current_user_ws(websocket: WebSocket) -> AuthUser | None:
-    """WebSocket variant: pull the token from `?token=` (browser-friendly) or
-    the `Authorization` header (mobile-friendly), verify, return the user.
+    """WebSocket variant. Reads token from `?token=` or `Authorization`.
+    Opens its own short-lived session for the upsert — WS lifetime is
+    open-ended, so we can't piggyback on a per-request session.
 
-    Returns None and closes the socket with code 4401 if auth fails. Callers
-    should `return` immediately after a None.
+    Returns None and closes with code 4401 on any failure. Callers should
+    `return` immediately on None.
     """
     token = websocket.query_params.get("token")
     if not token:
@@ -137,15 +201,11 @@ async def get_current_user_ws(websocket: WebSocket) -> AuthUser | None:
         await websocket.close(code=4401, reason="Invalid token")
         return None
     try:
-        return _user_from_claims(claims)
+        sub, email, full_name = _claims_identity(claims)
     except HTTPException:
         await websocket.close(code=4401, reason="Token missing sub")
         return None
 
-
-def resident_identity(user: AuthUser) -> str:
-    """Project the auth user down to the legacy string identity used by hubs.
-
-    See module docstring for the migration plan.
-    """
-    return user.full_name or user.email or user.user_id
+    async with AsyncSessionLocal() as session:
+        row = await _upsert_user(session, sub, email, full_name)
+        return _to_auth_user(row)

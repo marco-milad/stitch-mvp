@@ -2,10 +2,10 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, CreatedAt, UuidPk, utcnow
+from app.models.base import Base, CreatedAt, Timestamps, UuidPk, utcnow
 
 
 class Booking(UuidPk, CreatedAt, Base):
@@ -24,7 +24,9 @@ class Booking(UuidPk, CreatedAt, Base):
     status: Mapped[str] = mapped_column(String, default="confirmed", nullable=False)
 
 
-class MaintenanceRequest(UuidPk, CreatedAt, Base):
+class MaintenanceRequest(UuidPk, Timestamps, Base):
+    # `created_at` from Timestamps mixin = wire-format `openedAt`.
+    # `updated_at` from Timestamps mixin = wire-format `updatedAt`.
     __tablename__ = "maintenance_requests"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -35,10 +37,10 @@ class MaintenanceRequest(UuidPk, CreatedAt, Base):
     )
     category: Mapped[str] = mapped_column(String, nullable=False)
     urgency: Mapped[str] = mapped_column(String, nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    photo_url: Mapped[str | None] = mapped_column(String, nullable=True)
-    status: Mapped[str] = mapped_column(String, default="submitted", nullable=False)
-    timeline: Mapped[list[dict]] = mapped_column(JSONB, default=list, nullable=False)
+    title: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    assignee_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class Invoice(UuidPk, CreatedAt, Base):

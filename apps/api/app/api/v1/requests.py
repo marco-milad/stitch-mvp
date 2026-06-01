@@ -9,9 +9,10 @@ WS:
     /admin/requests/stream                  — snapshot on connect, then
                                               `request.updated` per change
 
-Auth is intentionally not enforced yet — admin role check ships with the
-Clerk JWT middleware. For the demo, the API is bound to localhost only and
-CORS is restricted to the three Vite/Expo dev origins.
+Persistence is SQL via `requests_hub`. Admin-side authn enforcement
+is still TODO — these routes don't yet check role. When the Clerk admin
+JWT custom claim lands, gate via `Depends(get_current_user)` + role
+check.
 """
 
 from __future__ import annotations
@@ -19,10 +20,12 @@ from __future__ import annotations
 import asyncio
 import json
 from contextlib import suppress
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import AsyncSessionLocal, get_db
 from app.core.logging import logger
 from app.schemas.requests import (
     DispatchInput,
@@ -33,13 +36,15 @@ from app.services import requests_hub
 
 router = APIRouter()
 
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+
 
 # ─── REST ──────────────────────────────────────────────────────────────────
 
 
 @router.get("/admin/requests", response_model=ServiceRequestsList)
-async def list_admin_requests() -> ServiceRequestsList:
-    items = await requests_hub.list_requests()
+async def list_admin_requests(session: DbSession) -> ServiceRequestsList:
+    items = await requests_hub.list_requests(session)
     techs = requests_hub.list_technicians()
     return ServiceRequestsList(items=items, technicians=techs)
 
@@ -49,9 +54,11 @@ async def list_admin_requests() -> ServiceRequestsList:
     response_model=ServiceRequest,
     status_code=status.HTTP_200_OK,
 )
-async def dispatch_request(request_id: str, payload: DispatchInput) -> ServiceRequest:
+async def dispatch_request(
+    request_id: str, payload: DispatchInput, session: DbSession
+) -> ServiceRequest:
     try:
-        return await requests_hub.dispatch(request_id, payload.technicianId)
+        return await requests_hub.dispatch(session, request_id, payload.technicianId)
     except requests_hub.RequestNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Request not found") from exc
     except requests_hub.TechnicianNotFoundError as exc:
@@ -65,9 +72,9 @@ async def dispatch_request(request_id: str, payload: DispatchInput) -> ServiceRe
     response_model=ServiceRequest,
     status_code=status.HTTP_200_OK,
 )
-async def resolve_request(request_id: str) -> ServiceRequest:
+async def resolve_request(request_id: str, session: DbSession) -> ServiceRequest:
     try:
-        return await requests_hub.resolve(request_id)
+        return await requests_hub.resolve(session, request_id)
     except requests_hub.RequestNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Request not found") from exc
 
@@ -80,7 +87,8 @@ async def requests_stream(websocket: WebSocket) -> None:
     await websocket.accept()
     logger.info("requests.ws.connected", peer=str(websocket.client))
 
-    items = [r.model_dump() for r in await requests_hub.list_requests()]
+    async with AsyncSessionLocal() as session:
+        items = [r.model_dump() for r in await requests_hub.list_requests(session)]
     techs = [t.model_dump() for t in requests_hub.list_technicians()]
     await websocket.send_text(
         json.dumps({"type": "snapshot", "items": items, "technicians": techs})

@@ -17,9 +17,10 @@ load_dotenv()
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.database import AsyncSessionLocal
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, logger
-from app.services import gate_simulator
+from app.services import gate_simulator, requests_hub
 
 configure_logging()
 
@@ -27,6 +28,8 @@ configure_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("api.starting", env=settings.APP_ENV, model=settings.GEMINI_MODEL)
+    async with AsyncSessionLocal() as session:
+        await requests_hub.seed_demo_data(session)
     gate_simulator.start()
     try:
         yield

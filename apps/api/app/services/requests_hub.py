@@ -1,8 +1,18 @@
-"""Service Requests hub — in-memory store + dispatch/resolve logic + WS
-broadcast. Same pattern as `feed_hub` and `gate_simulator`: a process-local
-store keyed by request id, an asyncio fan-out to subscribers, and an
-explicit migration seam (`_persist_and_broadcast`) that we replace with a
-real SQLAlchemy session + Redis pub/sub once the DB layer ships.
+"""Service Requests data layer.
+
+The hub used to be in-memory; it's now SQL-backed. Two responsibilities
+live here:
+
+1. **Persistence**. Reads/writes against `maintenance_requests`,
+   joining to `users` and `units` to project rows into the wire-format
+   `ServiceRequest` schema that callers (mobile + admin) already know.
+2. **Live fan-out**. `subscribe()` + `_broadcast()` are still
+   in-process asyncio.Queues. Persistence is durable; broadcasts only
+   reach this process's connected WebSocket clients. Multi-worker scale
+   needs Redis pub/sub — REDIS_URL is wired but unused for now.
+
+Technicians are still seed data (no model yet). Same with the bootstrap
+seed for demo tickets — see `seed_demo_data()`.
 """
 
 from __future__ import annotations
@@ -12,25 +22,20 @@ import contextlib
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import desc, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.logging import logger
+from app.models.ops import MaintenanceRequest
+from app.models.unit import Unit, UnitMember
+from app.models.user import User, UserRole
 from app.schemas.requests import RequestCreateInput, ServiceRequest, Technician
 from app.services import notifications_hub
 
-# ─── Helpers ───────────────────────────────────────────────────────────────
-
-
-def _now_iso() -> str:
-    return datetime.now(UTC).isoformat()
-
-
-def _hours_ago(h: float) -> str:
-    return datetime.fromtimestamp(datetime.now(UTC).timestamp() - h * 3600, tz=UTC).isoformat()
-
-
-# ─── Seed data ─────────────────────────────────────────────────────────────
+# ─── Seed data: technicians (still in-memory, no Technician model yet) ─────
 
 
 _SEED_TECHS: list[Technician] = [
@@ -43,97 +48,6 @@ _SEED_TECHS: list[Technician] = [
 ]
 
 
-def _seed_requests() -> list[ServiceRequest]:
-    return [
-        ServiceRequest(
-            id="sr-001",
-            residentName="Lina Mostafa",
-            unit="Sarai · B7-302",
-            category="ac",
-            urgency="urgent",
-            summary="AC dripping water from indoor unit. Living room ceiling stained.",
-            status="pending",
-            assigneeId=None,
-            openedAt=_hours_ago(1),
-            updatedAt=_hours_ago(1),
-        ),
-        ServiceRequest(
-            id="sr-002",
-            residentName="Tarek Ibrahim",
-            unit="Phase 1 · A2-104",
-            category="plumbing",
-            urgency="priority",
-            summary="Kitchen sink slow drain — getting worse.",
-            status="in_progress",
-            assigneeId="t-2",
-            openedAt=_hours_ago(6),
-            updatedAt=_hours_ago(0.5),
-        ),
-        ServiceRequest(
-            id="sr-003",
-            residentName="Rana Halim",
-            unit="Taj Sultan · T4-15",
-            category="electrical",
-            urgency="routine",
-            summary="Bathroom light flickers when fan turns on.",
-            status="in_progress",
-            assigneeId="t-3",
-            openedAt=_hours_ago(20),
-            updatedAt=_hours_ago(2),
-        ),
-        ServiceRequest(
-            id="sr-004",
-            residentName="Yousef Abdel-Rahman",
-            unit="Sahel · V-12",
-            category="pest",
-            urgency="priority",
-            summary="Ants in pantry. Spray needed.",
-            status="pending",
-            assigneeId=None,
-            openedAt=_hours_ago(3),
-            updatedAt=_hours_ago(3),
-        ),
-        ServiceRequest(
-            id="sr-005",
-            residentName="Mariam Saad",
-            unit="Phase 1 · C5-208",
-            category="cleaning",
-            urgency="routine",
-            summary="Hallway carpet stain — request deep clean.",
-            status="resolved",
-            assigneeId="t-4",
-            openedAt=_hours_ago(48),
-            updatedAt=_hours_ago(24),
-        ),
-        ServiceRequest(
-            id="sr-006",
-            residentName="Aya Lotfy",
-            unit="Sarai · B3-101",
-            category="ac",
-            urgency="priority",
-            summary="AC compressor making rattling noise.",
-            status="pending",
-            assigneeId=None,
-            openedAt=_hours_ago(0.5),
-            updatedAt=_hours_ago(0.5),
-        ),
-    ]
-
-
-# ─── In-memory store ───────────────────────────────────────────────────────
-
-_store: dict[str, ServiceRequest] = {r.id: r for r in _seed_requests()}
-_store_lock = asyncio.Lock()
-
-
-async def list_requests() -> list[ServiceRequest]:
-    """Snapshot of all tickets — sorted newest-first by openedAt."""
-    async with _store_lock:
-        items = list(_store.values())
-    items.sort(key=lambda r: r.openedAt, reverse=True)
-    return items
-
-
 def list_technicians() -> list[Technician]:
     return list(_SEED_TECHS)
 
@@ -142,7 +56,7 @@ def _get_tech(technician_id: str) -> Technician | None:
     return next((t for t in _SEED_TECHS if t.id == technician_id), None)
 
 
-# ─── Mutations ─────────────────────────────────────────────────────────────
+# ─── Errors ───────────────────────────────────────────────────────────────
 
 
 class RequestNotFoundError(Exception):
@@ -157,34 +71,101 @@ class IllegalStateError(Exception):
     pass
 
 
+# ─── Row projection ───────────────────────────────────────────────────────
+
+
+def _project(req: MaintenanceRequest, user: User, unit: Unit | None) -> ServiceRequest:
+    """Build the wire-format ServiceRequest from a row triple."""
+    full_name = " ".join(p for p in (user.first_name, user.last_name) if p) or user.email
+    return ServiceRequest(
+        id=str(req.id),
+        residentName=full_name,
+        unit=unit.name if unit is not None else "—",
+        category=req.category,  # type: ignore[arg-type]
+        urgency=req.urgency,  # type: ignore[arg-type]
+        title=req.title,
+        summary=req.summary,
+        status=req.status,  # type: ignore[arg-type]
+        assigneeId=req.assignee_id,
+        openedAt=req.created_at.isoformat(),
+        updatedAt=req.updated_at.isoformat(),
+    )
+
+
+async def _fetch_by_id(session: AsyncSession, request_id: uuid.UUID) -> ServiceRequest:
+    stmt = (
+        select(MaintenanceRequest, User, Unit)
+        .join(User, User.id == MaintenanceRequest.user_id)
+        .join(Unit, Unit.id == MaintenanceRequest.unit_id, isouter=True)
+        .where(MaintenanceRequest.id == request_id)
+    )
+    result = await session.execute(stmt)
+    row = result.one_or_none()
+    if row is None:
+        raise RequestNotFoundError(str(request_id))
+    req, user, unit = row
+    return _project(req, user, unit)
+
+
+# ─── Reads ────────────────────────────────────────────────────────────────
+
+
+async def list_requests(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID | None = None,
+) -> list[ServiceRequest]:
+    """Snapshot of tickets — newest-first. Pass `user_id` to filter to one
+    resident (the /me/requests case); leave it None for the admin view."""
+    stmt = (
+        select(MaintenanceRequest, User, Unit)
+        .join(User, User.id == MaintenanceRequest.user_id)
+        .join(Unit, Unit.id == MaintenanceRequest.unit_id, isouter=True)
+        .order_by(desc(MaintenanceRequest.created_at))
+    )
+    if user_id is not None:
+        stmt = stmt.where(MaintenanceRequest.user_id == user_id)
+    result = await session.execute(stmt)
+    return [_project(req, user, unit) for (req, user, unit) in result.all()]
+
+
+# ─── Mutations ────────────────────────────────────────────────────────────
+
+
+def _parse_request_id(raw: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(raw)
+    except ValueError as exc:
+        raise RequestNotFoundError(raw) from exc
+
+
 async def create_request(
-    resident_name: str, unit: str, payload: RequestCreateInput
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    unit_id: uuid.UUID | None,
+    payload: RequestCreateInput,
 ) -> ServiceRequest:
-    """Create a new ticket for the given resident in `pending` status, then
-    broadcast it as a `request.updated` event so subscribed clients pick it
-    up. Re-using the `updated` envelope means both admin and resident
-    streams already handle the prepend case (they fall through to prepend
-    when the id is unknown)."""
-    now = _now_iso()
-    ticket = ServiceRequest(
-        id=f"sr-{uuid.uuid4().hex[:8]}",
-        residentName=resident_name,
-        unit=unit,
+    """INSERT a pending ticket, project it, broadcast, notify."""
+    new = MaintenanceRequest(
+        user_id=user_id,
+        unit_id=unit_id,
         category=payload.category,
         urgency=payload.urgency,
         title=payload.title.strip(),
         summary=payload.description.strip(),
         status="pending",
-        assigneeId=None,
-        openedAt=now,
-        updatedAt=now,
+        assignee_id=None,
     )
-    async with _store_lock:
-        _store[ticket.id] = ticket
+    session.add(new)
+    await session.flush()  # populate new.id without committing yet
+    await session.commit()
+    await session.refresh(new)
+    ticket = await _fetch_by_id(session, new.id)
 
     await _broadcast({"type": "request.updated", "item": ticket.model_dump()})
     await notifications_hub.emit_ticket_created(
-        resident_name=resident_name,
+        resident_name=ticket.residentName,
         ticket_id=ticket.id,
         category=ticket.category,
         ticket_title=ticket.title or ticket.category,
@@ -192,44 +173,41 @@ async def create_request(
     logger.info(
         "request.created",
         id=ticket.id,
-        resident=resident_name,
+        resident=ticket.residentName,
         category=ticket.category,
     )
     return ticket
 
 
-async def dispatch(request_id: str, technician_id: str) -> ServiceRequest:
-    """Assign a technician and transition status to in_progress.
-
-    Idempotent re-dispatch (same tech) is allowed and bumps `updatedAt`.
-    Re-dispatch to a *different* tech is also allowed — the new assignee
-    replaces the previous one. Resolved tickets can't be re-dispatched.
-    """
+async def dispatch(
+    session: AsyncSession,
+    request_id: str,
+    technician_id: str,
+) -> ServiceRequest:
+    """Assign a technician and transition status to in_progress."""
     if _get_tech(technician_id) is None:
         raise TechnicianNotFoundError(technician_id)
 
-    async with _store_lock:
-        existing = _store.get(request_id)
-        if existing is None:
-            raise RequestNotFoundError(request_id)
-        if existing.status == "resolved":
-            raise IllegalStateError("Resolved tickets cannot be dispatched.")
-        updated = existing.model_copy(
-            update={
-                "assigneeId": technician_id,
-                "status": "in_progress",
-                "updatedAt": _now_iso(),
-            }
-        )
-        _store[request_id] = updated
+    pk = _parse_request_id(request_id)
+    row = await session.get(MaintenanceRequest, pk)
+    if row is None:
+        raise RequestNotFoundError(request_id)
+    if row.status == "resolved":
+        raise IllegalStateError("Resolved tickets cannot be dispatched.")
 
-    await _broadcast({"type": "request.updated", "item": updated.model_dump()})
+    row.assignee_id = technician_id
+    row.status = "in_progress"
+    await session.commit()
+    await session.refresh(row)
+    ticket = await _fetch_by_id(session, row.id)
+
+    await _broadcast({"type": "request.updated", "item": ticket.model_dump()})
     tech = _get_tech(technician_id)
     if tech is not None:
         await notifications_hub.emit_ticket_dispatched(
-            resident_name=updated.residentName,
-            ticket_id=updated.id,
-            category=updated.category,
+            resident_name=ticket.residentName,
+            ticket_id=ticket.id,
+            category=ticket.category,
             technician_name=tech.name,
         )
     logger.info(
@@ -238,31 +216,50 @@ async def dispatch(request_id: str, technician_id: str) -> ServiceRequest:
         technician=technician_id,
         status="in_progress",
     )
-    return updated
+    return ticket
 
 
-async def resolve(request_id: str) -> ServiceRequest:
+async def resolve(session: AsyncSession, request_id: str) -> ServiceRequest:
     """Mark a ticket resolved. Idempotent."""
-    async with _store_lock:
-        existing = _store.get(request_id)
-        if existing is None:
-            raise RequestNotFoundError(request_id)
-        if existing.status == "resolved":
-            return existing
-        updated = existing.model_copy(update={"status": "resolved", "updatedAt": _now_iso()})
-        _store[request_id] = updated
+    pk = _parse_request_id(request_id)
+    row = await session.get(MaintenanceRequest, pk)
+    if row is None:
+        raise RequestNotFoundError(request_id)
+    if row.status == "resolved":
+        return await _fetch_by_id(session, row.id)
 
-    await _broadcast({"type": "request.updated", "item": updated.model_dump()})
+    row.status = "resolved"
+    await session.commit()
+    await session.refresh(row)
+    ticket = await _fetch_by_id(session, row.id)
+
+    await _broadcast({"type": "request.updated", "item": ticket.model_dump()})
     await notifications_hub.emit_ticket_resolved(
-        resident_name=updated.residentName,
-        ticket_id=updated.id,
-        category=updated.category,
+        resident_name=ticket.residentName,
+        ticket_id=ticket.id,
+        category=ticket.category,
     )
     logger.info("request.resolved", id=request_id)
-    return updated
+    return ticket
 
 
-# ─── Broadcast hub ─────────────────────────────────────────────────────────
+# ─── Helpers for routes ───────────────────────────────────────────────────
+
+
+async def primary_unit_id_for(session: AsyncSession, user_id: uuid.UUID) -> uuid.UUID | None:
+    """The user's primary unit, if any. Used when residents create their own
+    tickets without specifying a unit explicitly."""
+    stmt = (
+        select(UnitMember.unit_id)
+        .where(UnitMember.user_id == user_id)
+        .order_by(desc(UnitMember.is_primary))
+        .limit(1)
+    )
+    result: uuid.UUID | None = await session.scalar(stmt)
+    return result
+
+
+# ─── Broadcast hub (still in-process) ─────────────────────────────────────
 
 _subscribers: set[asyncio.Queue[dict[str, Any]]] = set()
 _subscribers_lock = asyncio.Lock()
@@ -288,3 +285,186 @@ async def _broadcast(message: dict[str, Any]) -> None:
     for q in queues:
         with contextlib.suppress(asyncio.QueueFull):
             q.put_nowait(message)
+
+
+# ─── Seed ──────────────────────────────────────────────────────────────────
+
+_SEED_USERS: list[dict[str, str]] = [
+    {
+        "clerk_id": "seed_lina_mostafa",
+        "email": "lina@example.com",
+        "first_name": "Lina",
+        "last_name": "Mostafa",
+    },
+    {
+        "clerk_id": "seed_tarek_ibrahim",
+        "email": "tarek@example.com",
+        "first_name": "Tarek",
+        "last_name": "Ibrahim",
+    },
+    {
+        "clerk_id": "seed_rana_halim",
+        "email": "rana@example.com",
+        "first_name": "Rana",
+        "last_name": "Halim",
+    },
+    {
+        "clerk_id": "seed_yousef_ar",
+        "email": "yousef@example.com",
+        "first_name": "Yousef",
+        "last_name": "Abdel-Rahman",
+    },
+    {
+        "clerk_id": "seed_mariam_saad",
+        "email": "mariam@example.com",
+        "first_name": "Mariam",
+        "last_name": "Saad",
+    },
+    {
+        "clerk_id": "seed_aya_lotfy",
+        "email": "aya@example.com",
+        "first_name": "Aya",
+        "last_name": "Lotfy",
+    },
+]
+
+_SEED_UNITS: list[dict[str, str]] = [
+    {"name": "Sarai · B7-302", "project": "Sarai"},
+    {"name": "Phase 1 · A2-104", "project": "Phase 1"},
+    {"name": "Taj Sultan · T4-15", "project": "Taj Sultan"},
+    {"name": "Sahel · V-12", "project": "Sahel"},
+    {"name": "Phase 1 · C5-208", "project": "Phase 1"},
+    {"name": "Sarai · B3-101", "project": "Sarai"},
+]
+
+# (clerk_id, unit name, category, urgency, summary, status)
+_SEED_REQUESTS: list[tuple[str, str, str, str, str, str]] = [
+    (
+        "seed_lina_mostafa",
+        "Sarai · B7-302",
+        "ac",
+        "urgent",
+        "AC dripping water from indoor unit. Living room ceiling stained.",
+        "pending",
+    ),
+    (
+        "seed_tarek_ibrahim",
+        "Phase 1 · A2-104",
+        "plumbing",
+        "priority",
+        "Kitchen sink slow drain — getting worse.",
+        "in_progress",
+    ),
+    (
+        "seed_rana_halim",
+        "Taj Sultan · T4-15",
+        "electrical",
+        "routine",
+        "Bathroom light flickers when fan turns on.",
+        "in_progress",
+    ),
+    (
+        "seed_yousef_ar",
+        "Sahel · V-12",
+        "pest",
+        "priority",
+        "Ants in pantry. Spray needed.",
+        "pending",
+    ),
+    (
+        "seed_mariam_saad",
+        "Phase 1 · C5-208",
+        "cleaning",
+        "routine",
+        "Hallway carpet stain — request deep clean.",
+        "resolved",
+    ),
+    (
+        "seed_aya_lotfy",
+        "Sarai · B3-101",
+        "ac",
+        "priority",
+        "AC compressor making rattling noise.",
+        "pending",
+    ),
+]
+
+
+async def seed_demo_data(session: AsyncSession) -> None:
+    """Idempotent: only seeds if `maintenance_requests` is empty.
+
+    Synthetic clerk_ids (`seed_<name>`) keep these rows clear of any real
+    Clerk-provisioned users — when a real user signs in, they get an
+    empty list, which is the architecturally honest behaviour.
+    """
+    existing = await session.scalar(select(MaintenanceRequest.id).limit(1))
+    if existing is not None:
+        return
+
+    logger.info("requests.seed.start")
+    user_id_by_clerk: dict[str, uuid.UUID] = {}
+    for u in _SEED_USERS:
+        stmt = (
+            pg_insert(User)
+            .values(
+                clerk_id=u["clerk_id"],
+                email=u["email"],
+                first_name=u["first_name"],
+                last_name=u["last_name"],
+                role=UserRole.resident,
+            )
+            .on_conflict_do_update(
+                index_elements=["clerk_id"],
+                set_={"email": u["email"]},  # touch to make it RETURNING-safe
+            )
+            .returning(User.id)
+        )
+        user_id_by_clerk[u["clerk_id"]] = await session.scalar(stmt)  # type: ignore[assignment]
+
+    unit_id_by_name: dict[str, uuid.UUID] = {}
+    for u in _SEED_UNITS:
+        existing_id = await session.scalar(select(Unit.id).where(Unit.name == u["name"]))
+        if existing_id is not None:
+            unit_id_by_name[u["name"]] = existing_id
+            continue
+        row = Unit(name=u["name"], project=u.get("project"))
+        session.add(row)
+        await session.flush()
+        unit_id_by_name[u["name"]] = row.id
+
+    for clerk_id, unit_name, category, urgency, summary, st in _SEED_REQUESTS:
+        session.add(
+            MaintenanceRequest(
+                user_id=user_id_by_clerk[clerk_id],
+                unit_id=unit_id_by_name[unit_name],
+                category=category,
+                urgency=urgency,
+                title=None,
+                summary=summary,
+                status=st,
+            )
+        )
+
+    await session.commit()
+    logger.info(
+        "requests.seed.done",
+        users=len(_SEED_USERS),
+        units=len(_SEED_UNITS),
+        requests=len(_SEED_REQUESTS),
+    )
+
+
+# Re-export for code paths that imported it under the old name.
+__all__ = [
+    "IllegalStateError",
+    "RequestNotFoundError",
+    "TechnicianNotFoundError",
+    "create_request",
+    "dispatch",
+    "list_requests",
+    "list_technicians",
+    "primary_unit_id_for",
+    "resolve",
+    "seed_demo_data",
+    "subscribe",
+]

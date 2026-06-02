@@ -96,6 +96,14 @@ export function SignUp() {
 
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
+        {/* Clerk bot-protection mount point. REQUIRED by Clerk v5+ for any
+            custom `signUp.create(...)` call — without this element on the
+            page, the invisible CAPTCHA challenge has nowhere to render and
+            sign-up hangs silently with the button stuck on '…'. Clerk
+            injects the widget here on demand; the div itself is invisible
+            until Clerk decides a challenge is needed. */}
+        <div id="clerk-captcha" />
+
         <button
           type="submit"
           disabled={submitting}

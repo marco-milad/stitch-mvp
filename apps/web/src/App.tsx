@@ -7,6 +7,7 @@ import { MobileShell } from '@/components/MobileShell';
 import { CompleteProfileGate } from '@/components/guards/CompleteProfileGate';
 import { RequireTenant } from '@/components/guards/RequireRole';
 import { TabsLayout } from '@/layout/TabsLayout';
+import { ClerkAuthBridge } from '@/lib/useClerkAuthBridge';
 import { useNotificationsSync } from '@/lib/useNotifications';
 import { AmenitiesBook } from '@/screens/AmenitiesBook';
 import { Community } from '@/screens/Community';
@@ -70,6 +71,11 @@ export function App() {
 
   return (
     <ClerkProvider publishableKey={publishableKey}>
+      {/* Wires Clerk's getToken into residentApi so every /me/* HTTP
+          request and WS open carries an Authorization: Bearer <jwt>.
+          Renders nothing; pure side-effect. Must sit INSIDE
+          ClerkProvider so useAuth() resolves. */}
+      <ClerkAuthBridge />
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <Routes>

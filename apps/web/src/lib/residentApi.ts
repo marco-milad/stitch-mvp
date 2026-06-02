@@ -41,9 +41,43 @@ export class NetworkError extends Error {
   override name = 'NetworkError';
 }
 
+// ─── Auth token injection ────────────────────────────────────────────────
+//
+// `http()` calls the registered provider before every request and
+// attaches `Authorization: Bearer <jwt>` when it returns a string. The
+// app boots a small bridge component that registers Clerk's
+// `getToken()` so signed-in residents authenticate transparently and
+// signed-out browsers send no header at all (backend then 401s, which
+// is the correct behaviour).
+//
+// Kept module-level (instead of a React context) because the WS opener
+// needs the token too and lives outside the component tree.
+
+type AuthTokenProvider = () => Promise<string | null>;
+let authTokenProvider: AuthTokenProvider | null = null;
+
+/** Wire the Clerk getToken (or any equivalent provider) once at app
+ *  boot. Pass null to clear (test cleanup, sign-out, etc.). */
+export function registerAuthTokenProvider(provider: AuthTokenProvider | null): void {
+  authTokenProvider = provider;
+}
+
+async function currentAuthToken(): Promise<string | null> {
+  if (!authTokenProvider) return null;
+  try {
+    return await authTokenProvider();
+  } catch (err) {
+    // A throwing provider shouldn't take down the request — log and
+    // proceed with no token (the backend will 401, which is honest).
+    console.warn('[residentApi] auth token provider threw:', err);
+    return null;
+  }
+}
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
+  const token = await currentAuthToken();
   let res: Response;
   try {
     res = await fetch(`${HTTP_PREFIX}${path}`, {
@@ -51,6 +85,9 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        // Attach the Clerk JWT when one is available. Header-merge
+        // order: caller-supplied headers can still override (rare).
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(init?.headers ?? {}),
       },
     });
@@ -269,6 +306,20 @@ export function subscribeMyTickets(
   );
 }
 
+// ─── WS auth helper ──────────────────────────────────────────────────────
+//
+// Browser WebSocket constructor accepts no custom headers. The backend
+// (apps/api/app/core/auth.py:get_current_user_ws) reads the JWT from
+// the `?token=` query param as a first-class alternative to the
+// Authorization header. We append it here at open time.
+
+async function withWsAuth(rawUrl: string): Promise<string> {
+  const token = await currentAuthToken();
+  if (!token) return rawUrl;
+  const sep = rawUrl.includes('?') ? '&' : '?';
+  return `${rawUrl}${sep}token=${encodeURIComponent(token)}`;
+}
+
 export type NotificationsEvent =
   | { type: 'snapshot'; items: ResidentNotification[] }
   | { type: 'notification.created'; item: ResidentNotification }
@@ -332,15 +383,19 @@ function openReconnectingWs<T>(
     }
   };
 
-  const connect = () => {
+  const connect = async () => {
     if (closed || permanentlyFailed) return;
     attempts += 1;
+
+    // Resolve a fresh JWT each reconnect attempt — Clerk rotates tokens
+    // every ~60s, so re-using the original would 4401 after a while.
+    const authedUrl = await withWsAuth(url);
 
     // The WebSocket constructor can throw synchronously on a malformed
     // URL or when the page is sandboxed without ws permission. Catch
     // and route through the same retry/give-up logic as async failures.
     try {
-      socket = new WebSocket(url);
+      socket = new WebSocket(authedUrl);
     } catch (err) {
       const reason = err instanceof Error ? err.message : 'constructor threw';
       if (attempts >= MAX_WS_ATTEMPTS) {

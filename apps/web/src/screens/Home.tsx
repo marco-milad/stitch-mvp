@@ -33,8 +33,7 @@ import { useCurrentProperty } from '@/stores/propertyStore';
 import { useUnreadCount } from '@/lib/useNotifications';
 import { useActiveRequests } from '@/stores/serviceRequestsStore';
 import { useShowParkingInvitations } from '@/stores/featureTogglesStore';
-
-const MOCK_DUE_PAYMENTS = 1;
+import { useDuePaymentsStore, useHasOverdueBalance } from '@/stores/duePaymentsStore';
 
 /** Tile ids surfaced on Home's "Suggested services" row — most-used resident actions. */
 const SUGGESTED_TILE_IDS = [
@@ -188,34 +187,65 @@ interface Cta {
   onClick: () => void;
 }
 
-function CtaTile({ cta }: { cta: Cta }) {
+function CtaTile({
+  cta,
+  suspended = false,
+  suspendedNote,
+}: {
+  cta: Cta;
+  /** When true, click is a no-op and the tile renders in a dimmed
+   *  disabled glass state. Used by the overdue-balance suspension rule. */
+  suspended?: boolean;
+  /** Microcopy that replaces the subtitle when suspended. */
+  suspendedNote?: string;
+}) {
   const tilt = useTilt();
   return (
     <div
-      ref={tilt.ref}
-      onMouseMove={tilt.onMouseMove}
-      onMouseLeave={tilt.onMouseLeave}
-      style={tilt.style}
-      className="flex-1 tilt-surface"
+      ref={suspended ? undefined : tilt.ref}
+      onMouseMove={suspended ? undefined : tilt.onMouseMove}
+      onMouseLeave={suspended ? undefined : tilt.onMouseLeave}
+      style={suspended ? undefined : tilt.style}
+      className={`flex-1 ${suspended ? '' : 'tilt-surface'}`}
     >
       <button
         type="button"
-        onClick={cta.onClick}
-        className="group relative w-full overflow-hidden bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-4 flex flex-row items-center border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+        onClick={suspended ? undefined : cta.onClick}
+        disabled={suspended}
+        title={suspended ? suspendedNote : undefined}
+        className={[
+          'group relative w-full overflow-hidden rounded-2xl p-4 flex flex-row items-center text-left transition-all duration-300 ease-smooth',
+          suspended
+            ? // Suspended glass: lower opacity, no shadow lift, no scale.
+              // The tile stays in layout so the grid balance is preserved,
+              // but it reads as visually inert.
+              'bg-white/30 dark:bg-ink-700/30 backdrop-blur-lg border border-white/20 dark:border-white/5 shadow-sm shadow-ink-900/5 cursor-not-allowed'
+            : 'bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98]',
+        ].join(' ')}
       >
-        <span
-          aria-hidden
-          className="absolute inset-0 tilt-sheen opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        />
+        {!suspended && (
+          <span
+            aria-hidden
+            className="absolute inset-0 tilt-sheen opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          />
+        )}
         <div
-          className="relative w-10 h-10 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40"
+          className={`relative w-10 h-10 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40 ${suspended ? 'grayscale opacity-50' : ''}`}
           style={{ backgroundColor: cta.bg }}
         >
           <cta.Icon color={cta.fg} size={20} />
         </div>
         <div className="relative flex-1 min-w-0">
-          <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">{cta.title}</p>
-          <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">{cta.sub}</p>
+          <p
+            className={`text-sm font-semibold truncate ${suspended ? 'text-ink-500 dark:text-ink-400' : 'text-ink-900 dark:text-white'}`}
+          >
+            {cta.title}
+          </p>
+          <p
+            className={`text-[11px] truncate ${suspended ? 'text-red-600 dark:text-red-400 font-medium' : 'text-ink-500 dark:text-ink-100'}`}
+          >
+            {suspended ? (suspendedNote ?? cta.sub) : cta.sub}
+          </p>
         </div>
       </button>
     </div>
@@ -273,6 +303,8 @@ export function Home() {
   const activeRequests = useActiveRequests();
   const unreadCount = useUnreadCount();
   const showParkingInvitations = useShowParkingInvitations();
+  const duePaymentsCount = useDuePaymentsStore((s) => s.count);
+  const hasOverdueBalance = useHasOverdueBalance();
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
   const firstName = user?.firstName ?? 'Sara';
@@ -518,14 +550,28 @@ export function Home() {
         </div>
 
         {/* CTAs 2×2 — Row 2 collapses to a single full-width tile when
-            the Parking Invitations toggle is off (ctas length = 3). */}
+            the Parking Invitations toggle is off (ctas length = 3).
+            Invite tile auto-suspends when the resident has any
+            overdue balance — see useDuePaymentsStore. */}
         <div className="flex flex-row gap-3 mb-3">
           <CtaTile cta={ctas[0]!} />
           <CtaTile cta={ctas[1]!} />
         </div>
         <div className="flex flex-row gap-3 mb-5">
-          {ctas[2] && <CtaTile cta={ctas[2]} />}
-          {ctas[3] && <CtaTile cta={ctas[3]} />}
+          {ctas[2] && (
+            <CtaTile
+              cta={ctas[2]}
+              suspended={ctas[2].key === 'invite' && hasOverdueBalance}
+              suspendedNote={t('home.cta.suspendedOverdue')}
+            />
+          )}
+          {ctas[3] && (
+            <CtaTile
+              cta={ctas[3]}
+              suspended={ctas[3].key === 'invite' && hasOverdueBalance}
+              suspendedNote={t('home.cta.suspendedOverdue')}
+            />
+          )}
         </div>
 
         {/* Status pills */}
@@ -539,7 +585,7 @@ export function Home() {
             onClick={() => navigate('/services/requests')}
           />
           <StatusPill
-            count={MOCK_DUE_PAYMENTS}
+            count={duePaymentsCount}
             label={t('home.duePayments')}
             action={t('home.payNow')}
             tint="#DC2626"

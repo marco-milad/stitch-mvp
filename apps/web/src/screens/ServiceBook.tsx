@@ -19,6 +19,7 @@ import {
   serviceBookingFormSchema,
   type ServiceBookingFormInput,
 } from '@/lib/schemas/serviceRequest';
+import { OtelBookingButton } from '@/components/booking/OtelBookingButton';
 import { useCurrentProperty } from '@/stores/propertyStore';
 import { useServiceRequestsStore } from '@/stores/serviceRequestsStore';
 import { useShowServiceDurations } from '@/stores/featureTogglesStore';
@@ -225,9 +226,10 @@ function Header({ onClose }: { onClose: () => void }) {
       >
         <X size={22} className="text-ink-700 dark:text-white" />
       </button>
-      <h2 className="text-base font-bold text-ink-900 dark:text-white leading-tight">
+      <h2 className="flex-1 text-base font-bold text-ink-900 dark:text-white leading-tight truncate">
         {t('services.book.title')}
       </h2>
+      <OtelBookingButton compact />
     </div>
   );
 }

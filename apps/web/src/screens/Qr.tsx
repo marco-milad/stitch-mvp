@@ -9,6 +9,7 @@ import { QR_LOG_ICON, QR_LOG_TONE, QR_LOGS } from '@/lib/mock/activities';
 import { colors } from '@/lib/theme';
 import { useProfileStore } from '@/stores/profileStore';
 import { useShowParkingInvitations } from '@/stores/featureTogglesStore';
+import { useHasOverdueBalance } from '@/stores/duePaymentsStore';
 
 const QR_ROTATE_MS = 30_000;
 const QR_SIZE = 240;
@@ -21,6 +22,7 @@ export function Qr() {
   const brightnessBoost = useProfileStore((s) => s.brightnessBoost);
   const toggleBrightness = useProfileStore((s) => s.toggleBrightness);
   const showParkingInvitations = useShowParkingInvitations();
+  const hasOverdueBalance = useHasOverdueBalance();
 
   const refresh = () => setSeed(Math.floor(Math.random() * 1e9));
 
@@ -67,6 +69,8 @@ export function Qr() {
               onClick={() =>
                 window.alert('Invite guest\n\nComing in Week 2 — guest pass generation flow.')
               }
+              suspended={hasOverdueBalance}
+              suspendedNote={t('home.cta.suspendedOverdue')}
             />
           )}
           <QuickAction
@@ -144,27 +148,47 @@ function QuickAction({
   tone,
   bg,
   onClick,
+  suspended = false,
+  suspendedNote,
 }: {
   Icon: LucideIcon;
   label: string;
   tone: string;
   bg: string;
   onClick: () => void;
+  /** When true, click is a no-op and the chip dims. Used for the
+   *  overdue-balance suspension on the Invite quick action. */
+  suspended?: boolean;
+  /** Replaces the label when suspended (microcopy). */
+  suspendedNote?: string;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="flex-1 flex flex-col items-center bg-white dark:bg-ink-700 rounded-2xl py-3 border border-ink-100 dark:border-ink-700 active:scale-95 transition-transform"
+      onClick={suspended ? undefined : onClick}
+      disabled={suspended}
+      title={suspended ? suspendedNote : undefined}
+      aria-label={suspended ? `${label} — ${suspendedNote ?? 'suspended'}` : label}
+      className={[
+        'flex-1 flex flex-col items-center rounded-2xl py-3 border transition-all duration-300 ease-smooth',
+        suspended
+          ? 'bg-white/40 dark:bg-ink-700/40 border-white/20 dark:border-white/5 cursor-not-allowed opacity-70'
+          : 'bg-white dark:bg-ink-700 border-ink-100 dark:border-ink-700 active:scale-95',
+      ].join(' ')}
     >
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center mb-1"
+        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1 ${suspended ? 'grayscale opacity-60' : ''}`}
         style={{ backgroundColor: bg }}
       >
         <Icon color={tone} size={20} />
       </div>
-      <span className="text-xs font-semibold text-ink-900 dark:text-white">{label}</span>
+      <span
+        className={`text-[10px] font-semibold leading-tight text-center px-1 ${
+          suspended ? 'text-red-600 dark:text-red-400' : 'text-ink-900 dark:text-white'
+        }`}
+      >
+        {suspended ? (suspendedNote ?? label) : label}
+      </span>
     </button>
   );
 }

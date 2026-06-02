@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { AdvisorPicker } from '@/components/booking/AdvisorPicker';
 import { Calendar } from '@/components/booking/Calendar';
+import { OtelBookingButton } from '@/components/booking/OtelBookingButton';
 import { TimeSlotPicker } from '@/components/booking/TimeSlotPicker';
 import { formatFullDate, fromDateIso, toDateIso } from '@/lib/dates';
 import { ADVISORS, ANY_ADVISOR_ID, VISIT_TYPES, formatSlotRange } from '@/lib/mock/booking';
@@ -283,6 +284,7 @@ function Header() {
           {t('discover.book.subtitle')}
         </p>
       </div>
+      <OtelBookingButton compact />
     </div>
   );
 }

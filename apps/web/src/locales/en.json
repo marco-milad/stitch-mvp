@@ -3,6 +3,12 @@
     "name": "Stitch",
     "tagline": "Your community, in one app"
   },
+  "booking": {
+    "otel": {
+      "title": "My OTEL Booking",
+      "subtitle": "Partner hotels · in a new tab"
+    }
+  },
   "tabs": {
     "home": "Home",
     "community": "Community",
@@ -500,7 +506,8 @@
       "invite": "Invite Guest",
       "inviteSub": "Generate QR pass",
       "report": "Report Issue",
-      "reportSub": "Maintenance request"
+      "reportSub": "Maintenance request",
+      "suspendedOverdue": "Feature suspended due to overdue balance"
     },
     "openRequests": "Open requests",
     "viewAll": "View all",

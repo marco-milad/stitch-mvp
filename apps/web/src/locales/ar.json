@@ -3,6 +3,12 @@
     "name": "ستيتش",
     "tagline": "كمبوندك في تطبيق واحد"
   },
+  "booking": {
+    "otel": {
+      "title": "حجز فندقي",
+      "subtitle": "فنادق شريكة · في تبويب جديد"
+    }
+  },
   "tabs": {
     "home": "الرئيسية",
     "community": "المجتمع",
@@ -500,7 +506,8 @@
       "invite": "ادعو ضيف",
       "inviteSub": "اعمل QR pass",
       "report": "بلغ عن مشكلة",
-      "reportSub": "طلب صيانة"
+      "reportSub": "طلب صيانة",
+      "suspendedOverdue": "الميزة موقوفة بسبب رصيد متأخر"
     },
     "openRequests": "طلبات مفتوحة",
     "viewAll": "اعرض الكل",

@@ -9,6 +9,38 @@
       "subtitle": "Partner hotels · in a new tab"
     }
   },
+  "completeProfile": {
+    "heading": "Complete your profile",
+    "lede": "A few quick details before you unlock the app.",
+    "video": {
+      "title": "Watch the 30-second intro",
+      "subtitle": "Onboarding video will appear here",
+      "label": "Onboarding intro video"
+    },
+    "photo": {
+      "label": "Profile photo",
+      "hint": "Tap the avatar to upload. Max 2 MB.",
+      "pick": "Pick a profile photo",
+      "previewAlt": "Profile photo preview"
+    },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phone": "Phone number"
+    },
+    "rating": {
+      "label": "Service quality rating",
+      "hint": "How would you rate the service you've received so far? (1 = poor, 10 = excellent)",
+      "mustSet": "Drag the slider to set a rating."
+    },
+    "submit": "Finish & enter the app",
+    "submitting": "Finishing…",
+    "legal": "By continuing you agree to our terms and privacy notice.",
+    "errors": {
+      "photoTooBig": "That image is over 2 MB. Try a smaller one.",
+      "photoReadFailed": "Couldn't read that image. Try another file."
+    }
+  },
   "tabs": {
     "home": "Home",
     "community": "Community",
@@ -970,6 +1002,48 @@
       "save": "Register interest in this plan"
     },
     "eoi": {
+      "hub": {
+        "title": "Discover & Reserve",
+        "subtitle": "Tours, plans, availability — all in one place.",
+        "back": "Back to Discover",
+        "contact": "Contact sales",
+        "tabs": {
+          "tours": "360° Tours",
+          "availability": "Unit Availability",
+          "master": "Master Plans",
+          "floor": "Floor Plans"
+        },
+        "tours": {
+          "heroTitle": "Step inside, virtually",
+          "heroBody": "Immersive 360° walkthroughs of every show unit. No appointment needed — explore from your sofa, share with family abroad.",
+          "openCta": "Open the 360° tour",
+          "tile1Title": "Living room walkthrough",
+          "tile1Body": "Spatial audio + day/night lighting modes.",
+          "tile2Title": "Compound flythrough",
+          "tile2Body": "Aerial view of amenities and shared spaces."
+        },
+        "availability": {
+          "title": "Live unit availability",
+          "body": "Real-time stock of villas, townhouses, and apartments — filterable by phase, BUA, and view.",
+          "b1": "Hold a unit for 24 hours while you decide",
+          "b2": "Filter by handover quarter and finishing tier",
+          "b3": "Get notified when a unit you saved drops in price"
+        },
+        "master": {
+          "heroTitle": "Master plans",
+          "heroBody": "Zoomable, annotated master plans showing every phase, amenity cluster, and access road.",
+          "openCta": "Open the master plan",
+          "tile1Title": "Phase 1 vs Phase 2",
+          "tile1Body": "Side-by-side comparison of two flagship phases."
+        },
+        "floor": {
+          "title": "Floor plans",
+          "body": "High-resolution floor plans with dimensions, furniture overlays, and elevation views per unit type.",
+          "b1": "Switch between 2D plan and 3D walkthrough",
+          "b2": "Overlay your existing furniture to plan placement",
+          "b3": "Download as PDF for your architect"
+        }
+      },
       "title": "Register your interest",
       "subtitle": "Tell us what you're looking for — a sales advisor will reach out within 24 hours.",
       "close": "Close form",

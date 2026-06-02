@@ -24,11 +24,14 @@ from contextlib import suppress
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import AuthUser, get_current_user, get_current_user_ws
 from app.core.database import AsyncSessionLocal, get_db
 from app.core.logging import logger
+from app.models.unit import Unit, UnitMember
 from app.schemas.notifications import NotificationsList
 from app.schemas.parking import (
     ParkingBooking,
@@ -58,6 +61,108 @@ def _display_name(user: AuthUser) -> str:
     """For the not-yet-DB-backed hubs (parking, notifications, visitor passes)
     which still key on a string identifier. Drop when those hubs migrate."""
     return user.full_name or user.email or user.user_id
+
+
+# ─── Unit selection (resident → primary unit) ─────────────────────────────
+
+
+class UnitSelectInput(BaseModel):
+    """Resident picks a property from the UnitSwitcher → POST this.
+
+    The backend find-or-creates a Unit row keyed on (name, project) so
+    repeated picks for the same physical unit don't proliferate rows.
+    Then upserts a UnitMember linking this user to that unit and flips
+    its `is_primary` flag on while turning everyone else's off — that's
+    what `requests_hub.primary_unit_id_for(user)` reads when populating
+    `unit` on newly-created tickets.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=120)
+    project: str | None = None
+    unit_type: str | None = None
+    area_sqm: int | None = None
+    bedrooms: int | None = None
+    role: str = "owner"  # owner / tenant / family-member — mirrors the frontend enum.
+
+
+class UnitSelectResult(BaseModel):
+    """Echo of what got persisted so the client can verify."""
+
+    unit_id: str
+    name: str
+    project: str | None
+    is_primary: bool
+
+
+@router.post("/me/units/select", response_model=UnitSelectResult)
+async def select_my_primary_unit(
+    payload: UnitSelectInput, user: CurrentUser, session: DbSession
+) -> UnitSelectResult:
+    # 1. Find-or-create the Unit by (name, project). `project` is
+    #    nullable on Unit, so use `is None` semantics rather than `==`.
+    stmt = select(Unit).where(Unit.name == payload.name)
+    if payload.project is None:
+        stmt = stmt.where(Unit.project.is_(None))
+    else:
+        stmt = stmt.where(Unit.project == payload.project)
+    unit = await session.scalar(stmt)
+    if unit is None:
+        unit = Unit(
+            name=payload.name,
+            project=payload.project,
+            type=payload.unit_type,
+            area_sqm=payload.area_sqm,
+            beds=payload.bedrooms,
+        )
+        session.add(unit)
+        await session.flush()  # populate unit.id without committing
+
+    # 2. Demote any other primary memberships for this user — at most
+    #    one row at a time can be is_primary=True. `primary_unit_id_for`
+    #    only reads the top row by `desc(is_primary)`, but keeping the
+    #    invariant clean makes admin queries straightforward.
+    await session.execute(
+        update(UnitMember)
+        .where(UnitMember.user_id == user.db_user_id)
+        .where(UnitMember.unit_id != unit.id)
+        .values(is_primary=False)
+    )
+
+    # 3. Upsert THIS user/unit pair. The unique constraint
+    #    uq_unit_members_user_unit guarantees at most one row per pair,
+    #    so we look up first and either flip the flag or insert.
+    membership = await session.scalar(
+        select(UnitMember)
+        .where(UnitMember.user_id == user.db_user_id)
+        .where(UnitMember.unit_id == unit.id)
+    )
+    if membership is None:
+        membership = UnitMember(
+            user_id=user.db_user_id,
+            unit_id=unit.id,
+            role=payload.role,
+            is_primary=True,
+        )
+        session.add(membership)
+    else:
+        membership.role = payload.role
+        membership.is_primary = True
+
+    await session.commit()
+    logger.info(
+        "me.unit.selected",
+        user_id=str(user.db_user_id),
+        unit_id=str(unit.id),
+        unit_name=unit.name,
+        role=payload.role,
+    )
+    return UnitSelectResult(
+        unit_id=str(unit.id),
+        name=unit.name,
+        project=unit.project,
+        is_primary=True,
+    )
 
 
 # ─── Visitor passes ────────────────────────────────────────────────────────

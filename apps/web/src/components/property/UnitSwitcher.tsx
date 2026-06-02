@@ -2,6 +2,8 @@ import { Building2, Check, HardHat, Home as HomeIcon, X, type LucideIcon } from 
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { selectMyPrimaryUnit } from '@/lib/residentApi';
+import { isNetworkError } from '@/lib/residentApiFallbacks';
 import type { Property, UnitType } from '@/lib/schemas/property';
 import { usePropertyStore } from '@/stores/propertyStore';
 
@@ -40,8 +42,31 @@ export function UnitSwitcher({ open, onClose }: Props) {
   }, [open, onClose]);
 
   const pick = (id: string) => {
+    // Local store update is synchronous + closes the sheet so the UI
+    // feels instant. Backend sync is fire-and-forget — a refused or
+    // timed-out POST shouldn't block the user.
     setCurrent(id);
     onClose();
+    const property = properties.find((p) => p.id === id);
+    if (!property) return;
+    void selectMyPrimaryUnit({
+      name: property.unitName,
+      project: property.compoundName,
+      unit_type: property.unitType,
+      area_sqm: property.areaM2,
+      bedrooms: property.bedrooms,
+      role: property.ownership,
+    }).catch((err: unknown) => {
+      if (isNetworkError(err)) {
+        // Backend unreachable (offline dev, Railway cold start) — local
+        // store is already updated, so the resident continues to see
+        // their selection. Next ticket POST will fall back to "—" until
+        // they re-pick after the backend's back.
+        console.warn('[UnitSwitcher] backend unreachable; selection saved locally only.', err);
+        return;
+      }
+      console.error('[UnitSwitcher] /me/units/select failed:', err);
+    });
   };
 
   return (

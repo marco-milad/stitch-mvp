@@ -107,6 +107,42 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+// ─── Unit selection ────────────────────────────────────────────────────
+
+export interface UnitSelectInput {
+  /** Unit display name as the user sees it (e.g. "Villa 12", "Apt B-4-302"). */
+  name: string;
+  /** Compound / project the unit belongs to. Backend uses (name, project)
+   *  as the dedupe key, so passing this consistently avoids duplicate
+   *  Unit rows when two compounds happen to share a name. */
+  project?: string | null;
+  /** villa / townhouse / apartment / studio — sent verbatim, backend
+   *  stores as a string. */
+  unit_type?: string | null;
+  area_sqm?: number | null;
+  bedrooms?: number | null;
+  /** owner / tenant / family-member. Maps to UnitMember.role. */
+  role?: string;
+}
+
+export interface UnitSelectResult {
+  unit_id: string;
+  name: string;
+  project: string | null;
+  is_primary: boolean;
+}
+
+/** Tell the backend this is the resident's primary unit. Idempotent:
+ *  picking the same unit twice is a no-op, picking a different one
+ *  demotes the previous primary. Returns the persisted UnitSelectResult
+ *  echoing what hit the DB so the caller can confirm. */
+export async function selectMyPrimaryUnit(input: UnitSelectInput): Promise<UnitSelectResult> {
+  return http<UnitSelectResult>('/me/units/select', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 // ─── Visitor passes ────────────────────────────────────────────────────
 
 export type VehicleKind = 'car' | 'delivery' | 'rideshare';

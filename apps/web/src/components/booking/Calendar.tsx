@@ -54,16 +54,16 @@ export function Calendar({ value, onChange, isDisabled }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-700 overflow-hidden">
+    <div className="rounded-3xl border border-white/60 dark:border-ink-700 bg-white/75 dark:bg-ink-700 backdrop-blur-md shadow-lg shadow-ink-900/5 overflow-hidden">
       {/* Header */}
-      <div className="flex flex-row items-center justify-between px-3 py-2 border-b border-ink-100 dark:border-ink-700">
+      <div className="flex flex-row items-center justify-between px-3 py-2 border-b border-white/60 dark:border-ink-700">
         <button
           type="button"
           onClick={goPrev}
           aria-label="Previous month"
-          className="p-1.5 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-900 text-ink-500"
+          className="w-9 h-9 rounded-2xl flex items-center justify-center bg-white/70 backdrop-blur-sm border border-white/50 hover:bg-white hover:scale-105 active:scale-95 text-ink-500 transition-all duration-200 ease-smooth"
         >
-          <ChevronLeft size={18} className="rtl:rotate-180" />
+          <ChevronLeft size={16} className="rtl:rotate-180" />
         </button>
         <p className="text-sm font-bold text-ink-900 dark:text-white">
           {formatMonthYear(monthCursor, i18n.language)}
@@ -72,9 +72,9 @@ export function Calendar({ value, onChange, isDisabled }: Props) {
           type="button"
           onClick={goNext}
           aria-label="Next month"
-          className="p-1.5 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-900 text-ink-500"
+          className="w-9 h-9 rounded-2xl flex items-center justify-center bg-white/70 backdrop-blur-sm border border-white/50 hover:bg-white hover:scale-105 active:scale-95 text-ink-500 transition-all duration-200 ease-smooth"
         >
-          <ChevronRight size={18} className="rtl:rotate-180" />
+          <ChevronRight size={16} className="rtl:rotate-180" />
         </button>
       </div>
 
@@ -105,12 +105,14 @@ export function Calendar({ value, onChange, isDisabled }: Props) {
               onClick={() => onChange(cell.date)}
               aria-pressed={selected ? 'true' : 'false'}
               className={[
-                'aspect-square flex items-center justify-center text-xs font-semibold rounded-lg transition-colors tabular-nums',
+                'aspect-square flex items-center justify-center text-xs font-semibold rounded-2xl transition-all duration-200 ease-smooth tabular-nums',
                 !cell.inMonth && !selected ? 'text-ink-400/40' : '',
                 disabled
                   ? 'text-ink-400/40 cursor-not-allowed'
                   : 'hover:bg-brand-50 dark:hover:bg-brand-700/30',
-                selected ? 'bg-brand-500 text-white hover:bg-brand-500' : '',
+                selected
+                  ? 'bg-gradient-to-br from-brand-500 to-brand-600 text-white hover:from-brand-500 hover:to-brand-600 shadow-md shadow-brand-500/30 scale-[1.04] ring-1 ring-white/40'
+                  : '',
                 !selected && today && !disabled
                   ? 'ring-1 ring-brand-400 text-brand-600 dark:text-brand-400'
                   : '',

@@ -94,7 +94,9 @@ export function DiscoverBook() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-ink-50 dark:bg-ink-900">
+    // Warm cream wash matches ServiceBook + WellnessBook so all three
+    // booking surfaces speak the same visual language.
+    <div className="flex-1 flex flex-col bg-gradient-to-b from-amber-50/60 via-rose-50/40 to-white dark:from-ink-900 dark:via-ink-900 dark:to-ink-900">
       <Header />
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -251,7 +253,7 @@ export function DiscoverBook() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-brand-500 disabled:bg-ink-400 rounded-xl py-3.5 text-white font-semibold"
+            className="w-full bg-gradient-to-br from-ink-900 to-ink-800 disabled:from-ink-400 disabled:to-ink-400 rounded-2xl py-3.5 text-white font-semibold shadow-lg shadow-ink-900/20 hover:shadow-xl hover:shadow-ink-900/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
           >
             {isSubmitting ? t('discover.book.submitting') : t('discover.book.submit')}
           </button>
@@ -272,9 +274,9 @@ function Header() {
         type="button"
         onClick={() => navigate('/discover')}
         aria-label={t('discover.book.close')}
-        className="p-2 -ms-2 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-700"
+        className="w-10 h-10 -ms-2 rounded-2xl flex items-center justify-center bg-white/70 dark:bg-ink-700/70 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-sm shadow-ink-900/5 hover:bg-white hover:scale-105 active:scale-95 transition-all duration-300 ease-smooth"
       >
-        <X size={22} className="text-ink-700 dark:text-white" />
+        <X size={20} className="text-ink-700 dark:text-white" />
       </button>
       <div className="flex-1 min-w-0">
         <h2 className="text-base font-bold text-ink-900 dark:text-white leading-tight">
@@ -317,16 +319,18 @@ function VisitTypeCard({
       onClick={onClick}
       aria-pressed={active ? 'true' : 'false'}
       className={[
-        'w-full flex flex-row items-center text-start rounded-2xl p-3 border transition-colors',
+        'w-full flex flex-row items-center text-start rounded-3xl p-4 border backdrop-blur-md transition-all duration-300 ease-smooth',
         active
-          ? 'border-brand-500 bg-brand-50 dark:bg-brand-700/30'
-          : 'border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-700 hover:border-brand-400',
+          ? 'border-brand-400 bg-gradient-to-br from-brand-50/80 to-white/60 dark:bg-brand-700/30 shadow-lg shadow-brand-500/15 scale-[1.01]'
+          : 'border-white/50 bg-white/70 dark:bg-ink-700/70 dark:border-ink-700 shadow-md shadow-ink-900/5 hover:border-brand-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-ink-900/10',
       ].join(' ')}
     >
       <div
         className={[
-          'w-10 h-10 rounded-xl flex items-center justify-center me-3 flex-shrink-0',
-          active ? 'bg-brand-500 text-white' : 'bg-ink-100 dark:bg-ink-900 text-ink-500',
+          'w-11 h-11 rounded-2xl flex items-center justify-center me-3 flex-shrink-0 transition-all duration-300 ease-smooth',
+          active
+            ? 'bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-md shadow-brand-500/30 ring-1 ring-white/40'
+            : 'bg-white/80 backdrop-blur-sm border border-white/60 text-ink-500',
         ].join(' ')}
       >
         <Icon size={20} />
@@ -376,7 +380,7 @@ function Field({
 
 function inputClass(error?: unknown): string {
   const base =
-    'w-full rounded-xl px-4 py-3 text-sm text-ink-900 dark:text-white bg-white dark:bg-ink-700 border outline-none focus:border-brand-500 transition-colors';
+    'w-full rounded-2xl px-4 py-3 text-sm text-ink-900 dark:text-white bg-white/80 dark:bg-ink-700 backdrop-blur-sm border shadow-sm shadow-ink-900/5 outline-none focus:border-brand-500 focus:shadow-md focus:shadow-brand-500/15 transition-all duration-300 ease-smooth';
   const border = error ? 'border-red-500' : 'border-ink-100 dark:border-ink-700';
   return `${base} ${border}`;
 }
@@ -442,10 +446,10 @@ function SuccessState({ submission, onDone }: { submission: BookingInput; onDone
       : (ADVISORS.find((a) => a.id === submission.advisorId)?.name ?? '');
 
   return (
-    <div className="flex-1 flex flex-col bg-ink-50 dark:bg-ink-900 px-6 pt-12 pb-8">
+    <div className="flex-1 flex flex-col bg-gradient-to-b from-amber-50/60 via-rose-50/40 to-white dark:from-ink-900 dark:via-ink-900 dark:to-ink-900 px-6 pt-12 pb-8">
       <div className="flex-1 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-5 text-emerald-600">
-          <CheckCircle2 size={36} />
+        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-700/30 backdrop-blur-md border border-white/60 shadow-xl shadow-emerald-500/20 ring-1 ring-white/40 flex items-center justify-center mb-5 text-emerald-600">
+          <CheckCircle2 size={40} />
         </div>
         <h2 className="text-2xl font-extrabold text-ink-900 dark:text-white mb-2">
           {t('discover.book.success.title')}
@@ -466,7 +470,7 @@ function SuccessState({ submission, onDone }: { submission: BookingInput; onDone
       <button
         type="button"
         onClick={onDone}
-        className="w-full bg-brand-500 rounded-xl py-3.5 text-white font-semibold"
+        className="w-full bg-gradient-to-br from-ink-900 to-ink-800 rounded-2xl py-3.5 text-white font-semibold shadow-lg shadow-ink-900/20 hover:shadow-xl hover:shadow-ink-900/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
       >
         {t('discover.book.success.cta')}
       </button>

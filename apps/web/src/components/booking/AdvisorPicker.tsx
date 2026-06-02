@@ -103,9 +103,9 @@ function AdvisorCard({
 
 function cardClass(active: boolean): string {
   return [
-    'snap-start flex-shrink-0 w-28 rounded-xl p-3 text-center border transition-all',
+    'snap-start flex-shrink-0 w-28 rounded-2xl p-3 text-center border backdrop-blur-md transition-all duration-300 ease-smooth',
     active
-      ? 'border-brand-500 bg-brand-50 dark:bg-brand-700/30'
-      : 'border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-700 hover:border-brand-400',
+      ? 'border-brand-400 bg-gradient-to-br from-brand-50/80 to-white/60 dark:bg-brand-700/30 shadow-lg shadow-brand-500/15 scale-[1.02]'
+      : 'border-white/50 bg-white/70 dark:bg-ink-700/70 dark:border-ink-700 shadow-md shadow-ink-900/5 hover:border-brand-300 hover:scale-[1.02]',
   ].join(' ');
 }

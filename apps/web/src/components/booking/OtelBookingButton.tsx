@@ -33,21 +33,25 @@ export function OtelBookingButton({
       aria-label={t('booking.otel.title')}
       className={[
         'group relative inline-flex items-center gap-2 overflow-hidden',
-        // Ultra-curved corners per the new design system tokens.
-        'rounded-2xl px-3 py-2',
-        // Premium glass surface — sits one tier above the page glass.
-        'bg-white/70 dark:bg-ink-700/70 backdrop-blur-lg',
-        'border border-white/50 dark:border-white/10',
-        'shadow-lg shadow-ink-900/5',
+        // Ultra-curved corners — full rounded-3xl on the wrapper so the
+        // chip reads as part of the reference-image vocabulary.
+        'rounded-3xl px-3 py-2',
+        // Warm-tinted glass surface — amber/rose wash matches the
+        // cream backdrop the booking screens now sit on.
+        'bg-gradient-to-br from-amber-50/80 via-white/70 to-rose-50/60',
+        'dark:from-ink-700/70 dark:via-ink-700/70 dark:to-ink-700/70',
+        'backdrop-blur-lg',
+        'border border-white/60 dark:border-white/10',
+        'shadow-lg shadow-amber-500/10',
         // Tactile micro-interactions.
-        'hover:bg-white/90 hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10',
+        'hover:from-amber-50 hover:to-rose-50 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/20',
         'active:scale-95',
         'transition-all duration-300 ease-smooth',
         className,
       ].join(' ')}
     >
-      <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-brand-100 to-violet-100 dark:from-brand-700/40 dark:to-violet-700/40 ring-1 ring-white/40">
-        <BedDouble size={16} className="text-brand-700 dark:text-brand-100" />
+      <span className="w-8 h-8 rounded-2xl flex items-center justify-center bg-gradient-to-br from-amber-200 to-rose-200 dark:from-brand-700/40 dark:to-violet-700/40 ring-1 ring-white/50 shadow-sm shadow-amber-500/20">
+        <BedDouble size={16} className="text-amber-800 dark:text-brand-100" />
       </span>
       <span className="flex flex-col items-start min-w-0">
         <span className="text-xs font-bold text-ink-900 dark:text-white leading-tight whitespace-nowrap">

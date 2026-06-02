@@ -86,7 +86,9 @@ export function WellnessBook() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-ink-50 dark:bg-ink-900">
+    // Warm cream wash — same vocabulary as ServiceBook so the booking
+    // surfaces all read as one product, not three separate flows.
+    <div className="flex-1 flex flex-col bg-gradient-to-b from-amber-50/60 via-rose-50/40 to-white dark:from-ink-900 dark:via-ink-900 dark:to-ink-900">
       <Header onClose={() => navigate(`/services/wellness/${facility.id}`)} />
 
       <form
@@ -171,7 +173,7 @@ export function WellnessBook() {
             rows={3}
             maxLength={500}
             placeholder={t('services.book.fields.notes.placeholder')}
-            className="w-full rounded-xl px-4 py-3 text-sm text-ink-900 dark:text-white bg-white dark:bg-ink-700 border border-ink-100 dark:border-ink-700 outline-none focus:border-brand-500 transition-colors"
+            className="w-full rounded-2xl px-4 py-3 text-sm text-ink-900 dark:text-white bg-white/80 dark:bg-ink-700 backdrop-blur-sm border border-white/60 dark:border-ink-700 shadow-sm shadow-ink-900/5 outline-none focus:border-brand-500 focus:shadow-md focus:shadow-brand-500/15 transition-all duration-300 ease-smooth"
             {...register('notes')}
           />
 
@@ -187,7 +189,7 @@ export function WellnessBook() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-brand-500 disabled:bg-ink-400 rounded-xl py-3.5 text-white font-semibold"
+            className="w-full bg-gradient-to-br from-ink-900 to-ink-800 disabled:from-ink-400 disabled:to-ink-400 rounded-2xl py-3.5 text-white font-semibold shadow-lg shadow-ink-900/20 hover:shadow-xl hover:shadow-ink-900/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
           >
             {isSubmitting ? t('services.book.submitting') : t('services.book.submit')}
           </button>
@@ -207,9 +209,9 @@ function Header({ onClose }: { onClose: () => void }) {
         type="button"
         onClick={onClose}
         aria-label={t('services.book.close')}
-        className="p-2 -ms-2 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-700"
+        className="w-10 h-10 -ms-2 rounded-2xl flex items-center justify-center bg-white/70 dark:bg-ink-700/70 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-sm shadow-ink-900/5 hover:bg-white hover:scale-105 active:scale-95 transition-all duration-300 ease-smooth"
       >
-        <X size={22} className="text-ink-700 dark:text-white" />
+        <X size={20} className="text-ink-700 dark:text-white" />
       </button>
       <h2 className="flex-1 text-base font-bold text-ink-900 dark:text-white leading-tight truncate">
         {t('services.book.title')}
@@ -231,7 +233,7 @@ function SummaryWidget({
   const { t, i18n } = useTranslation();
   const showServiceDurations = useShowServiceDurations();
   return (
-    <div className="rounded-2xl border border-brand-100 dark:border-brand-700 bg-brand-50 dark:bg-brand-700/30 p-3 space-y-2">
+    <div className="rounded-3xl border border-white/60 dark:border-brand-700 bg-gradient-to-br from-brand-50/80 via-white/60 to-amber-50/40 dark:bg-brand-700/30 backdrop-blur-md p-4 space-y-2 shadow-lg shadow-brand-500/10">
       <SummaryRow
         label={t('services.book.summary.provider')}
         value={`${t('wellness.title')} · ${t(facility.nameKey)}`}
@@ -278,7 +280,7 @@ function SummaryRow({
 }) {
   if (inline) {
     return (
-      <div className="bg-white/60 dark:bg-ink-900/40 rounded-lg px-2 py-1.5">
+      <div className="bg-white/70 dark:bg-ink-900/40 backdrop-blur-sm border border-white/50 rounded-2xl px-2.5 py-1.5">
         <p className="text-[10px] font-bold uppercase tracking-widest text-ink-500">{label}</p>
         <p
           className={[
@@ -360,10 +362,10 @@ function SuccessState({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="flex-1 flex flex-col bg-ink-50 dark:bg-ink-900 px-6 pt-12 pb-8">
+    <div className="flex-1 flex flex-col bg-gradient-to-b from-amber-50/60 via-rose-50/40 to-white dark:from-ink-900 dark:via-ink-900 dark:to-ink-900 px-6 pt-12 pb-8">
       <div className="flex-1 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-5 text-emerald-600">
-          <CheckCircle2 size={36} />
+        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-700/30 backdrop-blur-md border border-white/60 shadow-xl shadow-emerald-500/20 ring-1 ring-white/40 flex items-center justify-center mb-5 text-emerald-600">
+          <CheckCircle2 size={40} />
         </div>
         <h2 className="text-2xl font-extrabold text-ink-900 dark:text-white mb-2">
           {t('services.book.success.title')}
@@ -378,18 +380,18 @@ function SuccessState({
           <span className="font-semibold">{t(session.titleKey)}</span>
         </p>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <button
           type="button"
           onClick={onViewRequests}
-          className="w-full bg-brand-500 rounded-xl py-3.5 text-white font-semibold"
+          className="w-full bg-gradient-to-br from-ink-900 to-ink-800 rounded-2xl py-3.5 text-white font-semibold shadow-lg shadow-ink-900/20 hover:shadow-xl hover:shadow-ink-900/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
         >
           {t('services.book.success.viewRequests')}
         </button>
         <button
           type="button"
           onClick={onBackToServices}
-          className="w-full border border-brand-500 text-brand-600 dark:text-brand-400 rounded-xl py-3 text-sm font-semibold"
+          className="w-full bg-white/70 dark:bg-ink-700/70 backdrop-blur-md border border-white/50 dark:border-white/10 text-ink-700 dark:text-white rounded-2xl py-3 text-sm font-semibold shadow-md shadow-ink-900/5 hover:bg-white hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
         >
           {t('services.book.success.backToServices')}
         </button>

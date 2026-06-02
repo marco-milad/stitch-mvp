@@ -81,14 +81,14 @@ function ProspectView() {
             <button
               type="button"
               onClick={() => navigate('/discover/tour')}
-              className="flex-1 bg-white text-ink-900 rounded-xl py-2.5 px-3 text-sm font-semibold"
+              className="flex-1 bg-white text-ink-900 rounded-2xl py-3 px-3 text-sm font-semibold shadow-lg shadow-ink-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-smooth"
             >
               {t('discover.prospect.cta.tour')}
             </button>
             <button
               type="button"
               onClick={() => navigate('/discover/book')}
-              className="flex-1 bg-white/15 backdrop-blur text-white border border-white/40 rounded-xl py-2.5 px-3 text-sm font-semibold"
+              className="flex-1 bg-white/15 backdrop-blur-md text-white border border-white/50 rounded-2xl py-3 px-3 text-sm font-semibold shadow-lg shadow-ink-900/10 hover:bg-white/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-smooth"
             >
               {t('discover.prospect.cta.book')}
             </button>
@@ -169,7 +169,7 @@ function ResidentView() {
         onClick={() => navigate('/services')}
         className="w-full text-left flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700"
       >
-        <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center me-3 flex-shrink-0 text-amber-600">
+        <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center me-3 flex-shrink-0 text-amber-600">
           <ArrowRight size={18} />
         </div>
         <div className="flex-1 min-w-0">
@@ -286,7 +286,7 @@ function OtherProjectRow({ project }: { project: OtherProject }) {
   const { icon: Icon } = project;
   return (
     <div className="flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700">
-      <div className="w-9 h-9 rounded-lg bg-ink-100 dark:bg-ink-900 flex items-center justify-center me-3 flex-shrink-0 text-ink-500">
+      <div className="w-10 h-10 rounded-2xl bg-ink-100 dark:bg-ink-900 flex items-center justify-center me-3 flex-shrink-0 text-ink-500">
         <Icon size={18} />
       </div>
       <div className="flex-1 min-w-0">

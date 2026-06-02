@@ -9,6 +9,80 @@
       "subtitle": "Partner hotels · in a new tab"
     }
   },
+  "payments": {
+    "title": "Payments & billing",
+    "subtitle": "Installments, invoices, and overdue alerts.",
+    "back": "Back to home",
+    "overdue": {
+      "title": "{{count}} overdue invoice on file",
+      "body": "Some compound features are suspended until you settle. Pay below to lift the suspension instantly."
+    },
+    "outstanding": {
+      "label": "Outstanding balance",
+      "breakdown": "EGP {{overdue}} overdue · EGP {{due}} due soon"
+    },
+    "payAll": {
+      "cta": "Pay all due",
+      "success": "Mock payment processed. Suspension lifted."
+    },
+    "installments": {
+      "title": "Installment plan",
+      "next": "Next due",
+      "perInstallment": "Per installment"
+    },
+    "history": {
+      "title": "Invoice history",
+      "statusPaid": "Paid",
+      "statusDue": "Due",
+      "statusOverdue": "Overdue",
+      "paidOn": "Paid {{date}}",
+      "dueOn": "Due {{date}}"
+    },
+    "sapNote": "Billing connector: SAP Finance · sync every 6 h."
+  },
+  "amenities": {
+    "title": "Amenities & facilities",
+    "subtitle": "Pools, gyms, workspaces — all bookable.",
+    "back": "Back to services",
+    "filters": {
+      "all": "All",
+      "pools": "Pools",
+      "gyms": "Gyms",
+      "workspaces": "Workspaces"
+    },
+    "sections": {
+      "pools": "Pools",
+      "gyms": "Gyms",
+      "workspaces": "Workspaces"
+    },
+    "bookingComingSoon": "Booking flow lands in Week 3 — for now this is a static preview."
+  },
+  "access": {
+    "locked": {
+      "title": "Sign up to unlock",
+      "body": "Create your resident account to access {{surface}}.",
+      "guestNote": "Browsing as a guest — sales, events, and brochures are open.",
+      "signUpCta": "Create an account",
+      "browseCta": "Keep browsing",
+      "defaultSurface": "this feature"
+    },
+    "surfaces": {
+      "home": "your home dashboard",
+      "services": "compound services",
+      "requests": "maintenance requests",
+      "compoundMap": "the compound map",
+      "parking": "parking management",
+      "smartHome": "smart-home controls",
+      "wellness": "wellness bookings",
+      "qr": "your gate QR pass",
+      "voice": "Farah, your AI concierge",
+      "notifications": "notifications",
+      "profile": "your profile",
+      "neighbors": "the neighbour directory",
+      "payments": "payments and billing",
+      "amenities": "amenity bookings"
+    }
+  },
   "completeProfile": {
     "heading": "Complete your profile",
     "lede": "A few quick details before you unlock the app.",

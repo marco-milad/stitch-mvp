@@ -39,10 +39,10 @@ export function ChipPicker<V extends string | number>({
             onClick={() => onChange(opt.value)}
             aria-pressed={active ? 'true' : 'false'}
             className={[
-              'px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+              'px-4 py-2 rounded-2xl text-xs font-semibold border backdrop-blur-md transition-all duration-300 ease-smooth',
               active
-                ? 'bg-brand-500 text-white border-brand-500'
-                : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-ink-100 dark:border-ink-700 hover:border-brand-400',
+                ? 'bg-gradient-to-br from-ink-900 to-ink-800 text-white border-ink-900 shadow-lg shadow-ink-900/25 scale-[1.03]'
+                : 'bg-white/70 dark:bg-ink-700/70 text-ink-700 dark:text-white border-white/50 dark:border-ink-700 shadow-sm shadow-ink-900/5 hover:bg-white hover:scale-[1.02]',
             ].join(' ')}
           >
             {label}

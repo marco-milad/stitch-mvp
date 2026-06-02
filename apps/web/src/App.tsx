@@ -5,10 +5,13 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom
 
 import { MobileShell } from '@/components/MobileShell';
 import { CompleteProfileGate } from '@/components/guards/CompleteProfileGate';
+import { RequireTenant } from '@/components/guards/RequireRole';
 import { TabsLayout } from '@/layout/TabsLayout';
 import { useNotificationsSync } from '@/lib/useNotifications';
+import { AmenitiesBook } from '@/screens/AmenitiesBook';
 import { Community } from '@/screens/Community';
 import { CompleteProfile } from '@/screens/CompleteProfile';
+import { Payments } from '@/screens/Payments';
 import { Discover } from '@/screens/Discover';
 import { DiscoverBook } from '@/screens/DiscoverBook';
 import { DiscoverCalculator } from '@/screens/DiscoverCalculator';
@@ -78,49 +81,216 @@ export function App() {
                   paths are allow-listed inside the gate to avoid
                   redirect loops. */}
               <Route element={<CompleteProfileGate />}>
-                {/* Tabbed routes share TabsLayout */}
+                {/* Tabbed routes share TabsLayout.
+                    Guest-allowed (no RequireTenant): Community + Discover
+                    are intentional marketing/brochure surfaces. Everything
+                    else (Home dashboard, services, profile) is gated. */}
                 <Route element={<TabsLayout />}>
-                  <Route path="/" element={<Home />} />
+                  <Route
+                    path="/"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.home">
+                        <Home />
+                      </RequireTenant>
+                    }
+                  />
+                  {/* Community = events/announcements feed → Guest-allowed */}
                   <Route path="/community" element={<Community />} />
-                  <Route path="/community/neighbors" element={<NeighborsDirectory />} />
-                  <Route path="/services" element={<Services />} />
-                  <Route path="/services/requests" element={<ServiceRequests />} />
-                  <Route path="/services/comp-map" element={<ServiceCompoundMap />} />
-                  <Route path="/services/parking" element={<ServiceParking />} />
-                  <Route path="/services/smart-home" element={<ServiceSmartHome />} />
-                  <Route path="/services/wellness" element={<WellnessHub />} />
-                  <Route path="/services/wellness/:facilityId" element={<WellnessFacility />} />
-                  <Route path="/services/:tileId" element={<ServiceCategory />} />
+                  <Route
+                    path="/community/neighbors"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.neighbors">
+                        <NeighborsDirectory />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.services">
+                        <Services />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/requests"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.requests">
+                        <ServiceRequests />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/comp-map"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.compoundMap">
+                        <ServiceCompoundMap />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/parking"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.parking">
+                        <ServiceParking />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/smart-home"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.smartHome">
+                        <ServiceSmartHome />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/wellness"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.wellness">
+                        <WellnessHub />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/wellness/:facilityId"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.wellness">
+                        <WellnessFacility />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/:tileId"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.services">
+                        <ServiceCategory />
+                      </RequireTenant>
+                    }
+                  />
                   <Route
                     path="/services/:tileId/providers/:providerId"
-                    element={<ServiceProvider />}
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.services">
+                        <ServiceProvider />
+                      </RequireTenant>
+                    }
                   />
+                  {/* Discover = brochure/sales journey → Guest-allowed */}
                   <Route path="/discover" element={<Discover />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/family" element={<ProfileFamily />} />
+                  <Route
+                    path="/profile"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.profile">
+                        <Profile />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/profile/family"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.profile">
+                        <ProfileFamily />
+                      </RequireTenant>
+                    }
+                  />
                 </Route>
 
                 {/* Modal/full-screen routes (no tab bar) */}
-                <Route path="/qr" element={<Qr />} />
-                <Route path="/voice" element={<Voice />} />
-                <Route path="/notifications" element={<Notifications />} />
+                <Route
+                  path="/qr"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.qr">
+                      <Qr />
+                    </RequireTenant>
+                  }
+                />
+                <Route
+                  path="/voice"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.voice">
+                      <Voice />
+                    </RequireTenant>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.notifications">
+                      <Notifications />
+                    </RequireTenant>
+                  }
+                />
+                {/* Community sub-routes follow parent Community policy (guest-allowed) */}
                 <Route path="/community/posts/:id" element={<PostDetail />} />
                 <Route path="/story/:id" element={<Story />} />
+                {/* Discover sub-routes are part of the sales/brochure journey */}
                 <Route path="/discover/tour" element={<DiscoverTour />} />
                 <Route path="/discover/master-plan" element={<DiscoverMasterPlan />} />
-                {/* /discover/eoi is the tabbed hub (Phase C). The lead-capture
-                  form moved to /discover/eoi/contact so direct links to it
-                  still work via that explicit path. */}
                 <Route path="/discover/eoi" element={<DiscoverEoiHub />} />
                 <Route path="/discover/eoi/contact" element={<DiscoverEoi />} />
                 <Route path="/discover/calculator" element={<DiscoverCalculator />} />
                 <Route path="/discover/book" element={<DiscoverBook />} />
                 <Route path="/discover/story/:id" element={<DiscoverStory />} />
-                <Route path="/services/:tileId/book" element={<ServiceBook />} />
-                <Route path="/services/wellness/:facilityId/book" element={<WellnessBook />} />
-                <Route path="/services/parking/new-pass" element={<ParkingNewPass />} />
-                <Route path="/home/parking" element={<HomeParking />} />
-                <Route path="/profile/family/invite" element={<ProfileFamilyInvite />} />
+                {/* Booking flows = tenant-only */}
+                <Route
+                  path="/services/:tileId/book"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.services">
+                      <ServiceBook />
+                    </RequireTenant>
+                  }
+                />
+                <Route
+                  path="/services/wellness/:facilityId/book"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.wellness">
+                      <WellnessBook />
+                    </RequireTenant>
+                  }
+                />
+                <Route
+                  path="/services/parking/new-pass"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.parking">
+                      <ParkingNewPass />
+                    </RequireTenant>
+                  }
+                />
+                <Route
+                  path="/home/parking"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.home">
+                      <HomeParking />
+                    </RequireTenant>
+                  }
+                />
+                <Route
+                  path="/profile/family/invite"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.profile">
+                      <ProfileFamilyInvite />
+                    </RequireTenant>
+                  }
+                />
+                {/* Item 2 — Amenities & facilities dashboard */}
+                <Route
+                  path="/amenities"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.amenities">
+                      <AmenitiesBook />
+                    </RequireTenant>
+                  }
+                />
+                {/* Item 3 — Payments & billing hub */}
+                <Route
+                  path="/payments"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.payments">
+                      <Payments />
+                    </RequireTenant>
+                  }
+                />
 
                 {/* Auth routes — allow-listed inside CompleteProfileGate */}
                 <Route path="/sign-in" element={<SignIn />} />

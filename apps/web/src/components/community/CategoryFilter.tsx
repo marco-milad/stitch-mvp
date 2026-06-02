@@ -21,11 +21,12 @@ export function CategoryFilter({ selected, onSelect }: Props) {
             type="button"
             onClick={() => onSelect(cat.id)}
             aria-pressed={active ? 'true' : 'false'}
-            className={
+            className={[
+              'flex-shrink-0 px-4 py-2 rounded-2xl text-xs font-semibold border backdrop-blur-md transition-all duration-300 ease-smooth',
               active
-                ? 'flex-shrink-0 px-3.5 py-1.5 rounded-full bg-brand-500 text-white text-xs font-semibold'
-                : 'flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white dark:bg-ink-700 border border-ink-100 dark:border-ink-700 text-ink-700 dark:text-white text-xs font-medium'
-            }
+                ? 'bg-gradient-to-br from-ink-900 to-ink-800 text-white border-ink-900 shadow-lg shadow-ink-900/25 scale-[1.03]'
+                : 'bg-white/70 dark:bg-ink-700/70 text-ink-700 dark:text-white border-white/50 dark:border-ink-700 shadow-sm shadow-ink-900/5 hover:bg-white hover:scale-[1.02]',
+            ].join(' ')}
           >
             {t(cat.labelKey)}
           </button>

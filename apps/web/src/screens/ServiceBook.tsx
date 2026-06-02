@@ -21,6 +21,7 @@ import {
 } from '@/lib/schemas/serviceRequest';
 import { useCurrentProperty } from '@/stores/propertyStore';
 import { useServiceRequestsStore } from '@/stores/serviceRequestsStore';
+import { useShowServiceDurations } from '@/stores/featureTogglesStore';
 
 const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 
@@ -243,6 +244,7 @@ function SummaryWidget({
   propertyName: string;
 }) {
   const { t, i18n } = useTranslation();
+  const showServiceDurations = useShowServiceDurations();
   return (
     <div className="rounded-2xl border border-brand-100 dark:border-brand-700 bg-brand-50 dark:bg-brand-700/30 p-3 space-y-2">
       <SummaryRow
@@ -253,12 +255,17 @@ function SummaryWidget({
         label={t('services.book.summary.offering')}
         value={t(offeringLabelKey(tile.id, offering.key))}
       />
-      <div className="grid grid-cols-2 gap-2">
-        <SummaryRow
-          label={t('services.book.summary.duration')}
-          value={t('services.providers.offeringDuration', { min: offering.durationMin })}
-          inline
-        />
+      {/* Grid collapses to a single full-width Price row when the
+          Service Durations toggle is off — keeps the summary visually
+          balanced regardless of which fields are surfaced. */}
+      <div className={`grid ${showServiceDurations ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+        {showServiceDurations && (
+          <SummaryRow
+            label={t('services.book.summary.duration')}
+            value={t('services.providers.offeringDuration', { min: offering.durationMin })}
+            inline
+          />
+        )}
         <SummaryRow
           label={t('services.book.summary.price')}
           value={`EGP ${formatNumber(offering.priceEgp, i18n.language)}`}

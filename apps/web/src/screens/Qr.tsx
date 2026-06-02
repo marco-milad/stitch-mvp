@@ -8,6 +8,7 @@ import { QrPattern } from '@/components/qr/QrPattern';
 import { QR_LOG_ICON, QR_LOG_TONE, QR_LOGS } from '@/lib/mock/activities';
 import { colors } from '@/lib/theme';
 import { useProfileStore } from '@/stores/profileStore';
+import { useShowParkingInvitations } from '@/stores/featureTogglesStore';
 
 const QR_ROTATE_MS = 30_000;
 const QR_SIZE = 240;
@@ -19,6 +20,7 @@ export function Qr() {
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const brightnessBoost = useProfileStore((s) => s.brightnessBoost);
   const toggleBrightness = useProfileStore((s) => s.toggleBrightness);
+  const showParkingInvitations = useShowParkingInvitations();
 
   const refresh = () => setSeed(Math.floor(Math.random() * 1e9));
 
@@ -53,15 +55,20 @@ export function Qr() {
         </div>
 
         <div className="flex flex-row gap-2 mb-5">
-          <QuickAction
-            Icon={UserPlus}
-            label="Invite"
-            tone="#7C3AED"
-            bg="#EDE9FE"
-            onClick={() =>
-              window.alert('Invite guest\n\nComing in Week 2 — guest pass generation flow.')
-            }
-          />
+          {/* Invite is gated behind the Parking Invitations toggle. When
+              off the row collapses to Refresh + Brightness which still
+              flex-1 evenly across the width. */}
+          {showParkingInvitations && (
+            <QuickAction
+              Icon={UserPlus}
+              label="Invite"
+              tone="#7C3AED"
+              bg="#EDE9FE"
+              onClick={() =>
+                window.alert('Invite guest\n\nComing in Week 2 — guest pass generation flow.')
+              }
+            />
+          )}
           <QuickAction
             Icon={RefreshCw}
             label="Refresh"

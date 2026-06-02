@@ -10,6 +10,7 @@ import {
   type WellnessSession,
   type WellnessFacilityId,
 } from '@/lib/mock/wellness';
+import { useShowServiceDurations } from '@/stores/featureTogglesStore';
 
 export function WellnessFacility() {
   const { t } = useTranslation();
@@ -88,6 +89,7 @@ export function WellnessFacility() {
 
 function SessionRow({ session, onClick }: { session: WellnessSession; onClick: () => void }) {
   const { t, i18n } = useTranslation();
+  const showServiceDurations = useShowServiceDurations();
   return (
     <div className="flex flex-row items-start gap-3 bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700">
       <div className="flex-1 min-w-0">
@@ -95,10 +97,12 @@ function SessionRow({ session, onClick }: { session: WellnessSession; onClick: (
           {t(session.titleKey)}
         </p>
         <div className="mt-1 flex flex-row flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-500 dark:text-ink-100">
-          <span className="inline-flex items-center gap-1">
-            <Clock size={11} />
-            {t('services.providers.offeringDuration', { min: session.durationMin })}
-          </span>
+          {showServiceDurations && (
+            <span className="inline-flex items-center gap-1">
+              <Clock size={11} />
+              {t('services.providers.offeringDuration', { min: session.durationMin })}
+            </span>
+          )}
           {session.instructorKey && (
             <span className="inline-flex items-center gap-1">
               <User size={11} />

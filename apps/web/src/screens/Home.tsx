@@ -32,6 +32,7 @@ import { colors } from '@/lib/theme';
 import { useCurrentProperty } from '@/stores/propertyStore';
 import { useUnreadCount } from '@/lib/useNotifications';
 import { useActiveRequests } from '@/stores/serviceRequestsStore';
+import { useShowParkingInvitations } from '@/stores/featureTogglesStore';
 
 const MOCK_DUE_PAYMENTS = 1;
 
@@ -271,6 +272,7 @@ export function Home() {
   const property = useCurrentProperty();
   const activeRequests = useActiveRequests();
   const unreadCount = useUnreadCount();
+  const showParkingInvitations = useShowParkingInvitations();
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
   const firstName = user?.firstName ?? 'Sara';
@@ -378,15 +380,23 @@ export function Home() {
         fg: '#7C3AED',
         onClick: () => navigate('/voice'),
       },
-      {
-        key: 'invite',
-        Icon: UserPlus,
-        title: t('home.cta.invite'),
-        sub: t('home.cta.inviteSub'),
-        bg: '#DBEAFE',
-        fg: '#2563EB',
-        onClick: () => navigate('/qr'),
-      },
+      // Parking-invitations feature flag gates this CTA. When off the
+      // tile is dropped from the array entirely; the 2x2 grid below
+      // detects the shorter length and renders Row 2 as a single
+      // full-width Report tile so the layout stays balanced.
+      ...(showParkingInvitations
+        ? [
+            {
+              key: 'invite',
+              Icon: UserPlus,
+              title: t('home.cta.invite'),
+              sub: t('home.cta.inviteSub'),
+              bg: '#DBEAFE',
+              fg: '#2563EB',
+              onClick: () => navigate('/qr'),
+            },
+          ]
+        : []),
       {
         key: 'report',
         Icon: Wrench,
@@ -397,7 +407,7 @@ export function Home() {
         onClick: () => navigate('/services'),
       },
     ],
-    [t, navigate, underConstruction, property?.unitName],
+    [t, navigate, underConstruction, property?.unitName, showParkingInvitations],
   );
 
   const WeatherIcon = weather.icon;
@@ -507,14 +517,15 @@ export function Home() {
           })}
         </div>
 
-        {/* CTAs 2×2 */}
+        {/* CTAs 2×2 — Row 2 collapses to a single full-width tile when
+            the Parking Invitations toggle is off (ctas length = 3). */}
         <div className="flex flex-row gap-3 mb-3">
           <CtaTile cta={ctas[0]!} />
           <CtaTile cta={ctas[1]!} />
         </div>
         <div className="flex flex-row gap-3 mb-5">
-          <CtaTile cta={ctas[2]!} />
-          <CtaTile cta={ctas[3]!} />
+          {ctas[2] && <CtaTile cta={ctas[2]} />}
+          {ctas[3] && <CtaTile cta={ctas[3]} />}
         </div>
 
         {/* Status pills */}

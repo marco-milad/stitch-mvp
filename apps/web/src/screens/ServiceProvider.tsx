@@ -10,10 +10,12 @@ import {
   priceFromEgp,
   type ProviderOffering,
 } from '@/lib/mock/serviceProviders';
+import { useShowServiceDurations } from '@/stores/featureTogglesStore';
 
 export function ServiceProvider() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const showServiceDurations = useShowServiceDurations();
   const { tileId = '', providerId = '' } = useParams<{
     tileId: string;
     providerId: string;
@@ -106,8 +108,13 @@ export function ServiceProvider() {
                   {t(offeringLabelKey(tile.id, o.key))}
                 </p>
                 <p className="text-[11px] text-ink-500 dark:text-ink-100">
-                  {t('services.providers.offeringDuration', { min: o.durationMin })} · EGP{' '}
-                  {formatNumber(o.priceEgp, i18n.language)}
+                  {showServiceDurations && (
+                    <>
+                      {t('services.providers.offeringDuration', { min: o.durationMin })}
+                      {' · '}
+                    </>
+                  )}
+                  EGP {formatNumber(o.priceEgp, i18n.language)}
                 </p>
               </div>
               <button

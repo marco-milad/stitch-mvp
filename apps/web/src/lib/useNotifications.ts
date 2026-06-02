@@ -14,6 +14,7 @@ import {
   subscribeMyNotifications,
   type ResidentNotification,
 } from '@/lib/residentApi';
+import { MOCK_NOTIFICATIONS, withMockFallback } from '@/lib/residentApiFallbacks';
 
 export const NOTIFICATIONS_KEY = ['me', 'notifications'] as const;
 const READ_STORAGE_KEY = 'stitch.notifications.read';
@@ -92,17 +93,30 @@ function useLiveFlag(): boolean {
 export function useNotificationsSync(): void {
   const qc = useQueryClient();
   useEffect(() => {
-    const sub = subscribeMyNotifications((event) => {
-      if (event.type === 'snapshot') {
-        qc.setQueryData<ResidentNotification[]>(NOTIFICATIONS_KEY, event.items);
-      } else if (event.type === 'notification.created') {
-        qc.setQueryData<ResidentNotification[] | undefined>(NOTIFICATIONS_KEY, (prev) => {
-          if (!prev) return [event.item];
-          if (prev.some((n) => n.id === event.item.id)) return prev;
-          return [event.item, ...prev];
-        });
-      }
-    }, publishLive);
+    const sub = subscribeMyNotifications(
+      (event) => {
+        if (event.type === 'snapshot') {
+          qc.setQueryData<ResidentNotification[]>(NOTIFICATIONS_KEY, event.items);
+        } else if (event.type === 'notification.created') {
+          qc.setQueryData<ResidentNotification[] | undefined>(NOTIFICATIONS_KEY, (prev) => {
+            if (!prev) return [event.item];
+            if (prev.some((n) => n.id === event.item.id)) return prev;
+            return [event.item, ...prev];
+          });
+        }
+      },
+      {
+        onStatusChange: publishLive,
+        // WS gave up after MAX_WS_ATTEMPTS — make sure the cache has
+        // something to render so the bell dot + Notifications screen
+        // don't sit on a permanent skeleton.
+        onPermanentFailure: () => {
+          qc.setQueryData<ResidentNotification[] | undefined>(NOTIFICATIONS_KEY, (prev) =>
+            prev && prev.length > 0 ? prev : MOCK_NOTIFICATIONS,
+          );
+        },
+      },
+    );
     return () => {
       sub.close();
       publishLive(false);
@@ -124,7 +138,9 @@ export interface UseMyNotificationsResult {
 export function useMyNotifications(): UseMyNotificationsResult {
   const query = useQuery<ResidentNotification[]>({
     queryKey: NOTIFICATIONS_KEY,
-    queryFn: listMyNotifications,
+    // Wrap the real fetcher so a server-unreachable error degrades to
+    // mock notifications instead of leaving the bell dot dark forever.
+    queryFn: () => withMockFallback(listMyNotifications, MOCK_NOTIFICATIONS, 'listMyNotifications'),
     staleTime: 30_000,
   });
 

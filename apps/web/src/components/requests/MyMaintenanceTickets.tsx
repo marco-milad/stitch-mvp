@@ -30,6 +30,7 @@ import {
   type TicketTechnician,
   type TicketUrgency,
 } from '@/lib/residentApi';
+import { MOCK_TECHNICIANS, MOCK_TICKETS, withMockFallback } from '@/lib/residentApiFallbacks';
 
 // Glass badges with a tinted colored glow per status. The shadow uses the
 // tone colour at low alpha so the badge reads as "lit" against the glass
@@ -100,33 +101,47 @@ export function MyMaintenanceTickets() {
 
   const ticketsQuery = useQuery<MaintenanceTicket[]>({
     queryKey: QUERY_KEY,
-    queryFn: listMyTickets,
+    // Mock fallback wires in here so a refused / timed-out fetch
+    // surfaces three demo tickets instead of an empty error state.
+    queryFn: () => withMockFallback(listMyTickets, MOCK_TICKETS, 'listMyTickets'),
     staleTime: 30_000,
   });
 
   const techsQuery = useQuery<TicketTechnician[]>({
     queryKey: ['me', 'tickets', 'techs'],
-    queryFn: listTechnicianRoster,
+    queryFn: () => withMockFallback(listTechnicianRoster, MOCK_TECHNICIANS, 'listTechnicianRoster'),
     staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
-    const sub = subscribeMyTickets((event) => {
-      if (event.type === 'snapshot') {
-        qc.setQueryData<MaintenanceTicket[]>(QUERY_KEY, event.items);
-      } else if (event.type === 'request.updated') {
-        // Backend's `/me/requests/stream` is pre-filtered to this
-        // resident, so any incoming update is for us. Prepend if new
-        // (e.g. ticket created in another tab); patch in place if known.
-        qc.setQueryData<MaintenanceTicket[] | undefined>(QUERY_KEY, (prev) => {
-          if (!prev) return [event.item];
-          const has = prev.some((r) => r.id === event.item.id);
-          return has
-            ? prev.map((r) => (r.id === event.item.id ? event.item : r))
-            : [event.item, ...prev];
-        });
-      }
-    }, setIsLive);
+    const sub = subscribeMyTickets(
+      (event) => {
+        if (event.type === 'snapshot') {
+          qc.setQueryData<MaintenanceTicket[]>(QUERY_KEY, event.items);
+        } else if (event.type === 'request.updated') {
+          // Backend's `/me/requests/stream` is pre-filtered to this
+          // resident, so any incoming update is for us. Prepend if new
+          // (e.g. ticket created in another tab); patch in place if known.
+          qc.setQueryData<MaintenanceTicket[] | undefined>(QUERY_KEY, (prev) => {
+            if (!prev) return [event.item];
+            const has = prev.some((r) => r.id === event.item.id);
+            return has
+              ? prev.map((r) => (r.id === event.item.id ? event.item : r))
+              : [event.item, ...prev];
+          });
+        }
+      },
+      {
+        onStatusChange: setIsLive,
+        // After the WS gives up retrying, make sure the cache has mock
+        // tickets so the card renders something instead of a skeleton.
+        onPermanentFailure: () => {
+          qc.setQueryData<MaintenanceTicket[] | undefined>(QUERY_KEY, (prev) =>
+            prev && prev.length > 0 ? prev : MOCK_TICKETS,
+          );
+        },
+      },
+    );
     return () => sub.close();
   }, [qc]);
 

@@ -65,31 +65,30 @@ export function Community() {
     <>
       <TopBar title={t('community.title')} unreadCount={unreadCount} />
       {isLive && (
-        <div className="px-4 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-            Live feed
-          </span>
+        <div className="px-4 py-1.5 bg-sand-100/80 dark:bg-ink-700/40 border-b border-sand-200/60 dark:border-ink-700 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
+          <span className="text-label-sm text-status-success">Live feed</span>
         </div>
       )}
       <StoryBar />
 
-      {/* Find Neighbors entry — directory of residents in the compound */}
+      {/* Find Neighbors entry — Rule 3 (sacred dark CTA) for the screen's
+          primary navigation action. Single ink-950 pill, no gradient. */}
       <button
         type="button"
         onClick={() => navigate('/community/neighbors')}
-        className="mx-3 my-2 w-[calc(100%-1.5rem)] flex flex-row items-center gap-3 bg-gradient-to-r from-brand-500 to-accent rounded-2xl p-3 text-start text-white active:scale-[0.99] transition-transform"
+        className="mx-3 my-2 w-[calc(100%-1.5rem)] flex flex-row items-center gap-3 bg-ink-950 dark:bg-white text-white dark:text-ink-950 rounded-3xl p-4 text-start shadow-md hover:shadow-lg active:scale-[0.99] transition-all duration-base ease-smooth"
       >
-        <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-          <Users size={20} />
+        <div className="w-11 h-11 rounded-2xl bg-white/10 dark:bg-ink-950/10 flex items-center justify-center flex-shrink-0">
+          <Users size={20} strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-extrabold leading-tight">{t('neighbors.entry.title')}</p>
-          <p className="text-[11px] text-white/85 leading-tight truncate">
+          <p className="text-body-md font-bold leading-tight">{t('neighbors.entry.title')}</p>
+          <p className="text-label-sm normal-case tracking-normal font-normal opacity-70 leading-tight truncate">
             {t('neighbors.entry.subtitle')}
           </p>
         </div>
-        <ChevronRight size={18} className="text-white/85 flex-shrink-0 rtl:rotate-180" />
+        <ChevronRight size={18} className="opacity-80 flex-shrink-0 rtl:rotate-180" />
       </button>
 
       <CategoryFilter selected={filter} onSelect={setFilter} />
@@ -98,21 +97,23 @@ export function Community() {
         <FeedSkeleton />
       ) : items.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-16">
-          {/* Geometric empty-state: glass medallion + Lucide icon — no emoji */}
+          {/* Empty state — Rule 1 (sand surface) + Rule 4 (soft shadow).
+              The medallion lands on rounded-3xl per curve hierarchy and
+              uses ink-950 for the icon (no brand-cyan glow). */}
           <div className="relative mb-4">
             <span
               aria-hidden
-              className="absolute inset-0 rounded-full bg-brand-300/40 blur-2xl motion-safe:animate-pulse"
+              className="absolute inset-0 rounded-full bg-sand-200/60 blur-2xl motion-safe:animate-pulse"
             />
-            <div className="relative w-16 h-16 rounded-2xl bg-white/65 dark:bg-ink-700/65 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 flex items-center justify-center">
+            <div className="relative w-16 h-16 rounded-3xl bg-white dark:bg-ink-700 border border-sand-200/60 dark:border-ink-700 shadow-md flex items-center justify-center text-ink-950 dark:text-white">
               {filter === 'saved' ? (
-                <Bookmark size={28} className="text-brand-500" />
+                <Bookmark size={28} strokeWidth={1.75} />
               ) : (
-                <Inbox size={28} className="text-brand-500" />
+                <Inbox size={28} strokeWidth={1.75} />
               )}
             </div>
           </div>
-          <p className="text-base text-ink-500 text-center">
+          <p className="text-body-md text-ink-500 dark:text-ink-100 text-center">
             {filter === 'saved'
               ? 'Nothing saved yet — tap the bookmark icon on any post.'
               : 'Nothing in this category yet.'}
@@ -137,7 +138,7 @@ function FeedSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-ink-700 rounded-2xl p-4 border border-ink-100 dark:border-ink-700 flex flex-col gap-3"
+          className="bg-white dark:bg-ink-700 rounded-3xl p-4 border border-sand-200/60 dark:border-ink-700 shadow-sm flex flex-col gap-3"
         >
           <div className="flex flex-row items-center gap-3">
             <Skeleton className="w-10 h-10 rounded-full" />
@@ -146,7 +147,7 @@ function FeedSkeleton() {
               <Skeleton className="h-2.5 w-20" />
             </div>
           </div>
-          <Skeleton className="h-44 rounded-xl" />
+          <Skeleton className="h-44 rounded-2xl" />
           <div className="flex flex-col gap-2">
             <Skeleton className="h-3 w-full" />
             <Skeleton className="h-3 w-4/5" />

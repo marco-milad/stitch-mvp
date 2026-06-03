@@ -33,9 +33,11 @@ export function TabsLayout() {
       key={tab.to}
       to={tab.to}
       end={tab.to === '/'}
+      // Brand identity: active tabs render ink-950 (sacred dark), inactive
+      // ink-300 (subtle). No brand-cyan in the chrome — strict neutrality.
       className={({ isActive }) =>
         `flex-1 flex flex-col items-center justify-center px-1 ${
-          isActive ? 'text-brand-500' : 'text-ink-400'
+          isActive ? 'text-ink-950 dark:text-white' : 'text-ink-300'
         }`
       }
       style={{ minWidth: 0 }}
@@ -44,11 +46,14 @@ export function TabsLayout() {
     >
       {({ isActive }) => {
         const Icon = tab.icon;
-        const tint = isActive ? colors.brand[500] : colors.ink[400];
+        const tint = isActive ? colors.ink[950] : colors.ink[300];
         return (
           <>
-            <Icon color={tint} size={20} />
-            <span className="text-[10px] mt-0.5 whitespace-nowrap" style={{ color: tint }}>
+            <Icon color={tint} size={20} strokeWidth={isActive ? 2.25 : 1.75} />
+            <span
+              className="text-caption normal-case tracking-normal font-semibold mt-0.5 whitespace-nowrap"
+              style={{ color: tint }}
+            >
               {tab.title}
             </span>
           </>
@@ -69,26 +74,31 @@ export function TabsLayout() {
         <Outlet />
       </div>
 
-      {/* Bottom tab bar — frosted glass */}
+      {/* Bottom tab bar — Brand rule 1 (sand surface + frosted glass) +
+          rule 4 (soft layered shadow). Border softens to sand-200 so the
+          bar reads as an integral part of the warm cream surface, not a
+          surgical line. */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40">
-        <div className="flex flex-row bg-white/60 dark:bg-ink-900/60 backdrop-blur-lg border-t border-white/40 dark:border-white/10 shadow-[0_-8px_32px_rgba(15,23,42,0.08)] safe-bottom h-16">
+        <div className="flex flex-row bg-white/80 dark:bg-ink-900/80 backdrop-blur-xl border-t border-sand-200/60 dark:border-white/10 shadow-lg safe-bottom h-16">
           {renderTab(TABS[0]!, 0)}
           {renderTab(TABS[1]!, 1)}
 
-          {/* FAB slot */}
+          {/* FAB slot — Rule 3 (sacred dark CTA): the primary action across
+              the app lives here, so it earns the ink-950 pill treatment
+              with a soft md shadow and the snap-in/out ease pair. */}
           <div className="flex items-center justify-center" style={{ flex: 1.3 }}>
             <button
               type="button"
               onClick={() => navigate('/qr')}
               aria-label="Open QR & access"
-              className="rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-xl shadow-brand-500/40 ring-1 ring-white/40 hover:scale-[1.04] active:scale-95 transition-all duration-200"
+              className="rounded-full bg-ink-950 dark:bg-white text-white dark:text-ink-950 flex items-center justify-center shadow-md hover:shadow-lg ring-2 ring-white/80 dark:ring-ink-900/60 hover:scale-[1.04] active:scale-95 transition-all duration-base ease-smooth"
               style={{
                 width: FAB_SIZE,
                 height: FAB_SIZE,
                 marginTop: -FAB_SIZE / 2 - 6,
               }}
             >
-              <QrCode color={colors.white} size={26} />
+              <QrCode color="currentColor" size={26} strokeWidth={2.25} />
             </button>
           </div>
 

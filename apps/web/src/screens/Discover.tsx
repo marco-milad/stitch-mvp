@@ -68,27 +68,28 @@ function ProspectView() {
           overlayClassName="bg-gradient-to-t from-black/70 via-black/30 to-black/10"
         />
         <div className="relative p-6">
-          <p className="text-white/80 text-[11px] font-semibold uppercase tracking-widest mb-2">
-            {COMPOUND.name}
-          </p>
-          <h2 className="text-white text-2xl font-extrabold leading-tight mb-2">
+          <p className="text-white/80 text-label-md mb-2">{COMPOUND.name}</p>
+          <h2 className="text-display-lg text-white leading-tight mb-2">
             {t('discover.prospect.heroTitle', { compound: COMPOUND.name })}
           </h2>
-          <p className="text-white/85 text-sm mb-5 line-clamp-2">
+          <p className="text-white/85 text-body-md mb-5 line-clamp-2">
             {t('discover.prospect.heroSub')}
           </p>
           <div className="flex flex-row gap-2">
+            {/* Rule 3 (sacred dark CTA): primary lands on ink-950 over the
+                hero photo; secondary is the translucent glass pill. Both
+                are rounded-full per pill convention. */}
             <button
               type="button"
               onClick={() => navigate('/discover/tour')}
-              className="flex-1 bg-white text-ink-900 rounded-2xl py-3 px-3 text-sm font-semibold shadow-lg shadow-ink-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-smooth"
+              className="flex-1 bg-ink-950 text-white rounded-full py-3 px-4 text-body-md font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-base ease-smooth"
             >
               {t('discover.prospect.cta.tour')}
             </button>
             <button
               type="button"
               onClick={() => navigate('/discover/book')}
-              className="flex-1 bg-white/15 backdrop-blur-md text-white border border-white/50 rounded-2xl py-3 px-3 text-sm font-semibold shadow-lg shadow-ink-900/10 hover:bg-white/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-smooth"
+              className="flex-1 bg-white/15 backdrop-blur-md text-white border border-white/50 rounded-full py-3 px-4 text-body-md font-bold hover:bg-white/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-base ease-smooth"
             >
               {t('discover.prospect.cta.book')}
             </button>
@@ -128,10 +129,11 @@ function ProspectView() {
         ))}
       </div>
 
+      {/* Bottom-of-page sign-in nudge — Rule 3 dark pill, full width. */}
       <button
         type="button"
         onClick={() => navigate('/sign-in')}
-        className="mt-5 w-full bg-brand-500 rounded-2xl py-3 flex items-center justify-center text-white font-semibold"
+        className="mt-5 w-full bg-ink-950 dark:bg-white text-white dark:text-ink-950 rounded-full py-3 flex items-center justify-center text-body-md font-bold shadow-md hover:shadow-lg active:scale-[0.98] transition-all duration-base ease-smooth"
       >
         {t('discover.prospect.cta.signInPrompt')}
       </button>
@@ -147,14 +149,14 @@ function ResidentView() {
 
   return (
     <>
-      <Gradient from="#06B6D4" to="#7C3AED" radius={24} style={{ marginBottom: 20 }}>
-        <div className="p-6">
-          <h2 className="text-white text-2xl font-extrabold leading-tight mb-2">
-            {t('discover.resident.heroTitle')}
-          </h2>
-          <p className="text-white/85 text-sm line-clamp-2">{t('discover.resident.heroSub')}</p>
-        </div>
-      </Gradient>
+      {/* Resident hero — Rule 3 sacred dark surface. Replaces the legacy
+          brand/violet duotone with a single ink-950 block. The ONE accent
+          on this screen lives in the tonight event cards (their gradients
+          are existing data-driven art directed previously). */}
+      <div className="rounded-3xl bg-ink-950 dark:bg-white text-white dark:text-ink-950 mb-5 p-6 shadow-md">
+        <h2 className="text-display-lg leading-tight mb-2">{t('discover.resident.heroTitle')}</h2>
+        <p className="text-body-md opacity-80 line-clamp-2">{t('discover.resident.heroSub')}</p>
+      </div>
 
       <SectionTitle>{t('discover.resident.tonightTitle')}</SectionTitle>
       <div className="space-y-2">
@@ -167,20 +169,20 @@ function ResidentView() {
       <button
         type="button"
         onClick={() => navigate('/services')}
-        className="w-full text-left flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700"
+        className="w-full text-left flex flex-row items-center bg-white dark:bg-ink-700 rounded-3xl p-4 border border-sand-200/60 dark:border-ink-700 shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-base ease-smooth"
       >
-        <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center me-3 flex-shrink-0 text-amber-600">
+        <div className="w-11 h-11 rounded-2xl bg-accent-50 dark:bg-accent-700/30 flex items-center justify-center me-3 flex-shrink-0 text-accent-700 dark:text-accent-300">
           <ArrowRight size={18} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">
+          <p className="text-body-md font-bold text-ink-950 dark:text-white truncate">
             {t('discover.resident.marketplaceRow')}
           </p>
-          <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">
+          <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
             {t('discover.resident.marketplaceSub')}
           </p>
         </div>
-        <ArrowRight color="#94A3B8" size={16} className="rtl:rotate-180" />
+        <ArrowRight className="text-ink-300 rtl:rotate-180" size={16} />
       </button>
     </>
   );
@@ -189,11 +191,9 @@ function ResidentView() {
 // ─── Pieces ──────────────────────────────────────────────────────────────────
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h4 className="text-[11px] font-bold uppercase tracking-widest text-ink-400 mt-4 mb-2">
-      {children}
-    </h4>
-  );
+  // Section titles read as proper headings now — restraint over uppercase
+  // micro-tracker. Heading-lg lands at 18/24/600, ink-950.
+  return <h4 className="text-heading-lg text-ink-950 dark:text-white mt-5 mb-2">{children}</h4>;
 }
 
 function ExploreRow({ title, sub, onClick }: { title: string; sub: string; onClick: () => void }) {
@@ -201,13 +201,15 @@ function ExploreRow({ title, sub, onClick }: { title: string; sub: string; onCli
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 mb-2 border border-ink-100 dark:border-ink-700 hover:border-brand-400 transition-colors"
+      className="w-full text-left flex flex-row items-center bg-white dark:bg-ink-700 rounded-3xl p-4 mb-2 border border-sand-200/60 dark:border-ink-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-base ease-smooth"
     >
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">{title}</p>
-        <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">{sub}</p>
+        <p className="text-body-md font-bold text-ink-950 dark:text-white truncate">{title}</p>
+        <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
+          {sub}
+        </p>
       </div>
-      <ArrowRight color="#94A3B8" size={16} className="rtl:rotate-180" />
+      <ArrowRight className="text-ink-300 rtl:rotate-180" size={16} />
     </button>
   );
 }
@@ -225,21 +227,38 @@ function TourCarousel({ stops }: { stops: TourStop[] }) {
             key={stop.id}
             type="button"
             onClick={() => setTourStopIndex(i)}
+            aria-pressed={active ? 'true' : 'false'}
             className={[
-              'snap-start flex-shrink-0 w-40 rounded-2xl border p-4 text-left transition-all',
+              'snap-start flex-shrink-0 w-40 rounded-3xl border p-4 text-left transition-all duration-base ease-smooth shadow-sm',
               active
-                ? 'bg-brand-50 dark:bg-brand-700/30 border-brand-500'
-                : 'bg-white dark:bg-ink-700 border-ink-100 dark:border-ink-700',
+                ? // Rule 3: selected stop reads as the current action — ink-950
+                  'bg-ink-950 dark:bg-white text-white dark:text-ink-950 border-ink-950 dark:border-white shadow-md'
+                : 'bg-white dark:bg-ink-700 border-sand-200/60 dark:border-ink-700 hover:shadow-md',
             ].join(' ')}
           >
             <IconBadge Icon={stop.icon} active={active} />
-            <p className="mt-3 text-sm font-semibold text-ink-900 dark:text-white truncate">
+            <p
+              className={[
+                'mt-3 text-body-md font-bold truncate',
+                active ? 'text-white dark:text-ink-950' : 'text-ink-950 dark:text-white',
+              ].join(' ')}
+            >
               {t(stop.titleKey)}
             </p>
-            <p className="text-[11px] text-ink-500 dark:text-ink-100 line-clamp-2 mt-0.5">
+            <p
+              className={[
+                'text-label-sm normal-case tracking-normal font-normal line-clamp-2 mt-0.5',
+                active ? 'text-white/75 dark:text-ink-950/70' : 'text-ink-500 dark:text-ink-100',
+              ].join(' ')}
+            >
               {t(stop.subKey)}
             </p>
-            <p className="mt-2 text-[10px] font-semibold text-brand-600 dark:text-brand-400">
+            <p
+              className={[
+                'mt-2 text-label-sm',
+                active ? 'text-accent-300' : 'text-ink-500 dark:text-ink-100',
+              ].join(' ')}
+            >
               {t('discover.prospect.stopMin', { count: stop.durationMin })}
             </p>
           </button>
@@ -253,8 +272,10 @@ function IconBadge({ Icon, active }: { Icon: LucideIcon; active: boolean }) {
   return (
     <div
       className={[
-        'w-9 h-9 rounded-xl flex items-center justify-center',
-        active ? 'bg-brand-500 text-white' : 'bg-ink-100 dark:bg-ink-900 text-ink-500',
+        'w-10 h-10 rounded-2xl flex items-center justify-center',
+        active
+          ? 'bg-white/15 dark:bg-ink-950/10 text-white dark:text-ink-950'
+          : 'bg-sand-100 dark:bg-ink-900 text-ink-500',
       ].join(' ')}
     >
       <Icon size={18} />
@@ -265,15 +286,19 @@ function IconBadge({ Icon, active }: { Icon: LucideIcon; active: boolean }) {
 function EventCard({ event }: { event: TonightEvent }) {
   const { t } = useTranslation();
   const { icon: Icon } = event;
+  // Existing data-driven gradient art retained per art direction — this
+  // is the screen's ONE accent slot. Curve upgraded to rounded-3xl.
   return (
-    <Gradient from={event.gradient.from} to={event.gradient.to} radius={18}>
+    <Gradient from={event.gradient.from} to={event.gradient.to} radius={24}>
       <div className="p-4 flex flex-row items-center">
-        <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center me-3 flex-shrink-0">
+        <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center me-3 flex-shrink-0">
           <Icon color="#fff" size={20} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-bold truncate">{t(event.titleKey)}</p>
-          <p className="text-white/85 text-[11px] truncate">{t(event.subKey)}</p>
+          <p className="text-white text-body-md font-bold truncate">{t(event.titleKey)}</p>
+          <p className="text-white/85 text-label-sm normal-case tracking-normal font-normal truncate">
+            {t(event.subKey)}
+          </p>
         </div>
       </div>
     </Gradient>
@@ -285,20 +310,23 @@ function OtherProjectRow({ project }: { project: OtherProject }) {
   const navigate = useNavigate();
   const { icon: Icon } = project;
   return (
-    <div className="flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700">
-      <div className="w-10 h-10 rounded-2xl bg-ink-100 dark:bg-ink-900 flex items-center justify-center me-3 flex-shrink-0 text-ink-500">
+    <div className="flex flex-row items-center bg-white dark:bg-ink-700 rounded-3xl p-4 border border-sand-200/60 dark:border-ink-700 shadow-sm">
+      <div className="w-11 h-11 rounded-2xl bg-sand-100 dark:bg-ink-900 flex items-center justify-center me-3 flex-shrink-0 text-ink-500">
         <Icon size={18} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">
+        <p className="text-body-md font-bold text-ink-950 dark:text-white truncate">
           {t(project.titleKey)}
         </p>
-        <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">{t(project.subKey)}</p>
+        <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
+          {t(project.subKey)}
+        </p>
       </div>
+      {/* EOI chip — small ink-950 pill per Rule 3, no brand violet. */}
       <button
         type="button"
         onClick={() => navigate('/discover/eoi')}
-        className="text-[11px] font-semibold text-brand-600 dark:text-brand-400"
+        className="text-label-sm normal-case tracking-normal font-bold bg-ink-950 dark:bg-white text-white dark:text-ink-950 rounded-full px-3 py-1.5 hover:scale-[1.03] active:scale-[0.97] transition-transform duration-fast ease-smooth"
       >
         {t('discover.prospect.eoiCta')}
       </button>

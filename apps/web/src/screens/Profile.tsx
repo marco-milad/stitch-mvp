@@ -223,7 +223,7 @@ export function Profile() {
                   onChange={(e) => setDark(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-ink-100 dark:bg-ink-900 peer-checked:bg-brand-500 rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5" />
+                <div className="w-11 h-6 bg-sand-200 dark:bg-ink-900 peer-checked:bg-ink-950 rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5" />
               </label>
             ),
           },
@@ -267,33 +267,42 @@ export function Profile() {
       <TopBar title={t('profile.title')} unreadCount={unreadCount} />
 
       <div className="pb-6">
-        {/* Identity card */}
-        <div className="mx-4 mt-3 p-5 bg-white dark:bg-ink-700 rounded-2xl border border-ink-100 dark:border-ink-700">
+        {/* Identity card — Rule 2 (curve hierarchy): panel-tier rounded-3xl.
+            Avatar adopts the sacred ink-950 surface (Rule 3); the Owner
+            badge becomes the screen's ONE accent slot (accent-300/ink-950)
+            instead of the legacy violet pill. */}
+        <div className="mx-4 mt-3 p-5 bg-white dark:bg-ink-700 rounded-3xl border border-sand-200/60 dark:border-ink-700 shadow-sm">
           <div className="flex flex-row items-center">
-            <div className="w-16 h-16 rounded-full bg-brand-500 flex items-center justify-center mr-4 flex-shrink-0">
-              <span className="text-white text-xl font-bold">{initials || 'S'}</span>
+            <div className="w-16 h-16 rounded-full bg-ink-950 dark:bg-white flex items-center justify-center mr-4 flex-shrink-0 shadow-md">
+              <span className="text-white dark:text-ink-950 text-display-md">
+                {initials || 'S'}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold text-ink-900 dark:text-white truncate">
+              <p className="text-heading-lg text-ink-950 dark:text-white truncate">
                 {firstName} {lastName}
               </p>
-              {email && <p className="text-xs text-ink-500 dark:text-ink-100 truncate">{email}</p>}
-              <div className="flex flex-row items-center mt-1.5">
-                <span className="bg-violet-100 dark:bg-violet-900/40 px-2 py-0.5 rounded-full text-[10px] font-semibold text-violet-700 dark:text-violet-300 mr-2">
+              {email && (
+                <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
+                  {email}
+                </p>
+              )}
+              <div className="flex flex-row items-center mt-1.5 gap-2">
+                <span className="bg-accent-300 text-ink-950 px-2 py-0.5 rounded-full text-label-sm normal-case tracking-normal font-bold">
                   Owner
                 </span>
-                <span className="text-[11px] text-ink-500 dark:text-ink-100 truncate">
+                <span className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
                   {MOCK_UNIT.name} · {MOCK_UNIT.project}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-row mt-5 pt-4 border-t border-white/40 dark:border-white/10">
+          <div className="flex flex-row mt-5 pt-4 border-t border-sand-200/80 dark:border-white/10">
             <Stat label="Requests" value={MOCK_STATS.requests} />
-            <div className="w-px bg-white/40 dark:bg-white/10" />
+            <div className="w-px bg-sand-200/80 dark:bg-white/10" />
             <Stat label="Active" value={MOCK_STATS.active} />
-            <div className="w-px bg-white/40 dark:bg-white/10" />
+            <div className="w-px bg-sand-200/80 dark:bg-white/10" />
             <Stat label="Points" value={MOCK_STATS.points} />
           </div>
         </div>
@@ -304,12 +313,10 @@ export function Profile() {
           totalCount={completionStats.total}
         />
 
-        <div className="px-4 pt-2 pb-1">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-400">
-            Recent activity
-          </h3>
+        <div className="px-4 pt-3 pb-2">
+          <h3 className="text-heading-lg text-ink-950 dark:text-white">Recent activity</h3>
         </div>
-        <div className="mx-4 mb-4 bg-white dark:bg-ink-700 rounded-2xl overflow-hidden border border-ink-100 dark:border-ink-700">
+        <div className="mx-4 mb-4 bg-white dark:bg-ink-700 rounded-3xl overflow-hidden border border-sand-200/60 dark:border-ink-700 shadow-sm">
           {PROFILE_ACTIVITY.map((a, i) => {
             const tone = ACTIVITY_TONE[a.tone];
             const Icon = a.icon;
@@ -318,21 +325,23 @@ export function Profile() {
                 key={a.id}
                 className={`flex flex-row items-center px-4 py-3 ${
                   i < PROFILE_ACTIVITY.length - 1
-                    ? 'border-b border-ink-100 dark:border-ink-700'
+                    ? 'border-b border-sand-200/60 dark:border-ink-700'
                     : ''
                 }`}
               >
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center mr-3 flex-shrink-0"
                   style={{ backgroundColor: tone.bg }}
                 >
                   <Icon color={tone.fg} size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink-900 dark:text-white truncate">
+                  <p className="text-body-md font-bold text-ink-950 dark:text-white truncate">
                     {a.title}
                   </p>
-                  <p className="text-[11px] text-ink-500 dark:text-ink-100">{a.when}</p>
+                  <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100">
+                    {a.when}
+                  </p>
                 </div>
               </div>
             );
@@ -341,17 +350,15 @@ export function Profile() {
 
         {sections.map((sec) => (
           <div key={sec.title}>
-            <div className="px-4 pt-2 pb-1">
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-400">
-                {sec.title}
-              </h3>
+            <div className="px-4 pt-3 pb-2">
+              <h3 className="text-heading-lg text-ink-950 dark:text-white">{sec.title}</h3>
             </div>
-            <div className="mx-4 mb-3 bg-white dark:bg-ink-700 rounded-2xl overflow-hidden border border-ink-100 dark:border-ink-700">
+            <div className="mx-4 mb-3 bg-white dark:bg-ink-700 rounded-3xl overflow-hidden border border-sand-200/60 dark:border-ink-700 shadow-sm">
               {sec.rows.map((row, i) => (
                 <div
                   key={row.key}
                   className={
-                    i < sec.rows.length - 1 ? 'border-b border-ink-100 dark:border-ink-700' : ''
+                    i < sec.rows.length - 1 ? 'border-b border-sand-200/60 dark:border-ink-700' : ''
                   }
                 >
                   <ProfileRow
@@ -374,10 +381,10 @@ export function Profile() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex-1 flex flex-col items-center">
-      <span className="text-xl font-bold text-ink-900 dark:text-white tabular-nums">
+      <span className="text-display-md text-ink-950 dark:text-white tabular-nums font-tabular">
         <AnimatedCount value={value} />
       </span>
-      <span className="text-[11px] text-ink-500 dark:text-ink-100 mt-0.5">{label}</span>
+      <span className="text-label-md text-ink-500 dark:text-ink-100 mt-0.5">{label}</span>
     </div>
   );
 }

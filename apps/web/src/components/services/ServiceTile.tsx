@@ -50,8 +50,8 @@ function ServiceTileImpl({ tile, highlight, onClick }: Props) {
       ref={tilt.ref}
       onMouseMove={tilt.onMouseMove}
       onMouseLeave={tilt.onMouseLeave}
-      className="group relative flex-1 m-1.5 bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left tilt-surface overflow-hidden hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
-      style={{ ...tilt.style, minHeight: 130 }}
+      className="group relative flex-1 m-1.5 bg-white dark:bg-ink-700 rounded-3xl p-4 border border-sand-200/60 dark:border-ink-700 shadow-sm text-left tilt-surface overflow-hidden hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 transition-all duration-base ease-smooth"
+      style={{ ...tilt.style, minHeight: 132 }}
     >
       {/* Cursor-tracking specular highlight */}
       <span
@@ -74,16 +74,16 @@ function ServiceTileImpl({ tile, highlight, onClick }: Props) {
       </button>
 
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+        className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
         style={{ backgroundColor: bg }}
       >
         <Icon color={fg} size={20} />
       </div>
 
-      <p className="text-sm font-semibold text-ink-900 dark:text-white mb-0.5 truncate">
+      <p className="text-body-md font-bold text-ink-950 dark:text-white mb-0.5 truncate">
         {segments.map((seg, i) =>
           seg.match ? (
-            <span key={i} style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+            <span key={i} className="bg-accent-300 text-ink-950 rounded px-0.5">
               {seg.text}
             </span>
           ) : (
@@ -91,7 +91,9 @@ function ServiceTileImpl({ tile, highlight, onClick }: Props) {
           ),
         )}
       </p>
-      <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">{tile.sub}</p>
+      <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
+        {tile.sub}
+      </p>
     </button>
   );
 }

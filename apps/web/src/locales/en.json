@@ -799,6 +799,9 @@
         "body": "{{provider}} will confirm within {{min}} minutes. You can track it any time from the requests screen.",
         "viewRequests": "View my requests",
         "backToServices": "Back to Services"
+      },
+      "errors": {
+        "submit": "Could not submit your booking. Please check your connection and try again."
       }
     },
     "compoundMap": {
@@ -1393,5 +1396,28 @@
     "switchToSignUp": "New here? Create an account",
     "switchToSignIn": "Already have an account? Sign in",
     "skipForNow": "Continue as guest"
+  },
+  "otel": {
+    "title": "My OTEL",
+    "back": "Back to Services",
+    "hero": {
+      "title": "Plan your next escape",
+      "subtitle": "Stitch partners with hand-picked resorts across Egypt — resident-only rates apply."
+    },
+    "deals": {
+      "title": "Featured partner deals"
+    }
+  },
+  "hotline": {
+    "title": "Hotline",
+    "back": "Back to Services",
+    "lines": {
+      "security": {
+        "label": "Security · Front gate"
+      },
+      "maintenance": {
+        "label": "Maintenance · 24/7"
+      }
+    }
   }
 }

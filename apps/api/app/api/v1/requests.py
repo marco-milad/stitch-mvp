@@ -32,7 +32,8 @@ from app.schemas.requests import (
     ServiceRequest,
     ServiceRequestsList,
 )
-from app.services import requests_hub
+from app.schemas.service_bookings import ServiceBookingsList
+from app.services import requests_hub, service_bookings_hub
 
 router = APIRouter()
 
@@ -129,3 +130,38 @@ async def _receiver(websocket: WebSocket) -> None:
                 await websocket.send_text(json.dumps({"type": "pong"}))
     except WebSocketDisconnect:
         return
+
+
+# ─── Service Bookings (admin view) ─────────────────────────────────────────
+#
+# Admin counterpart for `/me/service-bookings`. Same envelope shape as
+# `/admin/requests/stream` so the dashboard can subscribe with the same
+# reconnecting-WS helper. No technician roster — service bookings flow
+# straight to the vendor, not through internal dispatch.
+
+
+@router.get("/admin/service-bookings", response_model=ServiceBookingsList)
+async def list_admin_service_bookings(session: DbSession) -> ServiceBookingsList:
+    items = await service_bookings_hub.list_bookings(session)
+    return ServiceBookingsList(items=items)
+
+
+@router.websocket("/admin/service-bookings/stream")
+async def admin_service_bookings_stream(websocket: WebSocket) -> None:
+    await websocket.accept()
+    logger.info("service_bookings.ws.connected", peer=str(websocket.client))
+
+    async with AsyncSessionLocal() as session:
+        items = [b.model_dump() for b in await service_bookings_hub.list_bookings(session)]
+    await websocket.send_text(json.dumps({"type": "snapshot", "items": items}))
+
+    async with service_bookings_hub.subscribe() as queue:
+        sender = asyncio.create_task(_sender(websocket, queue))
+        receiver = asyncio.create_task(_receiver(websocket))
+        _, pending = await asyncio.wait({sender, receiver}, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+    logger.info("service_bookings.ws.disconnected", peer=str(websocket.client))

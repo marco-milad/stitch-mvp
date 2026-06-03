@@ -36,6 +36,8 @@ import { ProfileFamilyInvite } from '@/screens/ProfileFamilyInvite';
 import { ServiceBook } from '@/screens/ServiceBook';
 import { ServiceCategory } from '@/screens/ServiceCategory';
 import { ServiceCompoundMap } from '@/screens/ServiceCompoundMap';
+import { ServiceHotline } from '@/screens/ServiceHotline';
+import { ServiceOtel } from '@/screens/ServiceOtel';
 import { ServiceParking } from '@/screens/ServiceParking';
 import { ServiceProvider } from '@/screens/ServiceProvider';
 import { ServiceSmartHome } from '@/screens/ServiceSmartHome';
@@ -155,6 +157,22 @@ export function App() {
                     element={
                       <RequireTenant surfaceKey="access.surfaces.wellness">
                         <WellnessHub />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/hotline"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.services">
+                        <ServiceHotline />
+                      </RequireTenant>
+                    }
+                  />
+                  <Route
+                    path="/services/otel"
+                    element={
+                      <RequireTenant surfaceKey="access.surfaces.services">
+                        <ServiceOtel />
                       </RequireTenant>
                     }
                   />

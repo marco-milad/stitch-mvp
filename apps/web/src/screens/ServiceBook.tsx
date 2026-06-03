@@ -15,6 +15,7 @@ import {
   type ProviderOffering,
   type ServiceProvider,
 } from '@/lib/mock/serviceProviders';
+import { createMyServiceBooking, createMyTicket, type TicketCategory } from '@/lib/residentApi';
 import {
   serviceBookingFormSchema,
   type ServiceBookingFormInput,
@@ -61,24 +62,76 @@ export function ServiceBook() {
   const dateIso = watch('dateIso');
   const selectedDate = dateIso ? fromDateIso(dateIso) : null;
 
+  // Architectural option A: Home Services (Pest · Plumbing · Repair)
+  // semantically maps onto the existing maintenance-ticket pipeline so
+  // it reuses the admin dispatch board + technician roster. Every other
+  // bookable tile lands in the dedicated `/me/service-bookings`
+  // endpoint that broadcasts to the admin service-bookings dashboard.
+  const isMaintenanceTile = tile.id === 'daily-home';
+
   const onSubmit = async (data: ServiceBookingFormInput) => {
-    await new Promise((r) => setTimeout(r, 350));
-    const id =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `req-${Date.now()}`;
-    addRequest({
-      ...data,
-      id,
-      tileId: tile.id,
-      providerId: provider.id,
-      offeringKey: offering.key,
-      propertyId: property.id,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    });
-    reset();
-    setSubmitted(true);
+    try {
+      if (isMaintenanceTile) {
+        // Map the offering key onto a maintenance category — `pest` is
+        // its own key; everything else is plumbing/electrical/general.
+        const category: TicketCategory =
+          offering.key === 'pest'
+            ? 'pest'
+            : offering.key === 'plumbing'
+              ? 'plumbing'
+              : offering.key === 'electrical'
+                ? 'electrical'
+                : 'other';
+        const ticket = await createMyTicket({
+          category,
+          title: t(offeringLabelKey(tile.id, offering.key)),
+          description:
+            (data.notes ? `${data.notes}\n\n` : '') +
+            `Scheduled: ${data.dateIso} ${data.timeSlot} · provider ${provider.name}`,
+          urgency: 'routine',
+        });
+        // Optimistic mirror in the local store so the resident's "My
+        // Requests" pane on Services lights up immediately. The
+        // authoritative copy is the WS-fed TanStack Query cache.
+        addRequest({
+          ...data,
+          id: ticket.id,
+          tileId: tile.id,
+          providerId: provider.id,
+          offeringKey: offering.key,
+          propertyId: property.id,
+          status: 'pending',
+          createdAt: ticket.openedAt,
+        });
+      } else {
+        const booking = await createMyServiceBooking({
+          tileId: tile.id,
+          providerId: provider.id,
+          offeringKey: offering.key,
+          dateIso: data.dateIso,
+          timeSlot: data.timeSlot,
+          notes: data.notes,
+        });
+        addRequest({
+          ...data,
+          id: booking.id,
+          tileId: tile.id,
+          providerId: provider.id,
+          offeringKey: offering.key,
+          propertyId: property.id,
+          status: 'pending',
+          createdAt: booking.createdAt,
+        });
+      }
+      reset();
+      setSubmitted(true);
+    } catch (err) {
+      // Surface a minimal error UI without blocking the user from
+      // re-trying. Network errors land here too — better to let the
+      // resident retry than silently swallow + persist a phantom row.
+      console.error('[ServiceBook] submission failed:', err);
+      window.alert(t('services.book.errors.submit'));
+    }
   };
 
   if (submitted) {

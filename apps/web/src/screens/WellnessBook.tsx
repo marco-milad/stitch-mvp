@@ -14,6 +14,7 @@ import {
   type WellnessFacility,
   type WellnessSession,
 } from '@/lib/mock/wellness';
+import { createMyServiceBooking } from '@/lib/residentApi';
 import {
   serviceBookingFormSchema,
   type ServiceBookingFormInput,
@@ -55,23 +56,33 @@ export function WellnessBook() {
   }
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
-    await new Promise((r) => setTimeout(r, 350));
-    const id =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `req-${Date.now()}`;
-    addRequest({
-      ...data,
-      id,
-      tileId: facility.bookingTileId,
-      providerId: `wellness-${facility.id}`,
-      offeringKey: session.id,
-      propertyId: property.id,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    });
-    reset();
-    setSubmitted(true);
+    try {
+      const booking = await createMyServiceBooking({
+        tileId: facility.bookingTileId,
+        providerId: `wellness-${facility.id}`,
+        offeringKey: session.id,
+        dateIso: data.dateIso,
+        timeSlot: data.timeSlot,
+        notes: data.notes,
+      });
+      // Optimistic mirror so the resident's local requests pane lights
+      // up immediately. The WS stream is the authoritative source.
+      addRequest({
+        ...data,
+        id: booking.id,
+        tileId: facility.bookingTileId,
+        providerId: `wellness-${facility.id}`,
+        offeringKey: session.id,
+        propertyId: property.id,
+        status: 'pending',
+        createdAt: booking.createdAt,
+      });
+      reset();
+      setSubmitted(true);
+    } catch (err) {
+      console.error('[WellnessBook] submission failed:', err);
+      window.alert(t('services.book.errors.submit'));
+    }
   };
 
   if (submitted) {

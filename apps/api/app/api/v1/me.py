@@ -39,6 +39,11 @@ from app.schemas.parking import (
     ParkingSlotsList,
 )
 from app.schemas.requests import RequestCreateInput, ServiceRequest
+from app.schemas.service_bookings import (
+    ServiceBooking,
+    ServiceBookingCreateInput,
+    ServiceBookingsList,
+)
 from app.schemas.visitor_pass import (
     VisitorPass,
     VisitorPassCreate,
@@ -48,6 +53,7 @@ from app.services import (
     notifications_hub,
     parking_hub,
     requests_hub,
+    service_bookings_hub,
     visitor_passes_hub,
 )
 
@@ -313,6 +319,92 @@ async def _receiver(websocket: WebSocket) -> None:
                 await websocket.send_text(json.dumps({"type": "pong"}))
     except WebSocketDisconnect:
         return
+
+
+# ─── Service bookings (Cleaning, Laundry, Wellness, etc.) ──────────────────
+#
+# Distinct from the maintenance-ticket pipeline above. Home Services
+# (tile `daily-home`) deliberately routes through `/me/requests` instead
+# so it shares the admin dispatch board with technician assignment —
+# this endpoint serves the other six daily-* tiles plus wellness.
+
+
+@router.get("/me/service-bookings", response_model=ServiceBookingsList)
+async def list_my_service_bookings(user: CurrentUser, session: DbSession) -> ServiceBookingsList:
+    items = await service_bookings_hub.list_bookings(session, user_id=user.db_user_id)
+    return ServiceBookingsList(items=items)
+
+
+@router.post(
+    "/me/service-bookings",
+    response_model=ServiceBooking,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_my_service_booking(
+    payload: ServiceBookingCreateInput,
+    user: CurrentUser,
+    session: DbSession,
+) -> ServiceBooking:
+    unit_id = await requests_hub.primary_unit_id_for(session, user.db_user_id)
+    return await service_bookings_hub.create_booking(
+        session,
+        user_id=user.db_user_id,
+        unit_id=unit_id,
+        payload=payload,
+    )
+
+
+@router.websocket("/me/service-bookings/stream")
+async def my_service_bookings_stream(websocket: WebSocket) -> None:
+    """Resident-scoped push channel — same envelope shape as
+    `/me/requests/stream`. Snapshot on connect carries this resident's
+    bookings only; subsequent `booking.updated` events arrive for ALL
+    bookings and are filtered by residentName here (matches the
+    existing maintenance pipeline's pragmatic approach)."""
+    await websocket.accept()
+    user = await get_current_user_ws(websocket)
+    if user is None:
+        return
+    me_name = _display_name(user)
+    logger.info("me.service_bookings.ws.connected", peer=str(websocket.client))
+
+    async with AsyncSessionLocal() as session:
+        items = await service_bookings_hub.list_bookings(session, user_id=user.db_user_id)
+    my_items = [b.model_dump() for b in items]
+    await websocket.send_text(json.dumps({"type": "snapshot", "items": my_items}))
+
+    async with service_bookings_hub.subscribe() as queue:
+        sender = asyncio.create_task(_service_bookings_sender(websocket, queue, me_name))
+        receiver = asyncio.create_task(_receiver(websocket))
+        _, pending = await asyncio.wait({sender, receiver}, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+    logger.info("me.service_bookings.ws.disconnected", peer=str(websocket.client))
+
+
+def _booking_is_for_me(msg: dict[str, Any], me_name: str) -> bool:
+    item = msg.get("item")
+    if not isinstance(item, dict):
+        return True
+    return item.get("residentName") == me_name
+
+
+async def _service_bookings_sender(
+    websocket: WebSocket, queue: asyncio.Queue[dict[str, Any]], me_name: str
+) -> None:
+    try:
+        while True:
+            msg = await queue.get()
+            if not _booking_is_for_me(msg, me_name):
+                continue
+            await websocket.send_text(json.dumps(msg))
+    except WebSocketDisconnect:
+        return
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("me.service_bookings.ws.send_error", error=str(exc))
 
 
 # ─── Notifications ─────────────────────────────────────────────────────────

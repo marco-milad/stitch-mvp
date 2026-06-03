@@ -76,6 +76,46 @@ class Guest(UuidPk, CreatedAt, Base):
     qr_token: Mapped[str | None] = mapped_column(String, unique=True, nullable=True)
 
 
+class ServiceBooking(UuidPk, Timestamps, Base):
+    """Resident-booked daily-tile service request — Cleaning, Laundry,
+    Delivery, Pet, Gardening, Security Guard, Wellness sessions, etc.
+
+    Distinct from `MaintenanceRequest` because the lifecycle is different:
+    maintenance tickets go through the admin dispatch board with a
+    technician roster; service bookings are date+slot scheduled vendor
+    requests that flip pending → confirmed → in_progress → completed
+    (or cancelled).
+
+    Wire-format projections live in `app.schemas.service_bookings`;
+    live fan-out + persistence in `app.services.service_bookings_hub`.
+    Note: `daily-home` (Home Services) intentionally routes through the
+    maintenance ticket pipeline instead, so it never lands here.
+    """
+
+    __tablename__ = "service_bookings"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
+    )
+    unit_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("units.id"), nullable=True
+    )
+    # Logical service identifier (e.g. `daily-cleaning`, `daily-pet`,
+    # `wellness-spa`). Kept as a free string so adding a new tile doesn't
+    # require a backend deploy.
+    tile_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    provider_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    offering_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    # Scheduling — date (calendar day) + slot (HH:MM). Stored as ISO
+    # strings to match the frontend wire shape exactly; we don't do any
+    # back-end date math on these for the demo, so DATE/TIME types would
+    # only add format-coercion friction.
+    date_iso: Mapped[str] = mapped_column(String(10), nullable=False)
+    time_slot: Mapped[str] = mapped_column(String(5), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+
+
 class QrLog(UuidPk, Base):
     __tablename__ = "qr_logs"
 

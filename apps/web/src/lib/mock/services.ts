@@ -80,6 +80,9 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Pools · Gyms · Workspaces',
     icon: Waves,
     tone: 'teal',
+    // Routes directly into the premium amenities hub instead of the
+    // generic ServiceCategory infoOnly dead-end.
+    to: '/amenities',
     keywords: 'pool gym tennis clubhouse co-working booking facility مسبح جيم',
   },
   {
@@ -169,6 +172,8 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Security · Maintenance',
     icon: Phone,
     tone: 'red',
+    // Dedicated screen with tap-to-call rows — no more infoOnly dead-end.
+    to: '/services/hotline',
     keywords: 'security maintenance emergency call ivr أمن طوارئ مكالمة',
   },
   {
@@ -178,6 +183,8 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Resort booking',
     icon: Building2,
     tone: 'green',
+    // Routes into the partner-deal hub that hosts OtelBookingButton.
+    to: '/services/otel',
     keywords: 'otel hotel resort vacation stay فندق منتجع إجازة',
   },
   {

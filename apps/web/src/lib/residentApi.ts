@@ -285,6 +285,74 @@ export async function listTechnicianRoster(): Promise<TicketTechnician[]> {
   return data.technicians;
 }
 
+// ─── Service bookings (Cleaning, Laundry, Wellness, etc.) ────────────────
+//
+// Distinct from the maintenance ticket pipeline. Home Services (tile
+// `daily-home`) deliberately routes through `createMyTicket()` instead,
+// so it shares the admin dispatch board. Everything else (the other six
+// daily-* bookable tiles + wellness) lands here.
+
+export type ServiceBookingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
+
+export interface ServiceBooking {
+  id: string;
+  residentName: string;
+  unit: string;
+  tileId: string;
+  providerId: string;
+  offeringKey: string;
+  dateIso: string;
+  timeSlot: string;
+  notes: string | null;
+  status: ServiceBookingStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServiceBookingCreateInput {
+  tileId: string;
+  providerId: string;
+  offeringKey: string;
+  dateIso: string;
+  timeSlot: string;
+  notes?: string;
+}
+
+export async function listMyServiceBookings(): Promise<ServiceBooking[]> {
+  const data = await http<{ items: ServiceBooking[] }>('/me/service-bookings');
+  return data.items;
+}
+
+export async function createMyServiceBooking(
+  input: ServiceBookingCreateInput,
+): Promise<ServiceBooking> {
+  return http<ServiceBooking>('/me/service-bookings', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export type ServiceBookingsEvent =
+  | { type: 'snapshot'; items: ServiceBooking[] }
+  | { type: 'booking.updated'; item: ServiceBooking }
+  | { type: 'pong' };
+
+export function subscribeMyServiceBookings(
+  onEvent: (event: ServiceBookingsEvent) => void,
+  optsOrStatus?: WsSubscribeOptions | ((connected: boolean) => void),
+): WsSubscription {
+  return openReconnectingWs<ServiceBookingsEvent>(
+    `${WS_BASE}/api/v1/me/service-bookings/stream`,
+    onEvent,
+    normaliseOpts(optsOrStatus),
+  );
+}
+
 // ─── Notifications ─────────────────────────────────────────────────────
 
 export type NotificationKind = 'ticket_created' | 'ticket_dispatched' | 'ticket_resolved';

@@ -22,6 +22,13 @@ export function ServiceCategory() {
 
   const tile = SERVICE_TILES.find((t) => t.id === tileId);
   if (!tile) return <Navigate to="/services" replace />;
+  // Every non-bookable tile now has an explicit `to:` override on the
+  // tile definition (daily-book → /amenities, daily-hotline → /services/
+  // hotline, daily-otel → /services/otel) so landing on this route
+  // without a bookable flag means the URL was hand-typed or the tile
+  // definition drifted. Bounce back to the hub rather than rendering
+  // the legacy "info-only" dead-end.
+  if (!tile.bookable) return <Navigate to="/services" replace />;
 
   const providers = useMemo(() => {
     const list = getProvidersForTile(tileId);
@@ -41,42 +48,27 @@ export function ServiceCategory() {
     <>
       <CategoryHeader tile={tile} onBack={() => navigate('/services')} />
 
-      {tile.bookable ? (
-        <div className="p-4 space-y-3">
-          <SortChips value={sort} onChange={setSort} />
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-400 pt-2">
-            {t('services.category.providersTitle')}
-          </h3>
-          {providers.length === 0 ? (
-            <p className="text-sm text-ink-500 dark:text-ink-100">{t('services.category.empty')}</p>
-          ) : (
-            <div className="space-y-2">
-              {providers.map((p) => (
-                <ProviderRow
-                  key={p.id}
-                  provider={p}
-                  onClick={() => navigate(`/services/${tile.id}/providers/${p.id}`)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="p-4">
-          <div className="bg-white dark:bg-ink-700 rounded-2xl p-4 border border-ink-100 dark:border-ink-700">
-            <p className="text-sm text-ink-700 dark:text-ink-100">
-              {t('services.category.infoOnly')}
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate('/services')}
-              className="mt-4 w-full bg-brand-500 rounded-xl py-2.5 text-white text-sm font-semibold"
-            >
-              {t('services.category.infoAction')}
-            </button>
+      <div className="p-4 space-y-3">
+        <SortChips value={sort} onChange={setSort} />
+        <h3 className="text-heading-lg text-ink-950 dark:text-white pt-2">
+          {t('services.category.providersTitle')}
+        </h3>
+        {providers.length === 0 ? (
+          <p className="text-body-md text-ink-500 dark:text-ink-100">
+            {t('services.category.empty')}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {providers.map((p) => (
+              <ProviderRow
+                key={p.id}
+                provider={p}
+                onClick={() => navigate(`/services/${tile.id}/providers/${p.id}`)}
+              />
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }

@@ -15,7 +15,12 @@ import {
   type ProviderOffering,
   type ServiceProvider,
 } from '@/lib/mock/serviceProviders';
-import { createMyServiceBooking, createMyTicket, type TicketCategory } from '@/lib/residentApi';
+import {
+  AuthRequiredError,
+  createMyServiceBooking,
+  createMyTicket,
+  type TicketCategory,
+} from '@/lib/residentApi';
 import {
   serviceBookingFormSchema,
   type ServiceBookingFormInput,
@@ -126,10 +131,15 @@ export function ServiceBook() {
       reset();
       setSubmitted(true);
     } catch (err) {
-      // Surface a minimal error UI without blocking the user from
-      // re-trying. Network errors land here too — better to let the
-      // resident retry than silently swallow + persist a phantom row.
+      // AuthRequiredError = Clerk session expired / lost. Show a
+      // distinct message + redirect to sign-in so the resident isn't
+      // stuck blaming their connection.
       console.error('[ServiceBook] submission failed:', err);
+      if (err instanceof AuthRequiredError) {
+        window.alert(t('services.book.errors.authExpired'));
+        navigate('/sign-in?redirect=/services');
+        return;
+      }
       window.alert(t('services.book.errors.submit'));
     }
   };

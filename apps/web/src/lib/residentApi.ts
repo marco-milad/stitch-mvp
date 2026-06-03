@@ -41,6 +41,26 @@ export class NetworkError extends Error {
   override name = 'NetworkError';
 }
 
+/** Thrown when we're about to send an authenticated request but the
+ *  Clerk session has no token. Short-circuits BEFORE fetch fires so the
+ *  backend never sees an unauthenticated POST that 401s with "Missing
+ *  Authorization header". Callers can catch this distinctly to prompt
+ *  re-sign-in instead of showing a generic "Could not submit" error. */
+export class AuthRequiredError extends Error {
+  override name = 'AuthRequiredError';
+  constructor(path: string) {
+    super(`No active Clerk session for ${path} — sign in again to continue.`);
+  }
+}
+
+/** Endpoints under `/me/*` always require a signed-in resident. Use this
+ *  to gate the auth guard so anonymous endpoints (none today, but the
+ *  shape is here for when /api/v1/public/* lands) don't get short-
+ *  circuited. */
+function pathRequiresAuth(path: string): boolean {
+  return path.startsWith('/me/');
+}
+
 // ─── Auth token injection ────────────────────────────────────────────────
 //
 // `http()` calls the registered provider before every request and
@@ -78,6 +98,20 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
   const token = await currentAuthToken();
+
+  // Auth guard: don't fire authenticated requests with no bearer token.
+  // The backend would 401 with "Missing Authorization header" and the
+  // resident would just see "Could not submit your booking" with no
+  // useful signal. Throw a typed error so callers can prompt re-auth
+  // instead of treating it as a network/server problem.
+  if (!token && pathRequiresAuth(path)) {
+    clearTimeout(timer);
+    console.warn(
+      `[residentApi] Short-circuiting ${path}: no Clerk token available. Session likely expired.`,
+    );
+    throw new AuthRequiredError(path);
+  }
+
   let res: Response;
   try {
     res = await fetch(`${HTTP_PREFIX}${path}`, {

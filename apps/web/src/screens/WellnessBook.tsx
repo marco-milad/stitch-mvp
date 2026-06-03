@@ -14,7 +14,7 @@ import {
   type WellnessFacility,
   type WellnessSession,
 } from '@/lib/mock/wellness';
-import { createMyServiceBooking } from '@/lib/residentApi';
+import { AuthRequiredError, createMyServiceBooking } from '@/lib/residentApi';
 import {
   serviceBookingFormSchema,
   type ServiceBookingFormInput,
@@ -81,6 +81,11 @@ export function WellnessBook() {
       setSubmitted(true);
     } catch (err) {
       console.error('[WellnessBook] submission failed:', err);
+      if (err instanceof AuthRequiredError) {
+        window.alert(t('services.book.errors.authExpired'));
+        navigate('/sign-in?redirect=/services/wellness');
+        return;
+      }
       window.alert(t('services.book.errors.submit'));
     }
   };

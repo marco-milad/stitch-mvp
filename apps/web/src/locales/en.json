@@ -801,7 +801,8 @@
         "backToServices": "Back to Services"
       },
       "errors": {
-        "submit": "Could not submit your booking. Please check your connection and try again."
+        "submit": "Could not submit your booking. Please check your connection and try again.",
+        "authExpired": "Your session has expired. Please sign in again to confirm this booking."
       }
     },
     "compoundMap": {

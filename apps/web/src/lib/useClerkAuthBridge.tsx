@@ -26,12 +26,32 @@ export function ClerkAuthBridge(): null {
 
     registerAuthTokenProvider(async () => {
       try {
-        // Clerk's getToken caches the JWT and only fetches when it's
-        // within 30s of expiry, so calling it on every request is
-        // cheap. Pass no template arg = the default session token,
-        // which is what the FastAPI backend's PyJWKClient verifies
-        // against.
-        return await getToken();
+        // Two-pass token fetch:
+        //   1. Cached fast path — Clerk normally returns the cached JWT
+        //      and only re-fetches when it's within 30s of expiry, so
+        //      this is the common-case cheap call.
+        //   2. Forced refresh — if the cache returned null OR a token
+        //      that's about to expire, retry with skipCache so the SDK
+        //      hits Clerk's session endpoint and pulls a fresh one. This
+        //      closes a race where the cached token expires between
+        //      getToken() resolving and the fetch() actually firing, and
+        //      eliminates the "Missing Authorization header" 401 path on
+        //      the FastAPI side.
+        // Default session token is what the backend's PyJWKClient
+        // verifies against; no template arg.
+        let token = await getToken();
+        if (!token) {
+          token = await getToken({ skipCache: true });
+        }
+        if (!token) {
+          // Genuine session loss — not a cache hiccup. Surface clearly
+          // so the http() helper can short-circuit instead of firing an
+          // unauthenticated request that the backend will 401.
+          console.warn(
+            '[ClerkAuthBridge] getToken returned null even after skipCache — Clerk session is gone. User needs to sign in again.',
+          );
+        }
+        return token;
       } catch (err) {
         console.warn('[ClerkAuthBridge] getToken threw:', err);
         return null;

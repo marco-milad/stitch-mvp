@@ -85,6 +85,13 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        // Hybrid local-dev escape hatch: when the resident frontend (live
+        // on Vercel) is pointed at a local FastAPI via an ngrok tunnel,
+        // ngrok would otherwise interpose its "You are about to visit"
+        // browser warning on any browser-shaped request. Sending this
+        // header on every API call tells ngrok to forward straight
+        // through. Inert when the API URL is anything other than ngrok.
+        'ngrok-skip-browser-warning': 'true',
         // Attach the Clerk JWT when one is available. Header-merge
         // order: caller-supplied headers can still override (rare).
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

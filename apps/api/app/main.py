@@ -48,10 +48,23 @@ app = FastAPI(
 app.state.limiter = limiter
 
 
-# CORS — explicit allow-list from `ALLOWED_ORIGINS` env var, plus a regex
-# that matches every Vercel deployment (production alias + per-PR previews).
-# CORSMiddleware ORs the two: origin matches if it's in the list OR the regex.
-ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+# CORS — three-tier allow-list:
+#   1. EXPLICIT_ALLOWED_ORIGINS — guaranteed entries baked into the source
+#      so they survive any .env drift. Currently the production Vercel
+#      alias + the active localtunnel for hybrid dev (Vercel frontend
+#      pointing at a local FastAPI via tunnel).
+#   2. ALLOWED_ORIGINS env var — per-environment additions (localhost
+#      ports, preview tunnels, etc.). Merged with the explicit list as a
+#      dedup'd set.
+#   3. VERCEL_ORIGIN_REGEX — wildcard for every per-PR Vercel preview URL.
+# CORSMiddleware ORs the list and the regex: origin matches if it's in
+# the merged set OR matches the regex.
+EXPLICIT_ALLOWED_ORIGINS = [
+    "https://stitch-mvp-web.vercel.app",
+    "https://nephew-unclog-untimed.ngrok-free.dev",
+]
+_env_origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+ALLOWED_ORIGINS = sorted({*EXPLICIT_ALLOWED_ORIGINS, *_env_origins})
 VERCEL_ORIGIN_REGEX = r"https://stitch-mvp-web(-[a-z0-9-]+)?\.vercel\.app$"
 
 app.add_middleware(

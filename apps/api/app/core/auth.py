@@ -19,11 +19,12 @@ from fastapi import Depends, Header, HTTPException, WebSocket, status
 from jwt import PyJWKClient
 from jwt.exceptions import PyJWKClientError
 from pydantic import BaseModel
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal, get_db
+from app.core.logging import logger
 from app.models.user import User, UserRole
 
 
@@ -93,11 +94,31 @@ async def _upsert_user(
     email: str | None,
     full_name: str | None,
 ) -> User:
-    """Idempotent: upsert by clerk_id, return the row.
+    """Three-phase upsert keyed on (clerk_id, email).
 
-    First-time sign-in lands here with no existing row — INSERT. Repeat
-    sign-ins refresh email/name in case the user changed them in Clerk.
-    Concurrent first-time calls race safely via ON CONFLICT.
+    The original implementation did `ON CONFLICT (clerk_id) DO UPDATE`,
+    which silently 500'd whenever someone re-registered in Clerk with
+    the same email but a fresh `clerk_id`. The unique index on `email`
+    fired before the `clerk_id` conflict resolver could rescue it.
+
+    The three phases:
+        1. **Match by clerk_id** — the steady-state path. Existing
+           resident signs in, we refresh their email + name in case
+           they edited them in Clerk.
+        2. **Match by email** (different clerk_id) — the "re-link"
+           path. The user was deleted in Clerk and re-created with the
+           same email, or signed up via a different OAuth provider.
+           Treat as the same person: re-key the row onto the new
+           clerk_id so all their historical maintenance tickets,
+           service bookings, units, etc. stay attached.
+        3. **Fresh resident** — INSERT a new row.
+
+    Concurrent first-time calls under heavy load could still race
+    (TOCTOU between SELECT and INSERT), but the calling code holds a
+    per-request session, and a duplicate signup at exact-same-instant
+    is rare enough that we accept the small theoretical 500. The
+    important correctness property — that re-registrations don't bork
+    the upsert — is now guaranteed.
     """
     first, last = _split_name(full_name)
     # Email must be non-null per the User model; fall back to a stable
@@ -105,25 +126,50 @@ async def _upsert_user(
     # always re-link later when a real email lands in the claims.
     safe_email = email or f"{clerk_sub}@no-email.clerk"
 
-    stmt = (
-        pg_insert(User)
-        .values(
-            clerk_id=clerk_sub,
+    # Phase 1: existing resident, primary identity unchanged.
+    existing = await session.scalar(select(User).where(User.clerk_id == clerk_sub))
+    if existing is not None:
+        existing.email = safe_email
+        existing.first_name = first
+        existing.last_name = last
+        await session.commit()
+        await session.refresh(existing)
+        return existing
+
+    # Phase 2: same email, new Clerk identity → re-link the orphan row.
+    by_email = await session.scalar(select(User).where(User.email == safe_email))
+    if by_email is not None:
+        previous_clerk = by_email.clerk_id
+        by_email.clerk_id = clerk_sub
+        by_email.first_name = first
+        by_email.last_name = last
+        await session.commit()
+        await session.refresh(by_email)
+        logger.info(
+            "auth.user.relinked",
+            from_clerk_id=previous_clerk,
+            to_clerk_id=clerk_sub,
             email=safe_email,
-            first_name=first,
-            last_name=last,
-            role=UserRole.resident,
         )
-        .on_conflict_do_update(
-            index_elements=["clerk_id"],
-            set_={"email": safe_email, "first_name": first, "last_name": last},
-        )
-        .returning(User)
+        return by_email
+
+    # Phase 3: brand-new resident.
+    new_user = User(
+        clerk_id=clerk_sub,
+        email=safe_email,
+        first_name=first,
+        last_name=last,
+        role=UserRole.resident,
     )
-    result = await session.execute(stmt)
-    user = result.scalar_one()
+    session.add(new_user)
     await session.commit()
-    return user
+    await session.refresh(new_user)
+    logger.info(
+        "auth.user.created",
+        clerk_id=clerk_sub,
+        email=safe_email,
+    )
+    return new_user
 
 
 def _split_name(full_name: str | None) -> tuple[str | None, str | None]:

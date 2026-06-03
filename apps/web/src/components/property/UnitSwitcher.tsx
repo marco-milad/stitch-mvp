@@ -75,42 +75,44 @@ export function UnitSwitcher({ open, onClose }: Props) {
           desktop gutters stay clean. */}
       <button
         type="button"
-        aria-hidden={!open}
+        aria-label={t('properties.switcher.close')}
+        aria-hidden={open ? undefined : true}
         tabIndex={-1}
         onClick={onClose}
         className={[
-          'fixed inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 bg-black/50 transition-opacity',
+          'fixed inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 bg-ink-950/45 transition-opacity duration-base ease-smooth',
           open ? 'opacity-100' : 'opacity-0 pointer-events-none',
         ].join(' ')}
       />
 
-      {/* Sheet */}
+      {/* Sheet — sand-50 surface, brand curve hierarchy (rounded-2xl on the
+          sheet panel itself = 32px under the new tokens), soft shadow. */}
       <div
         role="dialog"
         aria-label={t('properties.switcher.title')}
-        aria-hidden={!open}
+        aria-hidden={open ? undefined : true}
         className={[
           'fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50',
-          'bg-white dark:bg-ink-900 rounded-t-3xl border-t border-ink-100 dark:border-ink-700 shadow-2xl',
-          'transition-transform duration-300 ease-out',
+          'bg-sand-50 dark:bg-ink-900 rounded-t-2xl border-t border-sand-200 dark:border-ink-700 shadow-xl',
+          'transition-transform duration-base ease-smooth',
           open ? 'translate-y-0' : 'translate-y-full',
         ].join(' ')}
       >
         {/* Grabber */}
         <div className="flex justify-center pt-2 pb-1">
-          <span className="w-10 h-1 rounded-full bg-ink-100 dark:bg-ink-700" />
+          <span className="w-10 h-1 rounded-full bg-sand-200 dark:bg-ink-700" />
         </div>
 
         {/* Header */}
         <div className="flex flex-row items-center justify-between px-4 pt-2 pb-3">
-          <h2 className="text-base font-bold text-ink-900 dark:text-white">
+          <h2 className="text-heading-lg text-ink-900 dark:text-white">
             {t('properties.switcher.title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label={t('properties.switcher.close')}
-            className="-me-2 p-2 rounded-lg hover:bg-ink-100 dark:hover:bg-ink-700 text-ink-500"
+            className="-me-2 p-2 rounded-md hover:bg-sand-100 dark:hover:bg-ink-700 text-ink-500 transition-colors duration-fast ease-smooth"
           >
             <X size={18} />
           </button>
@@ -151,50 +153,81 @@ function PropertyCard({
     <button
       type="button"
       onClick={onClick}
-      aria-pressed={active ? 'true' : 'false'}
+      aria-pressed={active || undefined}
       className={[
-        'w-full flex flex-row items-start gap-3 p-3 rounded-2xl mb-2 text-start border transition-colors',
+        // Rule 2 (curve hierarchy): chip-tier cards land on rounded-2xl.
+        // Rule 4 (soft shadow): subtle two-layer shadow at rest, slight lift on hover.
+        'w-full flex flex-row items-start gap-3 p-3 rounded-2xl mb-2 text-start border transition-all duration-fast ease-smooth shadow-sm',
         active
-          ? 'bg-brand-50 dark:bg-brand-700/30 border-brand-500'
-          : 'bg-white dark:bg-ink-700 border-ink-100 dark:border-ink-700 hover:border-brand-400',
+          ? // Rule 3 (dark CTAs sacred): selected state mirrors the primary
+            // dark pill — ink-950 surface with white type so the picked unit
+            // reads as the "current action".
+            'bg-ink-950 dark:bg-ink-950 border-ink-950 text-white shadow-md'
+          : 'bg-white dark:bg-ink-700 border-sand-200 dark:border-ink-700 hover:border-ink-700 hover:shadow-md',
       ].join(' ')}
     >
       <div
         className={[
-          'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
+          // Inner icon tile sits one tier below the card per curve hierarchy.
+          'w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 transition-colors duration-fast ease-smooth',
           active
-            ? 'bg-brand-500 text-white'
-            : 'bg-ink-100 dark:bg-ink-900 text-ink-500 dark:text-ink-100',
+            ? 'bg-white/15 text-white'
+            : 'bg-sand-100 dark:bg-ink-900 text-ink-500 dark:text-ink-100',
         ].join(' ')}
       >
         <Icon size={20} />
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-ink-900 dark:text-white truncate">
+        <p
+          className={[
+            'text-body-md font-bold truncate',
+            active ? 'text-white' : 'text-ink-900 dark:text-white',
+          ].join(' ')}
+        >
           {property.unitName}
         </p>
-        <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">
+        <p
+          className={[
+            'text-label-sm truncate normal-case tracking-normal font-normal',
+            active ? 'text-white/75' : 'text-ink-500 dark:text-ink-100',
+          ].join(' ')}
+        >
           {property.compoundName}
         </p>
-        <p className="mt-1 text-[11px] text-ink-500 dark:text-ink-100">
+        <p
+          className={[
+            'mt-1 text-label-sm normal-case tracking-normal font-normal',
+            active ? 'text-white/70' : 'text-ink-500 dark:text-ink-100',
+          ].join(' ')}
+        >
           {t(`properties.unitTypes.${property.unitType}`)} ·{' '}
           {t('properties.bedrooms', { count: property.bedrooms })} · {property.areaM2} m²
         </p>
-        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-ink-400">
+        <p
+          className={[
+            'mt-0.5 text-label-sm uppercase',
+            active ? 'text-accent-300' : 'text-ink-300',
+          ].join(' ')}
+        >
           {t(`properties.ownership.${property.ownership}`)}
         </p>
       </div>
 
-      {/* Right-side indicator */}
+      {/* Right-side indicator pills — fully rounded per chip convention. */}
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         {active && (
-          <span className="inline-flex items-center gap-1 bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 bg-accent-300 text-ink-950 text-label-sm font-bold px-2 py-0.5 rounded-full">
             <Check size={10} /> {t('properties.switcher.current')}
           </span>
         )}
         {underConstruction && (
-          <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span
+            className={[
+              'inline-flex items-center gap-1 text-label-sm font-bold px-2 py-0.5 rounded-full',
+              active ? 'bg-white/15 text-white' : 'bg-accent-50 text-accent-700',
+            ].join(' ')}
+          >
             <HardHat size={10} /> {t('properties.handover.eta', { date: property.handoverDate })}
           </span>
         )}

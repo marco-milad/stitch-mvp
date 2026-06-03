@@ -152,7 +152,9 @@ function SuggestionCard({ s }: { s: Suggestion }) {
       <button
         type="button"
         onClick={s.onClick}
-        className="group relative w-full overflow-hidden bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-4 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+        // Brand Rule 1 + 2: premium card surface at rounded-3xl with
+        // resting shadow-sm and hover lift to shadow-md.
+        className="group relative w-full overflow-hidden bg-white/70 dark:bg-ink-700/70 backdrop-blur-lg rounded-3xl p-4 border border-sand-200 dark:border-white/10 shadow-sm text-left hover:shadow-md hover:-translate-y-px active:scale-[0.98] transition-all duration-base ease-smooth"
       >
         {/* Cursor-tracking specular highlight */}
         <span
@@ -214,13 +216,15 @@ function CtaTile({
         disabled={suspended}
         title={suspended ? suspendedNote : undefined}
         className={[
-          'group relative w-full overflow-hidden rounded-2xl p-4 flex flex-row items-center text-left transition-all duration-300 ease-smooth',
+          // Brand Rule 1 + 2: premium card surface at rounded-3xl with
+          // resting shadow-sm and hover lift to shadow-md.
+          'group relative w-full overflow-hidden rounded-3xl p-4 flex flex-row items-center text-left transition-all duration-base ease-smooth',
           suspended
             ? // Suspended glass: lower opacity, no shadow lift, no scale.
               // The tile stays in layout so the grid balance is preserved,
               // but it reads as visually inert.
-              'bg-white/30 dark:bg-ink-700/30 backdrop-blur-lg border border-white/20 dark:border-white/5 shadow-sm shadow-ink-900/5 cursor-not-allowed'
-            : 'bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98]',
+              'bg-white/35 dark:bg-ink-700/30 backdrop-blur-lg border border-sand-200/60 dark:border-white/5 shadow-sm cursor-not-allowed'
+            : 'bg-white/70 dark:bg-ink-700/70 backdrop-blur-lg border border-sand-200 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-px active:scale-[0.98]',
         ].join(' ')}
       >
         {!suspended && (
@@ -271,7 +275,8 @@ function StatusPill({
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 flex flex-row items-center bg-white/60 dark:bg-ink-700/60 backdrop-blur-lg rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 text-left hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10 active:scale-[0.98] transition-all duration-300 ease-smooth"
+      // Brand Rule 1 + 2: premium card surface at rounded-3xl + soft shadow.
+      className="flex-1 flex flex-row items-center bg-white/70 dark:bg-ink-700/70 backdrop-blur-lg rounded-3xl p-3 border border-sand-200 dark:border-white/10 shadow-sm text-left hover:shadow-md hover:-translate-y-px active:scale-[0.98] transition-all duration-base ease-smooth"
     >
       <div
         className="w-9 h-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40"
@@ -451,36 +456,35 @@ export function Home() {
       <TopBar title={t('app.name')} unreadCount={unreadCount} />
 
       <div className="p-4">
-        {/* Greeting */}
-        <h1 className="text-[26px] font-extrabold text-ink-900 dark:text-white leading-tight">
-          {greeting.line1}
-        </h1>
-        <h2 className="text-[26px] font-extrabold text-ink-900 dark:text-white leading-tight mb-1">
-          {greeting.line2}
-        </h2>
-        <p className="text-sm text-ink-500 dark:text-ink-100 mb-3">{greeting.sub}</p>
+        {/* Greeting — Brand semantic typography (display-lg / body-md) */}
+        <h1 className="text-display-lg text-ink-900 dark:text-white">{greeting.line1}</h1>
+        <h2 className="text-display-lg text-ink-900 dark:text-white mb-1">{greeting.line2}</h2>
+        <p className="text-body-md text-ink-500 dark:text-ink-100 mb-3">{greeting.sub}</p>
 
-        {/* Role + unit pills */}
+        {/* Role + unit pills — Brand Rule 3: sacred dark pills. The
+            ownership label sits on a sand chip (quiet); the active unit
+            switcher is the dark ink-950 pill ("this is what you've
+            chosen"). One dark pill on the row keeps the editorial
+            restraint intact. */}
         <div className="flex flex-row flex-wrap items-center gap-2 mb-5">
-          <span className="bg-violet-100 dark:bg-violet-900/40 px-3 py-1 rounded-full text-[11px] font-semibold text-violet-700 dark:text-violet-300">
+          <span className="bg-sand-100 dark:bg-ink-700 text-ink-700 dark:text-ink-100 px-3 py-1 rounded-full text-label-sm normal-case tracking-normal font-semibold">
             {ownershipLabel}
           </span>
           <button
             type="button"
             onClick={() => setSwitcherOpen(true)}
             aria-label={t('properties.switcher.title')}
-            className="flex flex-row items-center bg-violet-100 dark:bg-violet-900/40 px-3 py-1 rounded-full active:scale-95 transition-transform"
+            className="inline-flex flex-row items-center gap-1 bg-ink-950 text-white px-3 py-1 rounded-full text-label-sm normal-case tracking-normal font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all duration-fast ease-smooth"
           >
-            <HomeIcon color="#7C3AED" size={12} />
-            <span className="text-[11px] font-semibold text-violet-700 dark:text-violet-300 mx-1">
-              {unitLabel}
-            </span>
-            <ChevronDown color="#7C3AED" size={11} />
+            <HomeIcon size={12} />
+            <span>{unitLabel}</span>
+            <ChevronDown size={11} />
           </button>
         </div>
 
-        {/* Weather — Ground tier glass (ambient, recedes against the mesh) */}
-        <div className="flex flex-row items-center bg-white/40 dark:bg-ink-700/40 backdrop-blur-md rounded-2xl p-3 mb-5 border border-white/40 dark:border-white/10 shadow-md shadow-ink-900/5">
+        {/* Weather — Brand Rule 1 + 2: Ground-tier card promoted to
+            rounded-3xl with the resting soft shadow + hover lift. */}
+        <div className="flex flex-row items-center bg-white/50 dark:bg-ink-700/40 backdrop-blur-md rounded-3xl p-3 mb-5 border border-sand-200 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow duration-base ease-smooth">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ring-1 ring-white/40 shadow-md"
             style={{ backgroundColor: weatherBg, boxShadow: `0 0 18px ${weatherBg}50` }}
@@ -498,15 +502,18 @@ export function Home() {
           </span>
         </div>
 
-        {/* For You row */}
+        {/* For You row — Brand Rule 4: section title uses semantic
+            heading-lg; the "AI personalized" subtitle stays quiet to
+            preserve the single-accent slot for the active-request
+            banner below. */}
         <div className="flex flex-row items-end justify-between mb-2">
           <div className="flex flex-row items-center">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-500 mr-2" />
-            <span className="text-base font-bold text-ink-900 dark:text-white">
-              {t('home.forYou')}
-            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-ink-950 mr-2" />
+            <span className="text-heading-lg text-ink-900 dark:text-white">{t('home.forYou')}</span>
           </div>
-          <span className="text-[11px] text-ink-400">{t('home.aiPersonalized')}</span>
+          <span className="text-label-sm normal-case tracking-normal text-ink-500">
+            {t('home.aiPersonalized')}
+          </span>
         </div>
         <div className="-mx-4 mb-5 px-4 overflow-x-auto no-scrollbar flex flex-row">
           {suggestions.map((s) => (
@@ -514,15 +521,18 @@ export function Home() {
           ))}
         </div>
 
-        {/* Suggested services */}
+        {/* Suggested services — Brand Rule 3: View-all link is a tiny
+            sacred dark pill (consistent with the unit switcher pill). */}
         <div className="flex flex-row items-end justify-between mb-2">
-          <span className="text-base font-bold text-ink-900 dark:text-white">
+          <span className="text-heading-lg text-ink-900 dark:text-white">
             {t('home.suggested.title')}
           </span>
-          <button type="button" onClick={() => navigate('/services')}>
-            <span className="text-xs font-semibold text-brand-500">
-              {t('home.suggested.viewAll')}
-            </span>
+          <button
+            type="button"
+            onClick={() => navigate('/services')}
+            className="inline-flex items-center bg-ink-950 text-white px-3 py-1 rounded-full text-label-sm normal-case tracking-normal font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all duration-fast ease-smooth"
+          >
+            {t('home.suggested.viewAll')}
           </button>
         </div>
         <div className="-mx-4 mb-5 px-4 overflow-x-auto no-scrollbar flex flex-row gap-2">
@@ -533,7 +543,8 @@ export function Home() {
                 key={tile.id}
                 type="button"
                 onClick={() => navigate(tile.to ?? `/services/${tile.id}`)}
-                className="flex-shrink-0 flex flex-col items-center bg-white dark:bg-ink-700 rounded-2xl px-3 py-3 w-20 border border-ink-100 dark:border-ink-700 active:scale-[0.98] transition-transform"
+                // Brand Rule 1 + 2: rounded-3xl tile + soft shadow.
+                className="flex-shrink-0 flex flex-col items-center bg-white dark:bg-ink-700 rounded-3xl px-3 py-3 w-20 border border-sand-200 dark:border-ink-700 shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-fast ease-smooth"
               >
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center mb-1.5"
@@ -594,65 +605,72 @@ export function Home() {
           />
         </div>
 
-        {/* Active request card — lifted tier (this is the loudest "track me!" CTA) */}
+        {/* Active request card — Brand Rule 4: this is THE single accent
+            placement on Home. The icon tile lands on accent-300 with an
+            accent-tinted shadow glow ("one yellow per surface"). Outer
+            card stays at the lifted-tier curve (rounded-3xl) with the
+            soft luxury shadow scale rather than the prior purple glow. */}
         {latestActiveRequest && (
           <button
             type="button"
             onClick={() => navigate('/services/requests')}
-            className="vt-ticket-card w-full flex flex-row items-center bg-white/80 dark:bg-ink-700/80 backdrop-blur-xl rounded-2xl p-3 mb-5 border border-white/60 dark:border-white/10 shadow-2xl shadow-purple-500/10 ring-1 ring-white/40 text-left hover:scale-[1.01] hover:shadow-purple-500/20 active:scale-[0.98] transition-all duration-300 ease-smooth"
+            className="vt-ticket-card w-full flex flex-row items-center bg-white/85 dark:bg-ink-700/80 backdrop-blur-xl rounded-3xl p-3 mb-5 border border-sand-200 dark:border-white/10 shadow-md ring-1 ring-white/40 text-left hover:shadow-accent hover:-translate-y-px active:scale-[0.98] transition-all duration-base ease-smooth"
           >
-            <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center me-3 flex-shrink-0">
-              <Clock color="#7C3AED" size={18} />
+            <div className="w-10 h-10 rounded-md bg-accent-300 flex items-center justify-center me-3 flex-shrink-0 shadow-accent">
+              <Clock color={colors.ink[900]} size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-violet-700 dark:text-violet-300">
+              <p className="text-label-sm uppercase text-accent-700">
                 {t('home.activeRequest.title')}
               </p>
-              <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">
+              <p className="text-body-md font-semibold text-ink-900 dark:text-white truncate">
                 {latestProvider?.name ?? latestActiveRequest.providerId} ·{' '}
                 {t(offeringLabelKey(latestActiveRequest.tileId, latestActiveRequest.offeringKey))}
               </p>
-              <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">
+              <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
                 {t('home.activeRequest.scheduledFor', {
                   date: latestActiveRequest.dateIso,
                   time: latestActiveRequest.timeSlot,
                 })}
               </p>
             </div>
-            <ChevronRight color={colors.ink[400]} size={18} />
+            <ChevronRight color={colors.ink[500]} size={18} />
           </button>
         )}
         {!latestActiveRequest && <div className="mb-5" aria-hidden />}
 
-        {/* Latest news */}
+        {/* Latest news — semantic heading-lg + sacred dark pill link +
+            premium card (rounded-3xl, shadow-sm hover:shadow-md). */}
         <div className="flex flex-row items-end justify-between mb-2">
-          <span className="text-base font-bold text-ink-900 dark:text-white">
-            {t('home.latest')}
-          </span>
-          <button type="button" onClick={() => navigate('/notifications')}>
-            <span className="text-xs font-semibold text-brand-500">{t('home.seeAll')}</span>
+          <span className="text-heading-lg text-ink-900 dark:text-white">{t('home.latest')}</span>
+          <button
+            type="button"
+            onClick={() => navigate('/notifications')}
+            className="inline-flex items-center bg-ink-950 text-white px-3 py-1 rounded-full text-label-sm normal-case tracking-normal font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all duration-fast ease-smooth"
+          >
+            {t('home.seeAll')}
           </button>
         </div>
         <button
           type="button"
           onClick={() => navigate('/notifications')}
-          className="w-full flex flex-row items-center bg-white dark:bg-ink-700 rounded-2xl p-3 border border-ink-100 dark:border-ink-700 text-left active:scale-[0.98] transition-transform"
+          className="w-full flex flex-row items-center bg-white dark:bg-ink-700 rounded-3xl p-3 border border-sand-200 dark:border-ink-700 shadow-sm text-left hover:shadow-md hover:-translate-y-px active:scale-[0.98] transition-all duration-base ease-smooth"
         >
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
+            className="w-10 h-10 rounded-md flex items-center justify-center mr-3 flex-shrink-0"
             style={{ backgroundColor: '#FEF3C7' }}
           >
             <Megaphone color="#D97706" size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-ink-900 dark:text-white truncate">
+            <p className="text-body-md font-semibold text-ink-900 dark:text-white truncate">
               Water maintenance scheduled
             </p>
-            <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">
+            <p className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
               Building 4-6 · Tomorrow 10 AM – 2 PM
             </p>
           </div>
-          <ChevronRight color={colors.ink[400]} size={18} />
+          <ChevronRight color={colors.ink[500]} size={18} />
         </button>
       </div>
 

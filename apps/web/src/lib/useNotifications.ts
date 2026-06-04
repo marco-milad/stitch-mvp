@@ -1,19 +1,22 @@
 // Resident notifications hook bundle.
-//   - `useMyNotifications()` — TanStack Query for /me/notifications kept
-//     warm by a `notification.created` WebSocket subscription.
+//   - `useMyNotifications()` — TanStack Query for /me/notifications,
+//     polled every 5 s so the bell dot stays current.
 //   - `useUnreadCount()` — convenience selector for the TopBar bell dot.
 //   - `useMarkAllRead()` — call when the user opens the Notifications
 //     screen so the bell dot clears. Read state lives in localStorage
 //     (`stitch.notifications.read`) — not synced server-side yet.
+//
+// Architectural note: this used to hold an open WebSocket subscription
+// (`/me/notifications/stream`) for push-style updates. We dropped it
+// because the WS was flapping during Clerk dev-key session hiccups and
+// 5 s polling gives equivalent UX for notification-shaped traffic at
+// a fraction of the complexity. The backend WS endpoint stays in place
+// for future opt-in.
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  listMyNotifications,
-  subscribeMyNotifications,
-  type ResidentNotification,
-} from '@/lib/residentApi';
+import { listMyNotifications, type ResidentNotification } from '@/lib/residentApi';
 import { MOCK_NOTIFICATIONS, withMockFallback } from '@/lib/residentApiFallbacks';
 
 export const NOTIFICATIONS_KEY = ['me', 'notifications'] as const;
@@ -65,87 +68,48 @@ function useReadIds(): Set<string> {
 
 // ─── Public hooks ────────────────────────────────────────────────────────
 
-// Module-scope live-flag so every consumer (TopBars, Notifications screen)
-// can render a "LIVE" pill without opening its own WS subscription.
-const liveListeners = new Set<(open: boolean) => void>();
-let isLiveCurrent = false;
-
-function publishLive(open: boolean): void {
-  if (open === isLiveCurrent) return;
-  isLiveCurrent = open;
-  for (const l of liveListeners) l(open);
-}
-
-function useLiveFlag(): boolean {
-  const [value, setValue] = useState(isLiveCurrent);
-  useEffect(() => {
-    liveListeners.add(setValue);
-    return () => {
-      liveListeners.delete(setValue);
-    };
-  }, []);
-  return value;
-}
-
-/** Open the notifications WS once at app mount. Mount in `App.tsx` so the
- *  TopBar bell dot can stay live across every tab without each screen
- *  opening its own socket. */
+/** Mount once at the app root (App.tsx) so the notifications query is
+ *  active before any screen reads it — that way the TopBar bell dot is
+ *  warm on first paint of every tab. The query itself does the polling;
+ *  this hook is just an activation handle.
+ *
+ *  Returning `void` keeps the call site (`<ShellRoute>`) trivially
+ *  side-effecting. TanStack Query deduplicates the underlying GET across
+ *  every consumer of `useMyNotifications`, so individual screens calling
+ *  the hook again are free. */
 export function useNotificationsSync(): void {
-  const qc = useQueryClient();
-  useEffect(() => {
-    const sub = subscribeMyNotifications(
-      (event) => {
-        if (event.type === 'snapshot') {
-          qc.setQueryData<ResidentNotification[]>(NOTIFICATIONS_KEY, event.items);
-        } else if (event.type === 'notification.created') {
-          qc.setQueryData<ResidentNotification[] | undefined>(NOTIFICATIONS_KEY, (prev) => {
-            if (!prev) return [event.item];
-            if (prev.some((n) => n.id === event.item.id)) return prev;
-            return [event.item, ...prev];
-          });
-        }
-      },
-      {
-        onStatusChange: publishLive,
-        // WS gave up after MAX_WS_ATTEMPTS — make sure the cache has
-        // something to render so the bell dot + Notifications screen
-        // don't sit on a permanent skeleton.
-        onPermanentFailure: () => {
-          qc.setQueryData<ResidentNotification[] | undefined>(NOTIFICATIONS_KEY, (prev) =>
-            prev && prev.length > 0 ? prev : MOCK_NOTIFICATIONS,
-          );
-        },
-      },
-    );
-    return () => {
-      sub.close();
-      publishLive(false);
-    };
-  }, [qc]);
+  useMyNotifications();
 }
 
 export interface UseMyNotificationsResult {
   notifications: ResidentNotification[];
   isLoading: boolean;
+  /** Always false now that the WS is gone. Retained on the return shape
+   *  so callers that previously rendered a LIVE pill compile without
+   *  changes; remove on the next round of cleanup if no consumer reads it. */
   isLive: boolean;
   readIds: Set<string>;
   unreadCount: number;
 }
 
-/** Read hook — relies on `useNotificationsSync` being mounted at the app
- *  root for live updates. TanStack Query dedupes the GET across callers,
- *  so this is cheap to call from multiple screens. */
+/** Read hook — polls /me/notifications every 5 s. TanStack Query dedupes
+ *  the GET across multiple callers, so screens that need notifications
+ *  data (TopBar, Notifications screen) can call this freely without
+ *  multiplying network traffic. */
 export function useMyNotifications(): UseMyNotificationsResult {
   const query = useQuery<ResidentNotification[]>({
     queryKey: NOTIFICATIONS_KEY,
     // Wrap the real fetcher so a server-unreachable error degrades to
     // mock notifications instead of leaving the bell dot dark forever.
     queryFn: () => withMockFallback(listMyNotifications, MOCK_NOTIFICATIONS, 'listMyNotifications'),
-    staleTime: 30_000,
+    // 5 s polling replaces the WebSocket. Background-tab pausing keeps
+    // hidden tabs cheap.
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
   });
 
   const ids = useReadIds();
-  const isLive = useLiveFlag();
   const notifications = query.data ?? [];
   const unreadCount = useMemo(
     () => notifications.reduce((acc, n) => (ids.has(n.id) ? acc : acc + 1), 0),
@@ -155,7 +119,7 @@ export function useMyNotifications(): UseMyNotificationsResult {
   return {
     notifications,
     isLoading: query.isLoading,
-    isLive,
+    isLive: false,
     readIds: ids,
     unreadCount,
   };

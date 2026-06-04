@@ -1,19 +1,19 @@
 // "Active maintenance tickets" card — the resident's view of the admin
 // dispatch pipeline.
 //
-//   • GET /api/v1/me/requests → TanStack Query, keyed ['me', 'requests'].
-//   • WS  /api/v1/me/requests/stream:
-//        - `snapshot` frame seeds the cache.
-//        - `request.updated` events patch the matching row by id.
+//   • GET /api/v1/me/requests → TanStack Query, polled every 5 s.
 //
-// When the status of a ticket flips (PENDING → IN_PROGRESS), the badge
-// runs a `badge-flip` keyframe (scale + glow) and the technician card
-// slides in from below using `tech-reveal`. The DOM key is just the
-// ticket id; the animation is driven by tracking `prevStatus` per id and
-// re-mounting the badge subtree via `key={status}`.
+// Architectural note: this previously held an open WebSocket to
+// `/me/requests/stream` for live status flips. We dropped that in favour
+// of plain HTTP polling because (a) ticket cadence is human-scale (a few
+// per hour at most), (b) the WS subscription was causing a "LIVE/OFFLINE"
+// flap whenever the Clerk session momentarily lost its token, and (c)
+// polling delivers status changes within 5 s which is well inside any
+// human noticeable threshold for a maintenance dashboard. The backend
+// WS endpoint stays live as an opt-in path for higher-frequency surfaces.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Loader2, Plus, Radio, Wrench, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Plus, Wrench, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -22,7 +22,6 @@ import {
   createMyTicket,
   listMyTickets,
   listTechnicianRoster,
-  subscribeMyTickets,
   type MaintenanceTicket,
   type TicketCategory,
   type TicketCreateInput,
@@ -88,7 +87,6 @@ const QUERY_KEY = ['me', 'requests'] as const;
 export function MyMaintenanceTickets() {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
-  const [isLive, setIsLive] = useState(false);
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -104,7 +102,14 @@ export function MyMaintenanceTickets() {
     // Mock fallback wires in here so a refused / timed-out fetch
     // surfaces three demo tickets instead of an empty error state.
     queryFn: () => withMockFallback(listMyTickets, MOCK_TICKETS, 'listMyTickets'),
-    staleTime: 30_000,
+    // 5 s polling replaces the legacy `/me/requests/stream` WebSocket.
+    // Maintenance ticket cadence is human-scale (a few per hour at most);
+    // 5 s is well inside the noticeable threshold for status flips and
+    // costs ~12 GETs per minute per signed-in resident. Background-tab
+    // pausing prevents burning mobile data on a hidden card.
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
   });
 
   const techsQuery = useQuery<TicketTechnician[]>({
@@ -112,38 +117,6 @@ export function MyMaintenanceTickets() {
     queryFn: () => withMockFallback(listTechnicianRoster, MOCK_TECHNICIANS, 'listTechnicianRoster'),
     staleTime: 5 * 60_000,
   });
-
-  useEffect(() => {
-    const sub = subscribeMyTickets(
-      (event) => {
-        if (event.type === 'snapshot') {
-          qc.setQueryData<MaintenanceTicket[]>(QUERY_KEY, event.items);
-        } else if (event.type === 'request.updated') {
-          // Backend's `/me/requests/stream` is pre-filtered to this
-          // resident, so any incoming update is for us. Prepend if new
-          // (e.g. ticket created in another tab); patch in place if known.
-          qc.setQueryData<MaintenanceTicket[] | undefined>(QUERY_KEY, (prev) => {
-            if (!prev) return [event.item];
-            const has = prev.some((r) => r.id === event.item.id);
-            return has
-              ? prev.map((r) => (r.id === event.item.id ? event.item : r))
-              : [event.item, ...prev];
-          });
-        }
-      },
-      {
-        onStatusChange: setIsLive,
-        // After the WS gives up retrying, make sure the cache has mock
-        // tickets so the card renders something instead of a skeleton.
-        onPermanentFailure: () => {
-          qc.setQueryData<MaintenanceTicket[] | undefined>(QUERY_KEY, (prev) =>
-            prev && prev.length > 0 ? prev : MOCK_TICKETS,
-          );
-        },
-      },
-    );
-    return () => sub.close();
-  }, [qc]);
 
   const techsById = useMemo(() => {
     const m = new Map<string, TicketTechnician>();
@@ -174,9 +147,6 @@ export function MyMaintenanceTickets() {
             {t('myTickets.title')}
           </h2>
           <span className="text-[11px] text-ink-500 truncate">{t('myTickets.subtitle')}</span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <LivePill connected={isLive} />
         </div>
       </div>
 
@@ -262,23 +232,6 @@ export function MyMaintenanceTickets() {
         />
       )}
     </section>
-  );
-}
-
-function LivePill({ connected }: { connected: boolean }) {
-  const { t } = useTranslation();
-  return (
-    <span
-      className={[
-        'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider border backdrop-blur-sm transition-all duration-300',
-        connected
-          ? 'bg-emerald-50/70 border-emerald-300/60 text-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
-          : 'bg-ink-100/60 border-ink-200/60 text-ink-500',
-      ].join(' ')}
-    >
-      <Radio size={10} className={connected ? 'animate-pulse' : undefined} />
-      {connected ? t('myTickets.live') : t('myTickets.offline')}
-    </span>
   );
 }
 

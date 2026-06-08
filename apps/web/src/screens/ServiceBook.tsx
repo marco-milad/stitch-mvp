@@ -1,3 +1,4 @@
+import { useAuth } from '@clerk/clerk-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
 import { useState } from 'react';
@@ -35,6 +36,7 @@ const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 export function ServiceBook() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const { tileId = '' } = useParams<{ tileId: string }>();
   const [params] = useSearchParams();
   const providerId = params.get('providerId') ?? '';
@@ -76,6 +78,16 @@ export function ServiceBook() {
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
+      // Belt-and-braces Clerk token warm-up. The `http()` helper already
+      // pulls the bearer via ClerkAuthBridge → currentAuthToken, but
+      // navigations through the booking funnel (Services tab → category
+      // → provider → here) can land us on this screen with a stale cache
+      // entry that returns null on the next getToken(). Forcing a fresh
+      // network fetch here primes Clerk's cache so the POST that follows
+      // sees a valid Authorization header. Discarded return value — we
+      // only care about the side effect on Clerk's internal cache.
+      await getToken({ skipCache: true });
+
       if (isMaintenanceTile) {
         // Map the offering key onto a maintenance category — `pest` is
         // its own key; everything else is plumbing/electrical/general.
@@ -140,7 +152,13 @@ export function ServiceBook() {
         navigate('/sign-in?redirect=/services');
         return;
       }
-      window.alert(t('services.book.errors.submit'));
+      // Append the raw error message to the localized banner so the
+      // resident (and we, debugging via screenshots) can see whether
+      // this is a CORS reject, a 422 validation error, a 5xx, or
+      // something else — rather than the opaque "check your connection"
+      // catch-all that hides the actual cause.
+      const detail = err instanceof Error ? err.message : String(err);
+      window.alert(`${t('services.book.errors.submit')}\n\n${detail}`);
     }
   };
 

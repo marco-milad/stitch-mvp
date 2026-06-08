@@ -1,3 +1,4 @@
+import { useAuth } from '@clerk/clerk-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
 import { useState } from 'react';
@@ -29,6 +30,7 @@ const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 export function WellnessBook() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const { facilityId = '' } = useParams<{ facilityId: string }>();
   const [params] = useSearchParams();
   const sessionId = params.get('session') ?? '';
@@ -57,6 +59,10 @@ export function WellnessBook() {
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
+      // Force a fresh Clerk token network fetch right before POSTing.
+      // Same belt-and-braces as ServiceBook — see that file for rationale.
+      await getToken({ skipCache: true });
+
       const booking = await createMyServiceBooking({
         tileId: facility.bookingTileId,
         providerId: `wellness-${facility.id}`,
@@ -86,7 +92,8 @@ export function WellnessBook() {
         navigate('/sign-in?redirect=/services/wellness');
         return;
       }
-      window.alert(t('services.book.errors.submit'));
+      const detail = err instanceof Error ? err.message : String(err);
+      window.alert(`${t('services.book.errors.submit')}\n\n${detail}`);
     }
   };
 

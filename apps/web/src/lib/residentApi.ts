@@ -16,7 +16,17 @@ const HTTP_PREFIX = `${API_BASE}/api/v1`;
 
 // Default HTTP timeout. On a refused/unreachable host fetch otherwise
 // waits for the browser's network timeout (30s+) which freezes the UI.
-const HTTP_TIMEOUT_MS = 6_000;
+//
+// 20 s is the budget for the actual wire round trip (handshake →
+// ngrok/Railway hop → FastAPI handler → DB → response). Earlier this
+// was 6 s, but write paths going through ngrok plus Clerk JWT
+// verification plus Railway-public-proxy Postgres can legitimately
+// take 4-8 s on a cold cache and our 6 s budget was clipping them
+// before the response had a chance to land. Per fix-B in
+// residentApi.http(), the timer now also starts AFTER currentAuthToken
+// resolves so Clerk SDK refresh time no longer counts against this
+// budget either.
+const HTTP_TIMEOUT_MS = 20_000;
 
 // Diagnostic: warn once at boot when the bundle is pointing at localhost
 // but is running from a public domain (typical Vercel mis-config where
@@ -95,23 +105,29 @@ async function currentAuthToken(): Promise<string | null> {
 }
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
+  // 1. Resolve the auth token BEFORE arming the abort timer. Clerk SDK
+  //    refresh can take real wall clock when the dev CDN is slow, and
+  //    counting that against the fetch budget caused the 6 s abort
+  //    storm on tile booking submissions. The timer now wraps the
+  //    actual wire round trip only.
   const token = await currentAuthToken();
 
-  // Auth guard: don't fire authenticated requests with no bearer token.
-  // The backend would 401 with "Missing Authorization header" and the
-  // resident would just see "Could not submit your booking" with no
-  // useful signal. Throw a typed error so callers can prompt re-auth
-  // instead of treating it as a network/server problem.
+  // 2. Auth guard: don't fire authenticated requests with no bearer
+  //    token. The backend would 401 with "Missing Authorization
+  //    header" and the resident would just see "Could not submit your
+  //    booking" with no useful signal. Throw a typed error so callers
+  //    can prompt re-auth instead of treating it as a network/server
+  //    problem.
   if (!token && pathRequiresAuth(path)) {
-    clearTimeout(timer);
     console.warn(
       `[residentApi] Short-circuiting ${path}: no Clerk token available. Session likely expired.`,
     );
     throw new AuthRequiredError(path);
   }
 
+  // 3. Arm the abort timer + fire the request.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
   let res: Response;
   try {
     res = await fetch(`${HTTP_PREFIX}${path}`, {

@@ -1,4 +1,3 @@
-import { useAuth } from '@clerk/clerk-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
 import { useState } from 'react';
@@ -30,7 +29,6 @@ const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 export function WellnessBook() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { getToken } = useAuth();
   const { facilityId = '' } = useParams<{ facilityId: string }>();
   const [params] = useSearchParams();
   const sessionId = params.get('session') ?? '';
@@ -59,19 +57,6 @@ export function WellnessBook() {
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
-      // Best-effort Clerk token warm-up — see ServiceBook.tsx for the
-      // full rationale. Wrapped in try/swallow so a Clerk DNS/CDN
-      // outage doesn't block a submission that the cached JWT could
-      // still satisfy.
-      try {
-        await getToken({ skipCache: true });
-      } catch (refreshErr) {
-        console.warn(
-          '[WellnessBook] Clerk token refresh failed; falling back to cached token:',
-          refreshErr,
-        );
-      }
-
       const booking = await createMyServiceBooking({
         tileId: facility.bookingTileId,
         providerId: `wellness-${facility.id}`,

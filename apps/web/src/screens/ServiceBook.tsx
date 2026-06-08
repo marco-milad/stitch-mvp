@@ -1,4 +1,3 @@
-import { useAuth } from '@clerk/clerk-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
 import { useState } from 'react';
@@ -36,7 +35,6 @@ const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 export function ServiceBook() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { getToken } = useAuth();
   const { tileId = '' } = useParams<{ tileId: string }>();
   const [params] = useSearchParams();
   const providerId = params.get('providerId') ?? '';
@@ -78,29 +76,6 @@ export function ServiceBook() {
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
-      // Best-effort Clerk token warm-up. The `http()` helper already
-      // pulls the bearer via ClerkAuthBridge → currentAuthToken, but
-      // navigations through the booking funnel (Services tab → category
-      // → provider → here) can land us on this screen with a stale cache
-      // entry that returns null on the next getToken(). Forcing a fresh
-      // network fetch primes Clerk's cache so the POST that follows
-      // sees a valid Authorization header.
-      //
-      // CRITICAL: this call is wrapped in try/swallow because Clerk's
-      // CDN/API can be unreachable (DNS block on *.clerk.accounts.dev,
-      // ad-blocker, offline) — when it throws, the cached JWT (last good
-      // value) is still attached by currentAuthToken in residentApi
-      // and the POST may still succeed. Letting this rethrow would block
-      // every submission the moment Clerk's network has a hiccup.
-      try {
-        await getToken({ skipCache: true });
-      } catch (refreshErr) {
-        console.warn(
-          '[ServiceBook] Clerk token refresh failed; falling back to cached token:',
-          refreshErr,
-        );
-      }
-
       if (isMaintenanceTile) {
         // Map the offering key onto a maintenance category — `pest` is
         // its own key; everything else is plumbing/electrical/general.

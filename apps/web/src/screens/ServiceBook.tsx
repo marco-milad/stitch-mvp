@@ -78,15 +78,28 @@ export function ServiceBook() {
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
-      // Belt-and-braces Clerk token warm-up. The `http()` helper already
+      // Best-effort Clerk token warm-up. The `http()` helper already
       // pulls the bearer via ClerkAuthBridge → currentAuthToken, but
       // navigations through the booking funnel (Services tab → category
       // → provider → here) can land us on this screen with a stale cache
       // entry that returns null on the next getToken(). Forcing a fresh
-      // network fetch here primes Clerk's cache so the POST that follows
-      // sees a valid Authorization header. Discarded return value — we
-      // only care about the side effect on Clerk's internal cache.
-      await getToken({ skipCache: true });
+      // network fetch primes Clerk's cache so the POST that follows
+      // sees a valid Authorization header.
+      //
+      // CRITICAL: this call is wrapped in try/swallow because Clerk's
+      // CDN/API can be unreachable (DNS block on *.clerk.accounts.dev,
+      // ad-blocker, offline) — when it throws, the cached JWT (last good
+      // value) is still attached by currentAuthToken in residentApi
+      // and the POST may still succeed. Letting this rethrow would block
+      // every submission the moment Clerk's network has a hiccup.
+      try {
+        await getToken({ skipCache: true });
+      } catch (refreshErr) {
+        console.warn(
+          '[ServiceBook] Clerk token refresh failed; falling back to cached token:',
+          refreshErr,
+        );
+      }
 
       if (isMaintenanceTile) {
         // Map the offering key onto a maintenance category — `pest` is

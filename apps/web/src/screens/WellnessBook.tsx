@@ -59,9 +59,18 @@ export function WellnessBook() {
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
-      // Force a fresh Clerk token network fetch right before POSTing.
-      // Same belt-and-braces as ServiceBook — see that file for rationale.
-      await getToken({ skipCache: true });
+      // Best-effort Clerk token warm-up — see ServiceBook.tsx for the
+      // full rationale. Wrapped in try/swallow so a Clerk DNS/CDN
+      // outage doesn't block a submission that the cached JWT could
+      // still satisfy.
+      try {
+        await getToken({ skipCache: true });
+      } catch (refreshErr) {
+        console.warn(
+          '[WellnessBook] Clerk token refresh failed; falling back to cached token:',
+          refreshErr,
+        );
+      }
 
       const booking = await createMyServiceBooking({
         tileId: facility.bookingTileId,

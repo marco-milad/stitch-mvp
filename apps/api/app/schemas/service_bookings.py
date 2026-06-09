@@ -27,7 +27,12 @@ ServiceBookingStatus = Literal["pending", "confirmed", "in_progress", "completed
 
 
 class ServiceBooking(BaseModel):
-    """Outbound projection — what the resident + admin clients render."""
+    """Outbound projection — what the resident + admin clients render.
+
+    `adminNotes` is null on the resident-facing projection (the hub
+    blanks it when no requesting admin context is present) and carries
+    the actual stored value on the admin-facing projection.
+    """
 
     id: str
     residentName: str
@@ -39,6 +44,7 @@ class ServiceBooking(BaseModel):
     timeSlot: str
     notes: str | None = None
     status: ServiceBookingStatus
+    adminNotes: str | None = None
     createdAt: str  # ISO 8601 with TZ
     updatedAt: str  # ISO 8601 with TZ
 
@@ -57,6 +63,19 @@ class ServiceBookingCreateInput(BaseModel):
     dateIso: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     timeSlot: str = Field(pattern=r"^\d{2}:\d{2}$")
     notes: str | None = Field(default=None, max_length=500)
+
+
+class ServiceBookingNotesUpdate(BaseModel):
+    """Admin → API: PATCH the internal admin_notes field on a booking.
+
+    Resident-side projection ignores this field; only the admin board
+    renders it. Status transitions live on dedicated POST endpoints
+    (/confirm, /complete, /cancel) so we don't co-mingle the two
+    concerns into one mutable PATCH.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    adminNotes: str | None = Field(default=None, max_length=2000)
 
 
 # ─── WebSocket envelopes ────────────────────────────────────────────────────

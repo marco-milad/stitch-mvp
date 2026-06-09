@@ -114,6 +114,10 @@ class ServiceBooking(UuidPk, Timestamps, Base):
     time_slot: Mapped[str] = mapped_column(String(5), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    # Admin-only commentary attached during the lifecycle (e.g. "vendor
+    # ETA 30 min late", "resident rescheduled via WhatsApp"). Hidden
+    # from the resident-side projection — see service_bookings_hub.
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class QrLog(UuidPk, Base):

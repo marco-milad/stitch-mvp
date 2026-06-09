@@ -163,6 +163,41 @@ export async function listServiceBookings(): Promise<ServiceBookingsList> {
   return http<ServiceBookingsList>('/admin/service-bookings');
 }
 
+// State-machine transitions. Each returns the projected booking after
+// the transition so the caller can optimistically update the cache.
+// HTTP 409 from the backend means "current status doesn't allow this
+// transition" — surfaces via the fetch error path with the explanation
+// message attached.
+
+export async function confirmServiceBooking(bookingId: string): Promise<ServiceBooking> {
+  return http<ServiceBooking>(`/admin/service-bookings/${bookingId}/confirm`, {
+    method: 'POST',
+  });
+}
+
+export async function completeServiceBooking(bookingId: string): Promise<ServiceBooking> {
+  return http<ServiceBooking>(`/admin/service-bookings/${bookingId}/complete`, {
+    method: 'POST',
+  });
+}
+
+export async function cancelServiceBooking(bookingId: string): Promise<ServiceBooking> {
+  return http<ServiceBooking>(`/admin/service-bookings/${bookingId}/cancel`, {
+    method: 'POST',
+  });
+}
+
+/** Patch the admin-only internal notes. Pass `null` (or omit) to clear. */
+export async function updateServiceBookingNotes(
+  bookingId: string,
+  adminNotes: string | null,
+): Promise<ServiceBooking> {
+  return http<ServiceBooking>(`/admin/service-bookings/${bookingId}/notes`, {
+    method: 'PATCH',
+    body: JSON.stringify({ adminNotes }),
+  });
+}
+
 export async function dispatchRequest(
   requestId: string,
   technicianId: string,

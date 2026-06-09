@@ -94,6 +94,9 @@ export interface ServiceBooking {
   timeSlot: string;
   notes: string | null;
   status: ServiceBookingStatus;
+  /** Admin-only internal commentary. Null on the resident-side
+   *  projection; populated on `/admin/service-bookings` only. */
+  adminNotes: string | null;
   createdAt: string;
   updatedAt: string;
 }

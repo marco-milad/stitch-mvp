@@ -32,7 +32,11 @@ from app.schemas.requests import (
     ServiceRequest,
     ServiceRequestsList,
 )
-from app.schemas.service_bookings import ServiceBookingsList
+from app.schemas.service_bookings import (
+    ServiceBooking,
+    ServiceBookingNotesUpdate,
+    ServiceBookingsList,
+)
 from app.services import requests_hub, service_bookings_hub
 
 router = APIRouter()
@@ -142,8 +146,77 @@ async def _receiver(websocket: WebSocket) -> None:
 
 @router.get("/admin/service-bookings", response_model=ServiceBookingsList)
 async def list_admin_service_bookings(session: DbSession) -> ServiceBookingsList:
-    items = await service_bookings_hub.list_bookings(session)
+    # Admin view includes the internal admin_notes column; the resident
+    # /me/service-bookings call sets include_admin_notes=False so the
+    # field stays admin-only.
+    items = await service_bookings_hub.list_bookings(session, include_admin_notes=True)
     return ServiceBookingsList(items=items)
+
+
+# ─── Service Booking state-machine transitions (admin) ────────────────────
+#
+#     pending  ──[/confirm]──►  confirmed  ──[/complete]──►  completed
+#        │                            │
+#        └────[/cancel]── cancelled ◄─┘
+#
+# Each route is a thin wrapper around service_bookings_hub which holds
+# the transition validation + broadcast. InvalidTransitionError maps to
+# 409 Conflict so the admin UI can distinguish "you can't do that from
+# the current state" from 404 ("booking doesn't exist").
+
+
+@router.post(
+    "/admin/service-bookings/{booking_id}/confirm",
+    response_model=ServiceBooking,
+)
+async def confirm_admin_service_booking(booking_id: str, session: DbSession) -> ServiceBooking:
+    try:
+        return await service_bookings_hub.confirm_booking(session, booking_id)
+    except service_bookings_hub.BookingNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Booking not found") from exc
+    except service_bookings_hub.InvalidTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post(
+    "/admin/service-bookings/{booking_id}/complete",
+    response_model=ServiceBooking,
+)
+async def complete_admin_service_booking(booking_id: str, session: DbSession) -> ServiceBooking:
+    try:
+        return await service_bookings_hub.complete_booking(session, booking_id)
+    except service_bookings_hub.BookingNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Booking not found") from exc
+    except service_bookings_hub.InvalidTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post(
+    "/admin/service-bookings/{booking_id}/cancel",
+    response_model=ServiceBooking,
+)
+async def cancel_admin_service_booking(booking_id: str, session: DbSession) -> ServiceBooking:
+    try:
+        return await service_bookings_hub.cancel_booking(session, booking_id)
+    except service_bookings_hub.BookingNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Booking not found") from exc
+    except service_bookings_hub.InvalidTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.patch(
+    "/admin/service-bookings/{booking_id}/notes",
+    response_model=ServiceBooking,
+)
+async def patch_admin_service_booking_notes(
+    booking_id: str, payload: ServiceBookingNotesUpdate, session: DbSession
+) -> ServiceBooking:
+    try:
+        return await service_bookings_hub.update_admin_notes(
+            session, booking_id, payload.adminNotes
+        )
+    except service_bookings_hub.BookingNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Booking not found") from exc
 
 
 @router.websocket("/admin/service-bookings/stream")

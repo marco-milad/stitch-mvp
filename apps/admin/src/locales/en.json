@@ -33,7 +33,8 @@
       "offering": "Offering",
       "scheduled": "Scheduled",
       "status": "Status",
-      "created": "Submitted"
+      "created": "Submitted",
+      "actions": "Actions"
     },
     "status": {
       "pending": "Pending",
@@ -41,6 +42,22 @@
       "in_progress": "In progress",
       "completed": "Completed",
       "cancelled": "Cancelled"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "complete": "Complete",
+      "cancel": "Cancel",
+      "cancelConfirm": "Cancel this booking? This action can't be undone.",
+      "addNotes": "Notes",
+      "editNotes": "Notes",
+      "noNotes": "No admin notes yet"
+    },
+    "notes": {
+      "label": "Admin notes",
+      "placeholder": "Internal notes — vendor coordination, reschedule reasons, etc. Not shown to the resident.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
     }
   },
   "common": {

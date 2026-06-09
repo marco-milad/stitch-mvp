@@ -33,7 +33,8 @@
       "offering": "النوع",
       "scheduled": "موعد التنفيذ",
       "status": "الحالة",
-      "created": "تاريخ الإرسال"
+      "created": "تاريخ الإرسال",
+      "actions": "إجراءات"
     },
     "status": {
       "pending": "في الانتظار",
@@ -41,6 +42,22 @@
       "in_progress": "جاري التنفيذ",
       "completed": "تم",
       "cancelled": "ملغي"
+    },
+    "actions": {
+      "confirm": "تأكيد",
+      "complete": "إنهاء",
+      "cancel": "إلغاء",
+      "cancelConfirm": "هتلغي الحجز ده؟ مفيش رجوع بعد كده.",
+      "addNotes": "ملاحظات",
+      "editNotes": "ملاحظات",
+      "noNotes": "مفيش ملاحظات لسه"
+    },
+    "notes": {
+      "label": "ملاحظات الأدمن",
+      "placeholder": "ملاحظات داخلية — تنسيق مع المقدم، أسباب التغيير، إلخ. مش هتظهر للساكن.",
+      "save": "حفظ",
+      "saving": "بنحفظ…",
+      "cancel": "إلغاء"
     }
   },
   "common": {

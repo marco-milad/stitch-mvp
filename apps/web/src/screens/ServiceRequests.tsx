@@ -1,5 +1,23 @@
+// "My Requests" screen — server-fed source of truth.
+//
+// Renders TWO live-polled lists, both reading directly from the FastAPI
+// backend so the resident only sees rows that genuinely persisted:
+//
+//   1. Maintenance tickets via the existing <MyMaintenanceTickets />
+//      component (polls GET /me/requests every 5 s).
+//
+//   2. Service bookings (Cleaning, Laundry, Delivery, Pet, Gardening,
+//      Security Guard, Wellness) via a sibling TanStack Query on
+//      GET /me/service-bookings, also polled every 5 s.
+//
+// The legacy localStorage panel (powered by useServiceRequestsStore +
+// MOCK_SEED_REQUESTS) was deceptive — it could show optimistic writes
+// for bookings whose POST never landed server-side. It's gone. If
+// you submit a tile booking and don't see it here within 5 s, the
+// server didn't persist it, full stop.
+
+import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,32 +26,38 @@ import { formatFullDate, fromDateIso } from '@/lib/dates';
 import { SERVICE_TILES } from '@/lib/mock/services';
 import { getProviderById, offeringLabelKey } from '@/lib/mock/serviceProviders';
 import {
-  isActiveStatus,
-  type RequestStatus,
-  type ServiceRequest,
-} from '@/lib/schemas/serviceRequest';
-import { useServiceRequestsStore } from '@/stores/serviceRequestsStore';
+  listMyServiceBookings,
+  type ServiceBooking,
+  type ServiceBookingStatus,
+} from '@/lib/residentApi';
 
-const STATUS_TONE: Record<RequestStatus, { bg: string; fg: string }> = {
+const STATUS_TONE: Record<ServiceBookingStatus, { bg: string; fg: string }> = {
   pending: { bg: '#FEF3C7', fg: '#92400E' },
   confirmed: { bg: '#DBEAFE', fg: '#1D4ED8' },
-  'in-progress': { bg: '#EDE9FE', fg: '#6D28D9' },
+  in_progress: { bg: '#EDE9FE', fg: '#6D28D9' },
   completed: { bg: '#D1FAE5', fg: '#047857' },
   cancelled: { bg: '#FEE2E2', fg: '#B91C1C' },
 };
 
+const ACTIVE_STATUSES = new Set<ServiceBookingStatus>(['pending', 'confirmed', 'in_progress']);
+
 export function ServiceRequests() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const requests = useServiceRequestsStore((s) => s.requests);
-  const cancelRequest = useServiceRequestsStore((s) => s.cancelRequest);
 
-  const { active, past } = useMemo(() => {
-    const a: ServiceRequest[] = [];
-    const p: ServiceRequest[] = [];
-    for (const r of requests) (isActiveStatus(r.status) ? a : p).push(r);
-    return { active: a, past: p };
-  }, [requests]);
+  const bookingsQuery = useQuery<ServiceBooking[]>({
+    queryKey: ['me', 'service-bookings'],
+    queryFn: listMyServiceBookings,
+    // 5 s polling matches MyMaintenanceTickets so both panels refresh in
+    // lockstep. Background-tab pause keeps mobile data cheap.
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+  });
+
+  const bookings = bookingsQuery.data ?? [];
+  const activeBookings = bookings.filter((b) => ACTIVE_STATUSES.has(b.status));
+  const pastBookings = bookings.filter((b) => !ACTIVE_STATUSES.has(b.status));
 
   return (
     <>
@@ -54,21 +78,20 @@ export function ServiceRequests() {
       </div>
 
       <div className="p-4">
-        {/* Maintenance tickets (live from /api/v1/me/requests) sit above
-            the existing service-booking list. */}
+        {/* Maintenance tickets — live from GET /me/requests, polled. */}
         <MyMaintenanceTickets />
 
-        {requests.length === 0 ? null : (
+        {/* Service bookings — live from GET /me/service-bookings, polled.
+            Hidden completely when there are no bookings server-side so
+            the resident can't be confused by ghost rows from a stale
+            localStorage cache. */}
+        {bookings.length > 0 && (
           <>
-            {active.length > 0 && (
-              <Section
-                title={t('services.requests.activeTitle')}
-                requests={active}
-                onCancel={cancelRequest}
-              />
+            {activeBookings.length > 0 && (
+              <Section title={t('services.requests.activeTitle')} bookings={activeBookings} />
             )}
-            {past.length > 0 && (
-              <Section title={t('services.requests.pastTitle')} requests={past} />
+            {pastBookings.length > 0 && (
+              <Section title={t('services.requests.pastTitle')} bookings={pastBookings} />
             )}
           </>
         )}
@@ -77,57 +100,43 @@ export function ServiceRequests() {
   );
 }
 
-function Section({
-  title,
-  requests,
-  onCancel,
-}: {
-  title: string;
-  requests: ServiceRequest[];
-  onCancel?: (id: string) => void;
-}) {
+function Section({ title, bookings }: { title: string; bookings: ServiceBooking[] }) {
   return (
     <section className="mb-5">
       <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-400 mb-2">{title}</h3>
       <div className="space-y-2">
-        {requests.map((r) => (
-          <RequestCard key={r.id} request={r} onCancel={onCancel} />
+        {bookings.map((b) => (
+          <BookingCard key={b.id} booking={b} />
         ))}
       </div>
     </section>
   );
 }
 
-function RequestCard({
-  request,
-  onCancel,
-}: {
-  request: ServiceRequest;
-  onCancel?: (id: string) => void;
-}) {
+function BookingCard({ booking }: { booking: ServiceBooking }) {
   const { t, i18n } = useTranslation();
-  const tile = SERVICE_TILES.find((tl) => tl.id === request.tileId);
-  const provider = getProviderById(request.providerId);
-  const tone = STATUS_TONE[request.status];
-  const dateObj = fromDateIso(request.dateIso);
-  const dateLabel = dateObj ? formatFullDate(dateObj, i18n.language) : request.dateIso;
+  const tile = SERVICE_TILES.find((tl) => tl.id === booking.tileId);
+  const provider = getProviderById(booking.providerId);
+  const tone = STATUS_TONE[booking.status];
+  const dateObj = fromDateIso(booking.dateIso);
+  const dateLabel = dateObj ? formatFullDate(dateObj, i18n.language) : booking.dateIso;
 
   return (
     <div className="bg-white/60 dark:bg-ink-700/60 backdrop-blur-md rounded-2xl p-3 border border-white/40 dark:border-white/10 shadow-lg shadow-ink-900/5 hover:scale-[1.02] hover:shadow-xl hover:shadow-ink-900/10 transition-all duration-300">
       <div className="flex flex-row items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-ink-900 dark:text-white truncate">
-            {provider?.name ?? request.providerId}
+            {provider?.name ?? booking.providerId}
           </p>
           <p className="text-[11px] text-ink-500 dark:text-ink-100 truncate">
             {tile ? `${tile.name} · ` : ''}
-            {t(offeringLabelKey(request.tileId, request.offeringKey))}
+            {t(offeringLabelKey(booking.tileId, booking.offeringKey))}
           </p>
           <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-ink-700 dark:text-ink-100">
             <CalendarIcon size={11} />
             {t('services.requests.scheduledFor', {
               date: dateLabel,
-              time: request.timeSlot,
+              time: booking.timeSlot,
             })}
           </p>
         </div>
@@ -135,18 +144,9 @@ function RequestCard({
           className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0"
           style={{ backgroundColor: tone.bg, color: tone.fg }}
         >
-          {t(`services.requests.status.${request.status}`)}
+          {t(`services.requests.status.${booking.status}`)}
         </span>
       </div>
-      {onCancel && (
-        <button
-          type="button"
-          onClick={() => onCancel(request.id)}
-          className="mt-3 text-[11px] font-semibold text-red-600 dark:text-red-400"
-        >
-          {t('services.requests.cancel')}
-        </button>
-      )}
     </div>
   );
 }

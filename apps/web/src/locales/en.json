@@ -861,6 +861,7 @@
         "pending": "Pending",
         "confirmed": "Confirmed",
         "in-progress": "In progress",
+        "in_progress": "In progress",
         "completed": "Completed",
         "cancelled": "Cancelled"
       }

@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
@@ -21,7 +22,6 @@ import {
 } from '@/lib/schemas/serviceRequest';
 import { OtelBookingButton } from '@/components/booking/OtelBookingButton';
 import { useCurrentProperty } from '@/stores/propertyStore';
-import { useServiceRequestsStore } from '@/stores/serviceRequestsStore';
 import { useShowServiceDurations } from '@/stores/featureTogglesStore';
 
 const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
@@ -36,7 +36,7 @@ export function WellnessBook() {
   const facility = getFacility(facilityId);
   const session = getSessionById(sessionId);
   const property = useCurrentProperty();
-  const addRequest = useServiceRequestsStore((s) => s.addRequest);
+  const qc = useQueryClient();
 
   const [submitted, setSubmitted] = useState(false);
 
@@ -65,18 +65,18 @@ export function WellnessBook() {
         timeSlot: data.timeSlot,
         notes: data.notes,
       });
-      // Optimistic mirror so the resident's local requests pane lights
-      // up immediately. The WS stream is the authoritative source.
-      addRequest({
-        ...data,
+      // Diagnostic log: prove the server actually wrote the row by
+      // surfacing the id it returned. If you see this line + see the
+      // matching row in admin, the write is genuinely live. No
+      // localStorage mirror — the server is the only source of truth.
+      console.info('[WellnessBook] service booking created server-side:', {
         id: booking.id,
-        tileId: facility.bookingTileId,
-        providerId: `wellness-${facility.id}`,
-        offeringKey: session.id,
-        propertyId: property.id,
-        status: 'pending',
         createdAt: booking.createdAt,
+        tileId: booking.tileId,
+        providerId: booking.providerId,
+        residentName: booking.residentName,
       });
+      qc.invalidateQueries({ queryKey: ['me', 'service-bookings'] });
       reset();
       setSubmitted(true);
     } catch (err) {

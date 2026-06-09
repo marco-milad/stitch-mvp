@@ -861,6 +861,7 @@
         "pending": "بانتظار التأكيد",
         "confirmed": "مؤكد",
         "in-progress": "جاري التنفيذ",
+        "in_progress": "جاري التنفيذ",
         "completed": "تم",
         "cancelled": "ملغي"
       }

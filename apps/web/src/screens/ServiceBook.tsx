@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
@@ -27,7 +28,6 @@ import {
 } from '@/lib/schemas/serviceRequest';
 import { OtelBookingButton } from '@/components/booking/OtelBookingButton';
 import { useCurrentProperty } from '@/stores/propertyStore';
-import { useServiceRequestsStore } from '@/stores/serviceRequestsStore';
 import { useShowServiceDurations } from '@/stores/featureTogglesStore';
 
 const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
@@ -44,7 +44,7 @@ export function ServiceBook() {
   const provider = getProviderById(providerId);
   const offering = provider?.offerings.find((o) => o.key === offeringKey);
   const property = useCurrentProperty();
-  const addRequest = useServiceRequestsStore((s) => s.addRequest);
+  const qc = useQueryClient();
 
   const [submitted, setSubmitted] = useState(false);
 
@@ -95,19 +95,18 @@ export function ServiceBook() {
             `Scheduled: ${data.dateIso} ${data.timeSlot} · provider ${provider.name}`,
           urgency: 'routine',
         });
-        // Optimistic mirror in the local store so the resident's "My
-        // Requests" pane on Services lights up immediately. The
-        // authoritative copy is the WS-fed TanStack Query cache.
-        addRequest({
-          ...data,
+        // Diagnostic log: prove the server actually wrote the row by
+        // surfacing the id it returned. If you see this line in the
+        // browser console + see the matching row in admin, the write
+        // is genuinely live. No localStorage mirror — the server is
+        // the only source of truth.
+        console.info('[ServiceBook] maintenance ticket created server-side:', {
           id: ticket.id,
-          tileId: tile.id,
-          providerId: provider.id,
-          offeringKey: offering.key,
-          propertyId: property.id,
-          status: 'pending',
-          createdAt: ticket.openedAt,
+          openedAt: ticket.openedAt,
+          residentName: ticket.residentName,
+          category: ticket.category,
         });
+        qc.invalidateQueries({ queryKey: ['me', 'requests'] });
       } else {
         const booking = await createMyServiceBooking({
           tileId: tile.id,
@@ -117,16 +116,14 @@ export function ServiceBook() {
           timeSlot: data.timeSlot,
           notes: data.notes,
         });
-        addRequest({
-          ...data,
+        console.info('[ServiceBook] service booking created server-side:', {
           id: booking.id,
-          tileId: tile.id,
-          providerId: provider.id,
-          offeringKey: offering.key,
-          propertyId: property.id,
-          status: 'pending',
           createdAt: booking.createdAt,
+          tileId: booking.tileId,
+          providerId: booking.providerId,
+          residentName: booking.residentName,
         });
+        qc.invalidateQueries({ queryKey: ['me', 'service-bookings'] });
       }
       reset();
       setSubmitted(true);

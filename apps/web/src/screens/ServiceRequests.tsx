@@ -63,6 +63,22 @@ export function ServiceRequests() {
   const activeBookings = bookings.filter((b) => ACTIVE_STATUSES.has(b.status));
   const pastBookings = bookings.filter((b) => !ACTIVE_STATUSES.has(b.status));
 
+  // Diagnostic: log the bookings query state on every render so we can
+  // tell at a glance from the browser console whether the issue is
+  // (a) query never fetched, (b) query errored, or (c) query succeeded
+  // but with empty data. Drop this log once tile bookings reliably
+  // appear server-fed.
+  console.info('[ServiceRequests] bookings query state:', {
+    status: bookingsQuery.status,
+    fetchStatus: bookingsQuery.fetchStatus,
+    isFetching: bookingsQuery.isFetching,
+    dataLength: bookings.length,
+    activeCount: activeBookings.length,
+    pastCount: pastBookings.length,
+    error: bookingsQuery.error?.message,
+    dataUpdatedAt: bookingsQuery.dataUpdatedAt,
+  });
+
   return (
     <>
       <div className="sticky top-0 z-10 bg-white/55 dark:bg-ink-900/55 backdrop-blur-lg border-b border-white/40 dark:border-white/10 shadow-[0_4px_24px_rgba(15,23,42,0.04)]">
@@ -86,34 +102,65 @@ export function ServiceRequests() {
         <MyMaintenanceTickets />
 
         {/* Service bookings — live from GET /me/service-bookings, polled.
-            Hidden completely when there are no bookings server-side so
-            the resident can't be confused by ghost rows from a stale
-            localStorage cache. */}
-        {bookings.length > 0 && (
-          <>
-            {activeBookings.length > 0 && (
-              <Section title={t('services.requests.activeTitle')} bookings={activeBookings} />
-            )}
-            {pastBookings.length > 0 && (
-              <Section title={t('services.requests.pastTitle')} bookings={pastBookings} />
-            )}
-          </>
-        )}
+            Explicit states so the resident can SEE whether bookings are
+            loading, errored, or genuinely empty — instead of the section
+            silently disappearing when the query is in any non-success
+            state (which was the previous behaviour and made debugging
+            painful when a booking POST succeeded but the polled list
+            silently rendered nothing). */}
+        <section className="mt-5">
+          <div className="flex items-baseline justify-between mb-2">
+            <h2 className="text-sm font-extrabold text-ink-900 dark:text-white">
+              {t('services.requests.bookingsTitle')}
+            </h2>
+            <span className="text-[10px] text-ink-500 dark:text-ink-100 tabular-nums">
+              {bookings.length} total
+            </span>
+          </div>
+
+          {bookingsQuery.status === 'pending' && (
+            <p className="text-xs text-ink-500 dark:text-ink-100 py-3 text-center">
+              {t('services.requests.loadingBookings')}
+            </p>
+          )}
+
+          {bookingsQuery.status === 'error' && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-2xl p-3 text-xs text-red-800 dark:text-red-200">
+              <p className="font-semibold">{t('services.requests.bookingsError')}</p>
+              <p className="mt-1 opacity-80">{bookingsQuery.error?.message}</p>
+            </div>
+          )}
+
+          {bookingsQuery.status === 'success' && bookings.length === 0 && (
+            <p className="text-xs text-ink-500 dark:text-ink-100 py-3 text-center">
+              {t('services.requests.bookingsEmpty')}
+            </p>
+          )}
+
+          {activeBookings.length > 0 && (
+            <Subsection title={t('services.requests.activeTitle')} bookings={activeBookings} />
+          )}
+          {pastBookings.length > 0 && (
+            <Subsection title={t('services.requests.pastTitle')} bookings={pastBookings} />
+          )}
+        </section>
       </div>
     </>
   );
 }
 
-function Section({ title, bookings }: { title: string; bookings: ServiceBooking[] }) {
+function Subsection({ title, bookings }: { title: string; bookings: ServiceBooking[] }) {
   return (
-    <section className="mb-5">
-      <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-400 mb-2">{title}</h3>
+    <div className="mb-4">
+      <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-400 mb-2 mt-3">
+        {title}
+      </h3>
       <div className="space-y-2">
         {bookings.map((b) => (
           <BookingCard key={b.id} booking={b} />
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 

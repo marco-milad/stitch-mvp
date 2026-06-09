@@ -6,9 +6,42 @@
   "nav": {
     "content": "Content Management",
     "requests": "Service Requests",
+    "bookings": "Service Bookings",
     "gate": "Gate & Parking",
     "signOut": "Sign out",
     "lang": "العربية"
+  },
+  "bookings": {
+    "title": "Service Bookings",
+    "subtitle": "Wellness, cleaning, laundry, delivery and other vendor-bound bookings submitted by residents.",
+    "totalSuffix": "total",
+    "loading": "Loading bookings…",
+    "empty": "No bookings match this filter.",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "col": {
+      "id": "ID",
+      "resident": "Resident",
+      "unit": "Unit",
+      "service": "Service",
+      "offering": "Offering",
+      "scheduled": "Scheduled",
+      "status": "Status",
+      "created": "Submitted"
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
   },
   "common": {
     "save": "Save",

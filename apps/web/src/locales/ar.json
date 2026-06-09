@@ -853,6 +853,10 @@
     "requests": {
       "title": "طلباتي",
       "empty": "مفيش طلبات لسه. اضغط على خدمة عشان تحجز.",
+      "bookingsTitle": "حجوزات الخدمات",
+      "loadingBookings": "بنحمل حجوزاتك…",
+      "bookingsEmpty": "مفيش حجوزات لسه. ابعت طلب من أي تايل عشان يظهر هنا.",
+      "bookingsError": "ما اتحملوش حجوزاتك.",
       "activeTitle": "نشط",
       "pastTitle": "السابقة",
       "scheduledFor": "{{date}} · {{time}}",

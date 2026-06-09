@@ -70,6 +70,34 @@ export interface ServiceRequest {
   openedAt: string;
 }
 
+// ─── Service bookings (Wellness, Cleaning, Laundry, Pet, etc.) ────────────
+// Distinct from ServiceRequest above: these are vendor-bound bookings
+// flowing through /admin/service-bookings, not the maintenance dispatch
+// pipeline. Status lifecycle has confirmed/completed/cancelled in
+// addition to the shared pending/in_progress.
+
+export type ServiceBookingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
+
+export interface ServiceBooking {
+  id: string;
+  residentName: string;
+  unit: string;
+  tileId: string;
+  providerId: string;
+  offeringKey: string;
+  dateIso: string;
+  timeSlot: string;
+  notes: string | null;
+  status: ServiceBookingStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Gate & Parking ─────────────────────────────────────────────────────────
 
 export const PermitStatusSchema = z.enum(['pending', 'approved', 'rejected', 'expired']);

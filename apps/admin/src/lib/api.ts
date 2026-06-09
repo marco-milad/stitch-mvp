@@ -14,6 +14,7 @@ import type {
   AdminPost,
   AdminReel,
   GateScanEvent,
+  ServiceBooking,
   ServiceRequest,
   Technician,
 } from './types';
@@ -145,6 +146,21 @@ export interface RequestsList {
 
 export async function listRequests(): Promise<RequestsList> {
   return http<RequestsList>('/admin/requests');
+}
+
+// ─── Service bookings (Wellness, Cleaning, Laundry, Pet, Delivery, etc.) ─
+//
+// Separate endpoint from the maintenance dispatch pipeline above. These
+// are vendor-bound bookings the resident submits via the Services tile
+// flow — no technician dispatch, no resolve action (yet); the admin
+// just needs visibility for now.
+
+export interface ServiceBookingsList {
+  items: ServiceBooking[];
+}
+
+export async function listServiceBookings(): Promise<ServiceBookingsList> {
+  return http<ServiceBookingsList>('/admin/service-bookings');
 }
 
 export async function dispatchRequest(

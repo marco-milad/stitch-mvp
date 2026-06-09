@@ -7,6 +7,7 @@ import { useFeedSync } from '@/lib/useFeedSync';
 import { ContentManagement } from '@/screens/ContentManagement';
 import { GateOps } from '@/screens/GateOps';
 import { NotFound } from '@/screens/NotFound';
+import { ServiceBookings } from '@/screens/ServiceBookings';
 import { ServiceRequests } from '@/screens/ServiceRequests';
 
 function FeedSyncRoot({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export function App() {
               <Route path="/" element={<Navigate to="/content" replace />} />
               <Route path="/content" element={<ContentManagement />} />
               <Route path="/requests" element={<ServiceRequests />} />
+              <Route path="/bookings" element={<ServiceBookings />} />
               <Route path="/gate" element={<GateOps />} />
               <Route path="*" element={<NotFound />} />
             </Route>

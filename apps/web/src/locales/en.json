@@ -853,6 +853,10 @@
     "requests": {
       "title": "My requests",
       "empty": "No requests yet. Tap a service to book your first one.",
+      "bookingsTitle": "Service bookings",
+      "loadingBookings": "Loading your bookings…",
+      "bookingsEmpty": "No bookings yet. Submit one from any service tile to see it here.",
+      "bookingsError": "Couldn't load your bookings.",
       "activeTitle": "Active",
       "pastTitle": "Past",
       "scheduledFor": "{{date}} · {{time}}",

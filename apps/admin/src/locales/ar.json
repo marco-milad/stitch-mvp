@@ -6,9 +6,42 @@
   "nav": {
     "content": "إدارة المحتوى",
     "requests": "طلبات الخدمة",
+    "bookings": "حجوزات الخدمات",
     "gate": "البوابة والمواقف",
     "signOut": "تسجيل الخروج",
     "lang": "English"
+  },
+  "bookings": {
+    "title": "حجوزات الخدمات",
+    "subtitle": "العافية والتنظيف والغسيل والتوصيل وغيرها من الحجوزات اللي السكان بعتوها.",
+    "totalSuffix": "إجمالي",
+    "loading": "جاري تحميل الحجوزات…",
+    "empty": "مفيش حجوزات بالفلتر ده.",
+    "filters": {
+      "all": "الكل",
+      "pending": "في الانتظار",
+      "confirmed": "مؤكد",
+      "inProgress": "جاري التنفيذ",
+      "completed": "تم",
+      "cancelled": "ملغي"
+    },
+    "col": {
+      "id": "كود",
+      "resident": "الساكن",
+      "unit": "الوحدة",
+      "service": "الخدمة",
+      "offering": "النوع",
+      "scheduled": "موعد التنفيذ",
+      "status": "الحالة",
+      "created": "تاريخ الإرسال"
+    },
+    "status": {
+      "pending": "في الانتظار",
+      "confirmed": "مؤكد",
+      "in_progress": "جاري التنفيذ",
+      "completed": "تم",
+      "cancelled": "ملغي"
+    }
   },
   "common": {
     "save": "حفظ",

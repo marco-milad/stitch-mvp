@@ -677,6 +677,7 @@
   "services": {
     "title": "الخدمات",
     "comingSoon": "صيانة، حجوزات، مدفوعات — هتيجي قريب.",
+    "comingSoonBadge": "قريباً",
     "myRequestsBanner": {
       "title": "طلباتي الحالية",
       "subtitle": "تابع التذاكر اللي فتحتها مع فريق العمليات"

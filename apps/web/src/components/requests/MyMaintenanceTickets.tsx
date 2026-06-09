@@ -12,22 +12,19 @@
 // human noticeable threshold for a maintenance dashboard. The backend
 // WS endpoint stays live as an opt-in path for higher-frequency surfaces.
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Loader2, Plus, Wrench, X } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Plus, Wrench } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 import {
-  createMyTicket,
   listMyTickets,
   listTechnicianRoster,
   type MaintenanceTicket,
-  type TicketCategory,
-  type TicketCreateInput,
   type TicketStatus,
   type TicketTechnician,
-  type TicketUrgency,
 } from '@/lib/residentApi';
 import { MOCK_TECHNICIANS, MOCK_TICKETS, withMockFallback } from '@/lib/residentApiFallbacks';
 import { residentQueryOptions } from '@/lib/useResidentQuery';
@@ -87,16 +84,7 @@ const QUERY_KEY = ['me', 'requests'] as const;
 
 export function MyMaintenanceTickets() {
   const { t, i18n } = useTranslation();
-  const qc = useQueryClient();
-  const [creatorOpen, setCreatorOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  // Auto-dismiss toast after 3.5s.
-  useEffect(() => {
-    if (!toast) return undefined;
-    const id = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(id);
-  }, [toast]);
+  const navigate = useNavigate();
 
   const ticketsQuery = useQuery<MaintenanceTicket[]>({
     queryKey: QUERY_KEY,
@@ -155,29 +143,20 @@ export function MyMaintenanceTickets() {
         </div>
       </div>
 
+      {/* "+ New request" routes into the Maintenance catalog so the
+          resident always goes through the polished ServiceBook flow
+          with the 24/7 slot picker. The legacy in-screen modal — which
+          bypassed scheduling entirely and let `/me/requests` accept
+          unscheduled tickets — has been removed. Single intake form,
+          single source of truth. */}
       <button
         type="button"
-        onClick={() => setCreatorOpen(true)}
-        className="mb-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 hover:from-brand-500 hover:to-brand-700 text-white text-sm font-bold shadow-lg shadow-brand-500/40 ring-1 ring-white/30 hover:scale-[1.02] hover:shadow-xl hover:shadow-brand-500/50 active:scale-[0.98] transition-all duration-300"
+        onClick={() => navigate('/services/daily-home')}
+        className="mb-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-ink-950 dark:bg-white text-white dark:text-ink-950 text-sm font-bold shadow-md hover:shadow-lg active:scale-[0.99] transition-all duration-base ease-smooth"
       >
         <Plus size={16} />
         <span>{t('myTickets.newRequest')}</span>
       </button>
-
-      {toast && (
-        <div className="mb-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-900/30 backdrop-blur-md border border-emerald-200/70 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-200 text-xs font-semibold shadow-lg shadow-emerald-500/15 animate-ticket-in">
-          <CheckCircle2 size={14} />
-          <span className="flex-1">{toast}</span>
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            aria-label="Dismiss"
-            className="opacity-70 hover:opacity-100 hover:scale-110 active:scale-95 transition-all duration-200"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      )}
 
       {ticketsQuery.isLoading ? (
         <div className="flex flex-col gap-2">
@@ -224,17 +203,6 @@ export function MyMaintenanceTickets() {
             />
           ))}
         </div>
-      )}
-
-      {creatorOpen && (
-        <NewRequestModal
-          onClose={() => setCreatorOpen(false)}
-          onCreated={() => {
-            setCreatorOpen(false);
-            setToast(t('myTickets.toast.created'));
-            qc.invalidateQueries({ queryKey: QUERY_KEY });
-          }}
-        />
       )}
     </section>
   );
@@ -354,182 +322,14 @@ function TicketCard({
   );
 }
 
-// ─── New-request modal ────────────────────────────────────────────────
-
-const CATEGORY_OPTIONS: readonly TicketCategory[] = [
-  'plumbing',
-  'electrical',
-  'cleaning',
-  'ac',
-  'pest',
-  'other',
-];
-
-const URGENCY_OPTIONS: readonly TicketUrgency[] = ['routine', 'priority', 'urgent'];
-
-interface NewRequestModalProps {
-  onClose: () => void;
-  onCreated: () => void;
-}
-
-function NewRequestModal({ onClose, onCreated }: NewRequestModalProps) {
-  const { t } = useTranslation();
-
-  const [category, setCategory] = useState<TicketCategory>('plumbing');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [urgency, setUrgency] = useState<TicketUrgency>('routine');
-  const [error, setError] = useState<string | null>(null);
-
-  const mutation = useMutation({
-    mutationFn: (input: TicketCreateInput) => createMyTicket(input),
-    onSuccess: () => onCreated(),
-    onError: (e: Error) => setError(t('myTickets.errors.createFailed', { message: e.message })),
-  });
-
-  const canSubmit = title.trim().length > 0 && description.trim().length > 0 && !mutation.isPending;
-
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    setError(null);
-    mutation.mutate({
-      category,
-      title: title.trim(),
-      description: description.trim(),
-      urgency,
-    });
-  };
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-30 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-3 animate-qr-rise"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !mutation.isPending) onClose();
-      }}
-    >
-      <div className="w-full max-w-md bg-white/85 dark:bg-ink-900/85 backdrop-blur-xl rounded-2xl border border-white/50 dark:border-white/10 shadow-2xl shadow-ink-900/20 ring-1 ring-white/30 flex flex-col max-h-[90vh]">
-        <header className="flex items-center justify-between px-5 py-4 border-b border-ink-100 dark:border-ink-700">
-          <div className="flex flex-col">
-            <h2 className="text-base font-extrabold text-ink-900 dark:text-white leading-tight">
-              {t('myTickets.create.title')}
-            </h2>
-            <p className="text-[11px] text-ink-500 leading-tight">
-              {t('myTickets.create.subtitle')}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={mutation.isPending}
-            aria-label={t('myTickets.create.cancel')}
-            className="p-1.5 rounded-lg text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-700 disabled:opacity-50"
-          >
-            <X size={16} />
-          </button>
-        </header>
-
-        <div className="px-5 py-4 flex flex-col gap-3 overflow-y-auto">
-          {error && (
-            <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
-              {error}
-            </div>
-          )}
-
-          <ModalField label={t('myTickets.create.category')}>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as TicketCategory)}
-              aria-label={t('myTickets.create.category')}
-              className="w-full px-3 py-2.5 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 text-sm text-ink-900 dark:text-white"
-            >
-              {CATEGORY_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {t(`myTickets.category.${c}`)}
-                </option>
-              ))}
-            </select>
-          </ModalField>
-
-          <ModalField label={t('myTickets.create.ticketTitle')}>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('myTickets.create.ticketTitlePlaceholder')}
-              maxLength={80}
-              aria-label={t('myTickets.create.ticketTitle')}
-              className="w-full px-3 py-2.5 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 text-sm text-ink-900 dark:text-white"
-            />
-          </ModalField>
-
-          <ModalField label={t('myTickets.create.description')}>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('myTickets.create.descriptionPlaceholder')}
-              rows={4}
-              maxLength={2000}
-              aria-label={t('myTickets.create.description')}
-              className="w-full px-3 py-2.5 rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 text-sm text-ink-900 dark:text-white resize-none"
-            />
-          </ModalField>
-
-          <ModalField label={t('myTickets.create.urgency')}>
-            <div className="flex gap-2">
-              {URGENCY_OPTIONS.map((u) => {
-                const selected = urgency === u;
-                return (
-                  <button
-                    key={u}
-                    type="button"
-                    onClick={() => setUrgency(u)}
-                    className={[
-                      'flex-1 px-3 py-2 rounded-lg text-[11px] font-semibold border',
-                      selected
-                        ? 'bg-brand-500 border-brand-500 text-white'
-                        : 'bg-white dark:bg-ink-900 border-ink-200 dark:border-ink-700 text-ink-700 dark:text-white',
-                    ].join(' ')}
-                  >
-                    {t(`myTickets.urgency.${u}`)}
-                  </button>
-                );
-              })}
-            </div>
-          </ModalField>
-        </div>
-
-        <footer className="flex items-center gap-2 px-5 py-3 border-t border-ink-100 dark:border-ink-700">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={mutation.isPending}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-ink-200 dark:border-ink-700 text-ink-700 dark:text-white text-sm font-semibold disabled:opacity-50"
-          >
-            {t('myTickets.create.cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 hover:from-brand-500 hover:to-brand-700 text-white text-sm font-bold shadow-lg shadow-brand-500/40 ring-1 ring-white/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
-          >
-            {mutation.isPending && <Loader2 size={14} className="animate-spin" />}
-            {mutation.isPending ? t('myTickets.create.submitting') : t('myTickets.create.submit')}
-          </button>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
-function ModalField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
+// ─── New-request modal: REMOVED ───────────────────────────────────────
+// The in-screen modal that posted unscheduled tickets to /me/requests
+// was deleted as part of the catalog consolidation. All maintenance
+// intake now flows through /services/daily-home → ServiceBook, which
+// pairs the request with a 24/7 maintenance slot (capacity-checked
+// on the server). Single intake form, single source of truth.
+//
+// The original NewRequestModal + ModalField + CATEGORY_OPTIONS +
+// URGENCY_OPTIONS used to live here. If you need to bring back a
+// quick-add path later, do it from inside ServiceBook so the slot
+// engine stays in the loop.

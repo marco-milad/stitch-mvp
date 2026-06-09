@@ -40,6 +40,10 @@ export interface ServiceTile {
   /** When true, the category screen renders a providers list + booking flow.
    *  When false/undefined, it renders an info card with a single action. */
   bookable?: boolean;
+  /** Tiles whose destination screen doesn't exist yet. Rendered with
+   *  reduced opacity + a "Soon" badge, tap is suppressed. Prevents the
+   *  silent /services bounce that made the catalog feel broken. */
+  comingSoon?: boolean;
   /** Optional override for navigation destination. When set, tapping the tile
    *  navigates here instead of the default `/services/:id`. Used for tiles
    *  that own a dedicated hub screen (e.g. Wellness). */
@@ -73,6 +77,21 @@ export const TONE_FG: Record<ServiceTone, string> = {
 };
 
 export const SERVICE_TILES: ServiceTile[] = [
+  {
+    // First slot in the Daily grid — highest-traffic intake path. The
+    // tile id stays `daily-home` so all existing routes, the
+    // ServiceBook maintenance branch, and the mock provider mapping
+    // (TILE_TO_OFFERING_NS) keep working unchanged.
+    id: 'daily-home',
+    section: 'daily',
+    name: 'Maintenance',
+    sub: 'Pest · Plumbing · Repair',
+    icon: Wrench,
+    tone: 'purple',
+    bookable: true,
+    keywords:
+      'plumbing electrical pest carpenter painter ac maintenance صيانة سباكة كهرباء حشرات نجار تكييف',
+  },
   {
     id: 'daily-book',
     section: 'daily',
@@ -124,16 +143,6 @@ export const SERVICE_TILES: ServiceTile[] = [
     tone: 'green',
     bookable: true,
     keywords: 'pet dog cat walking grooming vet kennel كلب قطة بيطري',
-  },
-  {
-    id: 'daily-home',
-    section: 'daily',
-    name: 'Home Services',
-    sub: 'Pest · Plumbing · Repair',
-    icon: Wrench,
-    tone: 'purple',
-    bookable: true,
-    keywords: 'plumbing electrical pest carpenter painter سباكة كهرباء حشرات نجار',
   },
   {
     id: 'daily-gardening',
@@ -203,6 +212,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Restaurants · Shops',
     icon: ShoppingBag,
     tone: 'amber',
+    comingSoon: true,
     keywords: 'restaurant cafe shop food retail supermarket مطعم كافيه محل',
   },
   {
@@ -212,6 +222,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Rewards · Partners',
     icon: Star,
     tone: 'amber',
+    comingSoon: true,
     keywords: 'loyalty rewards points partners discount نقاط مكافآت خصم',
   },
   {
@@ -221,6 +232,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Feedback · Reports',
     icon: MessageCircle,
     tone: 'purple',
+    comingSoon: true,
     keywords: 'complaint feedback issue report شكوى ملاحظة',
   },
   {
@@ -250,17 +262,13 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Invoices · Installments',
     icon: CreditCard,
     tone: 'red',
+    comingSoon: true,
     keywords: 'payment invoice bill installment fee maintenance دفع فاتورة قسط',
   },
-  {
-    id: 'prop-maint',
-    section: 'property',
-    name: 'Maintenance',
-    sub: 'My requests',
-    icon: Wrench,
-    tone: 'green',
-    keywords: 'maintenance request ticket repair fix ac plumbing صيانة طلب تكييف',
-  },
+  // Deleted: `prop-maint`. Its tracking concept ("My requests") is
+  // owned by the sacred dark banner at the top of /services and by
+  // the dedicated /services/requests screen — keeping a duplicate
+  // tile here just gave residents two cold paths to the same place.
   {
     id: 'prop-unit',
     section: 'property',
@@ -268,6 +276,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Specs · Members',
     icon: Home,
     tone: 'purple',
+    comingSoon: true,
     keywords: 'unit villa apartment members specs وحدة فيلا شقة',
   },
   {
@@ -277,6 +286,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Fines · T&Cs',
     icon: AlertTriangle,
     tone: 'red',
+    comingSoon: true,
     keywords: 'violation fine penalty rules مخالفة غرامة',
   },
   {
@@ -287,6 +297,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     icon: HardHat,
     tone: 'amber',
     ownerOnly: true,
+    comingSoon: true,
     keywords: 'construction handover progress milestone بناء تسليم',
   },
   {
@@ -297,6 +308,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     icon: FileText,
     tone: 'blue',
     ownerOnly: true,
+    comingSoon: true,
     keywords: 'documents contract deed paperwork legal مستندات عقد',
   },
   {
@@ -306,6 +318,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: '6 projects worldwide',
     icon: Globe,
     tone: 'purple',
+    comingSoon: true,
     keywords: 'eoi projects international invest interest عقار استثمار',
   },
   {
@@ -315,6 +328,7 @@ export const SERVICE_TILES: ServiceTile[] = [
     sub: 'Site visits · Meetings',
     icon: CalendarDays,
     tone: 'blue',
+    comingSoon: true,
     keywords: 'appointment meeting visit booking schedule موعد اجتماع',
   },
 ];

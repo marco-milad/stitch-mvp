@@ -677,6 +677,7 @@
   "services": {
     "title": "Services",
     "comingSoon": "Maintenance, bookings, payments — coming Week 2.",
+    "comingSoonBadge": "Soon",
     "myRequestsBanner": {
       "title": "My active requests",
       "subtitle": "Track tickets you've opened with the ops team"

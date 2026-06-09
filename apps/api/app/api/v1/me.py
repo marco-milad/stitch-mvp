@@ -244,12 +244,18 @@ async def create_my_request(
     payload: RequestCreateInput, user: CurrentUser, session: DbSession
 ) -> ServiceRequest:
     unit_id = await requests_hub.primary_unit_id_for(session, user.db_user_id)
-    return await requests_hub.create_request(
-        session,
-        user_id=user.db_user_id,
-        unit_id=unit_id,
-        payload=payload,
-    )
+    try:
+        return await requests_hub.create_request(
+            session,
+            user_id=user.db_user_id,
+            unit_id=unit_id,
+            payload=payload,
+        )
+    except requests_hub.SlotFullError as exc:
+        # 409 so the frontend can re-fetch availability and prompt the
+        # user to pick a different slot, distinct from a 422 schema
+        # mismatch or a 500 server error.
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.websocket("/me/requests/stream")

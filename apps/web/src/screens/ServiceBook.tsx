@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -20,6 +20,9 @@ import {
   AuthRequiredError,
   createMyServiceBooking,
   createMyTicket,
+  getMaintenanceAvailability,
+  MAINTENANCE_TIME_SLOTS,
+  type MaintenanceAvailabilityResponse,
   type TicketCategory,
 } from '@/lib/residentApi';
 import {
@@ -31,6 +34,17 @@ import { useCurrentProperty } from '@/stores/propertyStore';
 import { useShowServiceDurations } from '@/stores/featureTogglesStore';
 
 const FIXED_SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
+
+// Map an offering key from the Home Services tile onto the maintenance
+// ticket category enum the backend's availability counter uses. Single
+// source so the category passed to `getMaintenanceAvailability` and
+// the one persisted on the ticket can never drift.
+function offeringToCategory(offeringKey: string): TicketCategory {
+  if (offeringKey === 'pest') return 'pest';
+  if (offeringKey === 'plumbing') return 'plumbing';
+  if (offeringKey === 'electrical') return 'electrical';
+  return 'other';
+}
 
 export function ServiceBook() {
   const { t, i18n } = useTranslation();
@@ -73,20 +87,35 @@ export function ServiceBook() {
   // bookable tile lands in the dedicated `/me/service-bookings`
   // endpoint that broadcasts to the admin service-bookings dashboard.
   const isMaintenanceTile = tile.id === 'daily-home';
+  const maintenanceCategory = useMemo(
+    () => (offering ? offeringToCategory(offering.key) : null),
+    [offering],
+  );
+
+  // Live availability for the maintenance slot grid. Only fires when
+  // (a) we're on the Home Services tile flow AND (b) the user has
+  // picked a date — there's nothing to query before then.
+  // Cached for 30 s after a successful fetch so date toggling within
+  // the same minute doesn't hammer the endpoint; refetch on remount
+  // makes sure stale capacity numbers don't survive a Confirm-and-bounce
+  // back through the form.
+  const availabilityQuery = useQuery<MaintenanceAvailabilityResponse>({
+    queryKey: ['maintenance', 'availability', maintenanceCategory, dateIso],
+    queryFn: () => {
+      if (!isMaintenanceTile || !maintenanceCategory || !dateIso) {
+        throw new Error('availability query fired without prerequisites');
+      }
+      return getMaintenanceAvailability(maintenanceCategory, dateIso);
+    },
+    enabled: Boolean(isMaintenanceTile && maintenanceCategory && dateIso),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
       if (isMaintenanceTile) {
-        // Map the offering key onto a maintenance category — `pest` is
-        // its own key; everything else is plumbing/electrical/general.
-        const category: TicketCategory =
-          offering.key === 'pest'
-            ? 'pest'
-            : offering.key === 'plumbing'
-              ? 'plumbing'
-              : offering.key === 'electrical'
-                ? 'electrical'
-                : 'other';
+        const category: TicketCategory = offeringToCategory(offering.key);
         const ticket = await createMyTicket({
           category,
           title: t(offeringLabelKey(tile.id, offering.key)),
@@ -94,6 +123,12 @@ export function ServiceBook() {
             (data.notes ? `${data.notes}\n\n` : '') +
             `Scheduled: ${data.dateIso} ${data.timeSlot} · provider ${provider.name}`,
           urgency: 'routine',
+          // 24/7 slot scheduling fields. Backend capacity-checks these
+          // inside the same transaction and 409s if the slot just filled
+          // up between the availability fetch and the submit — see the
+          // catch path below.
+          scheduledDateIso: data.dateIso,
+          scheduledTimeSlot: data.timeSlot,
         });
         // Diagnostic log: prove the server actually wrote the row by
         // surfacing the id it returned. If you see this line in the
@@ -204,34 +239,49 @@ export function ServiceBook() {
           )}
 
           <p className="text-[11px] font-semibold text-ink-700 dark:text-ink-100 mt-2">
-            {t('services.book.slotsTitle')}
+            {t(
+              isMaintenanceTile
+                ? 'services.book.maintenanceSlotsTitle'
+                : 'services.book.slotsTitle',
+            )}
           </p>
           <Controller
             name="timeSlot"
             control={control}
-            render={({ field }) => (
-              <div className="flex flex-row flex-wrap gap-2">
-                {FIXED_SLOTS.map((slot) => {
-                  const active = slot === field.value;
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => field.onChange(slot)}
-                      aria-pressed={active ? 'true' : 'false'}
-                      className={[
-                        'px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums transition-colors',
-                        active
-                          ? 'bg-brand-500 text-white border-brand-500'
-                          : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-ink-100 dark:border-ink-700 hover:border-brand-400',
-                      ].join(' ')}
-                    >
-                      <span dir="ltr">{slot}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            render={({ field }) =>
+              isMaintenanceTile ? (
+                <MaintenanceSlotGrid
+                  selected={field.value}
+                  onSelect={(slot) => field.onChange(slot)}
+                  availability={availabilityQuery.data}
+                  isLoading={availabilityQuery.isPending}
+                  isError={availabilityQuery.isError}
+                  dateChosen={Boolean(dateIso)}
+                />
+              ) : (
+                <div className="flex flex-row flex-wrap gap-2">
+                  {FIXED_SLOTS.map((slot) => {
+                    const active = slot === field.value;
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => field.onChange(slot)}
+                        aria-pressed={active ? 'true' : 'false'}
+                        className={[
+                          'px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums transition-colors',
+                          active
+                            ? 'bg-brand-500 text-white border-brand-500'
+                            : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-ink-100 dark:border-ink-700 hover:border-brand-400',
+                        ].join(' ')}
+                      >
+                        <span dir="ltr">{slot}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )
+            }
           />
           {errors.timeSlot?.message && (
             <p className="text-[11px] text-red-500" role="alert">
@@ -305,6 +355,108 @@ function Header({ onClose }: { onClose: () => void }) {
         {t('services.book.title')}
       </h2>
       <OtelBookingButton compact />
+    </div>
+  );
+}
+
+function MaintenanceSlotGrid({
+  selected,
+  onSelect,
+  availability,
+  isLoading,
+  isError,
+  dateChosen,
+}: {
+  selected: string | undefined;
+  onSelect: (slot: string) => void;
+  availability: MaintenanceAvailabilityResponse | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  dateChosen: boolean;
+}) {
+  const { t } = useTranslation();
+
+  // Until the resident picks a date there's nothing to show capacity
+  // against — render an instructional placeholder instead of an empty
+  // grid that pretends to be live.
+  if (!dateChosen) {
+    return (
+      <div className="rounded-2xl border border-dashed border-ink-100 dark:border-ink-700 px-4 py-6 text-center text-[11px] text-ink-500 dark:text-ink-100">
+        {t('services.book.maintenanceSlots.pickDateFirst')}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-[11px] text-red-700 dark:text-red-200">
+        {t('services.book.maintenanceSlots.error')}
+      </div>
+    );
+  }
+
+  // Loading state — render disabled placeholders so the grid keeps its
+  // shape (no layout shift when data lands). Capacity numbers ride
+  // alongside the labels even in the loading state for consistency.
+  const slotsToRender = availability?.slots ?? [];
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {MAINTENANCE_TIME_SLOTS.map((slot) => {
+        const meta = slotsToRender.find((s) => s.slot === slot);
+        const active = slot === selected;
+        const available = meta?.available ?? false;
+        const bookedCount = meta?.bookedCount ?? 0;
+        const capacity = meta?.capacity ?? availability?.capacityPerSlot ?? 3;
+        const disabled = isLoading || !meta || !available;
+
+        return (
+          <button
+            key={slot}
+            type="button"
+            onClick={() => !disabled && onSelect(slot)}
+            disabled={disabled}
+            aria-pressed={active ? 'true' : 'false'}
+            aria-label={t('services.book.maintenanceSlots.slotAria', {
+              slot,
+              booked: bookedCount,
+              capacity,
+            })}
+            className={[
+              'relative flex flex-col items-center justify-center gap-1 px-2 py-3 rounded-2xl border tabular-nums transition-all duration-fast ease-smooth',
+              active && !disabled
+                ? 'bg-brand-500 text-white border-brand-500 shadow-md scale-[1.02]'
+                : disabled
+                  ? 'bg-ink-100/60 dark:bg-ink-900/30 text-ink-300 dark:text-ink-700 border-ink-100 dark:border-ink-700 cursor-not-allowed'
+                  : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-ink-100 dark:border-ink-700 hover:border-brand-400 hover:shadow-sm',
+            ].join(' ')}
+          >
+            <span dir="ltr" className="text-xs font-bold">
+              {slot}
+            </span>
+            <span
+              className={[
+                'text-[9px] uppercase tracking-wider font-semibold',
+                active && !disabled
+                  ? 'text-white/85'
+                  : disabled
+                    ? 'text-ink-400'
+                    : 'text-ink-400 dark:text-ink-100',
+              ].join(' ')}
+            >
+              {isLoading
+                ? t('services.book.maintenanceSlots.loading')
+                : !meta
+                  ? '—'
+                  : !available
+                    ? t('services.book.maintenanceSlots.full')
+                    : t('services.book.maintenanceSlots.openCount', {
+                        booked: bookedCount,
+                        capacity,
+                      })}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

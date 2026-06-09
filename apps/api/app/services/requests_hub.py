@@ -34,7 +34,7 @@ from app.models.ops import MaintenanceRequest
 from app.models.unit import Unit, UnitMember
 from app.models.user import User, UserRole
 from app.schemas.requests import RequestCreateInput, ServiceRequest, Technician
-from app.services import notifications_hub
+from app.services import maintenance_slots, notifications_hub
 
 # ─── Seed data: technicians (still in-memory, no Technician model yet) ─────
 
@@ -72,6 +72,23 @@ class IllegalStateError(Exception):
     pass
 
 
+class SlotFullError(Exception):
+    """Raised when create_request is called with a scheduled slot that
+    has already hit its concurrency cap. Maps to HTTP 409 Conflict so
+    the resident frontend can re-fetch availability and prompt the
+    user to pick a different slot."""
+
+    def __init__(self, category: str, date_iso: str, time_slot: str) -> None:
+        self.category = category
+        self.date_iso = date_iso
+        self.time_slot = time_slot
+        super().__init__(
+            f"Slot {time_slot!r} on {date_iso!r} for category {category!r} "
+            f"is at capacity ({maintenance_slots.CAPACITY_PER_SLOT} active "
+            f"tickets); pick a different slot.",
+        )
+
+
 # ─── Row projection ───────────────────────────────────────────────────────
 
 
@@ -98,6 +115,8 @@ def _project(req: MaintenanceRequest, user: User, unit: Unit | None) -> ServiceR
         assigneeId=req.assignee_id,
         openedAt=req.created_at.isoformat(),
         updatedAt=req.updated_at.isoformat(),
+        scheduledDateIso=req.scheduled_date_iso,
+        scheduledTimeSlot=req.scheduled_time_slot,
     )
 
 
@@ -155,7 +174,43 @@ async def create_request(
     unit_id: uuid.UUID | None,
     payload: RequestCreateInput,
 ) -> ServiceRequest:
-    """INSERT a pending ticket, project it, broadcast, notify."""
+    """INSERT a pending ticket, project it, broadcast, notify.
+
+    When the payload carries both `scheduledDateIso` and
+    `scheduledTimeSlot`, the slot is capacity-checked first. If the
+    cap is already hit, raises `SlotFullError` BEFORE the INSERT so we
+    don't leave a half-persisted ticket. If only one of the two is
+    provided, both are dropped (a half-scheduled ticket is meaningless
+    for the availability counter).
+    """
+    schedule_date: str | None = None
+    schedule_slot: str | None = None
+    if payload.scheduledDateIso and payload.scheduledTimeSlot:
+        # Validate the slot is one of the canonical 8 — guards against
+        # frontend drift / hand-crafted payloads.
+        if not maintenance_slots.is_valid_slot(payload.scheduledTimeSlot):
+            raise SlotFullError(
+                category=payload.category,
+                date_iso=payload.scheduledDateIso,
+                time_slot=payload.scheduledTimeSlot,
+            )
+        # Capacity check inside the same session so the count we read
+        # reflects any concurrent INSERTs the same transaction sees.
+        within = await maintenance_slots.is_slot_within_capacity(
+            session,
+            category=payload.category,
+            date_iso=payload.scheduledDateIso,
+            time_slot=payload.scheduledTimeSlot,
+        )
+        if not within:
+            raise SlotFullError(
+                category=payload.category,
+                date_iso=payload.scheduledDateIso,
+                time_slot=payload.scheduledTimeSlot,
+            )
+        schedule_date = payload.scheduledDateIso
+        schedule_slot = payload.scheduledTimeSlot
+
     new = MaintenanceRequest(
         user_id=user_id,
         unit_id=unit_id,
@@ -165,6 +220,8 @@ async def create_request(
         summary=payload.description.strip(),
         status="pending",
         assignee_id=None,
+        scheduled_date_iso=schedule_date,
+        scheduled_time_slot=schedule_slot,
     )
     session.add(new)
     await session.flush()  # populate new.id without committing yet
@@ -467,6 +524,7 @@ async def seed_demo_data(session: AsyncSession) -> None:
 __all__ = [
     "IllegalStateError",
     "RequestNotFoundError",
+    "SlotFullError",
     "TechnicianNotFoundError",
     "create_request",
     "dispatch",

@@ -41,6 +41,15 @@ class MaintenanceRequest(UuidPk, Timestamps, Base):
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
     assignee_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Scheduled appointment metadata for the 24/7 maintenance slot
+    # system. Nullable because legacy tickets pre-date this feature and
+    # because some emergency/internal tickets don't go through the slot
+    # picker. `scheduled_time_slot` stores the canonical label form
+    # "09:00-12:00" (11 chars max) defined in
+    # `app.services.maintenance_slots.TIME_SLOTS`. Counted by
+    # /api/v1/maintenance/availability to enforce per-slot concurrency.
+    scheduled_date_iso: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+    scheduled_time_slot: Mapped[str | None] = mapped_column(String(11), nullable=True)
 
 
 class Invoice(UuidPk, CreatedAt, Base):

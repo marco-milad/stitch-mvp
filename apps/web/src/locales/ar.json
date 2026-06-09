@@ -787,6 +787,15 @@
         }
       },
       "slotsTitle": "المواعيد المتاحة",
+      "maintenanceSlotsTitle": "اختار موعد 3 ساعات (٢٤/٧)",
+      "maintenanceSlots": {
+        "pickDateFirst": "اختار اليوم فوق عشان تشوف المواعيد المتاحة.",
+        "loading": "جاري التحميل…",
+        "full": "مكتمل",
+        "openCount": "{{booked}}/{{capacity}}",
+        "error": "ما اتحملش الجدول — جرب يوم تاني أو حدّث الصفحة.",
+        "slotAria": "موعد {{slot}}، {{booked}} من {{capacity}} محجوز"
+      },
       "summary": {
         "provider": "المزود",
         "offering": "الخدمة",

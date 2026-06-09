@@ -787,6 +787,15 @@
         }
       },
       "slotsTitle": "Available times",
+      "maintenanceSlotsTitle": "Pick a 3-hour slot (24/7)",
+      "maintenanceSlots": {
+        "pickDateFirst": "Pick a date above to see slot availability.",
+        "loading": "Loading…",
+        "full": "Full",
+        "openCount": "{{booked}}/{{capacity}}",
+        "error": "Couldn't load availability — try changing the date or refresh.",
+        "slotAria": "Slot {{slot}}, {{booked}} of {{capacity}} taken"
+      },
       "summary": {
         "provider": "Provider",
         "offering": "Service",

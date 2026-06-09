@@ -13,10 +13,21 @@ export const REQUEST_STATUS_VALUES = [
 ] as const;
 export type RequestStatus = (typeof REQUEST_STATUS_VALUES)[number];
 
-/** Fields the user actually fills in. Used as the RHF schema in ServiceBook. */
+/** Fields the user actually fills in. Used as the RHF schema in ServiceBook.
+ *
+ *  `timeSlot` accepts EITHER form:
+ *    - "HH:MM"          — legacy short slot (vendor-bound bookings:
+ *                          Cleaning, Laundry, Pet, etc.)
+ *    - "HH:MM-HH:MM"    — canonical maintenance slot label
+ *                          (Home Services / 24-7 grid)
+ *  ServiceBook branches on `tile.id === 'daily-home'` to pick which
+ *  picker UI to render, but both ultimately drop into this single
+ *  string field. */
 export const serviceBookingFormSchema = z.object({
   dateIso: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'services.book.fields.date.error' }),
-  timeSlot: z.string().regex(/^\d{2}:\d{2}$/, { message: 'services.book.fields.time.error' }),
+  timeSlot: z
+    .string()
+    .regex(/^\d{2}:\d{2}(-\d{2}:\d{2})?$/, { message: 'services.book.fields.time.error' }),
   notes: z.string().max(500).optional(),
   consent: z.literal(true, {
     errorMap: () => ({ message: 'services.book.fields.consent.error' }),

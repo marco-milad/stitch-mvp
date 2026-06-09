@@ -30,6 +30,8 @@ export const MOCK_TICKETS: MaintenanceTicket[] = [
     assigneeId: 't-1',
     openedAt: MOCK_OPENED_AT,
     updatedAt: MOCK_UPDATED_AT,
+    scheduledDateIso: null,
+    scheduledTimeSlot: null,
   },
   {
     id: 'sr-mock-2',
@@ -43,6 +45,8 @@ export const MOCK_TICKETS: MaintenanceTicket[] = [
     assigneeId: null,
     openedAt: '2026-05-23T11:40:00Z',
     updatedAt: '2026-05-23T11:40:00Z',
+    scheduledDateIso: null,
+    scheduledTimeSlot: null,
   },
   {
     id: 'sr-mock-3',
@@ -56,6 +60,8 @@ export const MOCK_TICKETS: MaintenanceTicket[] = [
     assigneeId: 't-3',
     openedAt: '2026-05-10T08:20:00Z',
     updatedAt: '2026-05-14T15:55:00Z',
+    scheduledDateIso: null,
+    scheduledTimeSlot: null,
   },
 ];
 

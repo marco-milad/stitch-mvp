@@ -40,6 +40,11 @@ class ServiceRequest(BaseModel):
     assigneeId: str | None = None
     openedAt: str  # ISO 8601 with TZ
     updatedAt: str  # ISO 8601 with TZ
+    # Scheduled appointment fields — populated when the ticket was
+    # created through the 24/7 slot picker on the resident frontend.
+    # Null on emergency / walk-up / legacy tickets.
+    scheduledDateIso: str | None = None
+    scheduledTimeSlot: str | None = None  # canonical "HH:MM-HH:MM" label
 
 
 class ServiceRequestsList(BaseModel):
@@ -60,6 +65,16 @@ class RequestCreateInput(BaseModel):
     title: str = Field(min_length=1, max_length=80)
     description: str = Field(min_length=1, max_length=2000)
     urgency: RequestUrgency = "routine"
+    # Optional appointment fields. When both are provided AND the slot
+    # has capacity remaining, the ticket persists with the schedule
+    # attached. When omitted (e.g. legacy / walk-up flows), the ticket
+    # is created without a schedule.
+    scheduledDateIso: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    scheduledTimeSlot: str | None = Field(
+        default=None,
+        pattern=r"^\d{2}:\d{2}-\d{2}:\d{2}$",
+        max_length=11,
+    )
 
 
 # ─── WebSocket envelopes ────────────────────────────────────────────────────

@@ -305,6 +305,12 @@ export interface MaintenanceTicket {
   assigneeId: string | null;
   openedAt: string;
   updatedAt: string;
+  /** Calendar day the resident picked on the booking form (YYYY-MM-DD).
+   *  Null on emergency / walk-up / legacy tickets. */
+  scheduledDateIso: string | null;
+  /** Canonical "HH:MM-HH:MM" slot label from MAINTENANCE_TIME_SLOTS.
+   *  Null when the ticket wasn't scheduled through the slot picker. */
+  scheduledTimeSlot: string | null;
 }
 
 export interface TicketCreateInput {
@@ -312,6 +318,59 @@ export interface TicketCreateInput {
   title: string;
   description: string;
   urgency?: TicketUrgency;
+  /** When both fields are provided, the backend capacity-checks the
+   *  slot and rejects with 409 if it's full. When either is omitted,
+   *  both are dropped and the ticket is created without a schedule. */
+  scheduledDateIso?: string;
+  scheduledTimeSlot?: string;
+}
+
+// ─── Maintenance slot availability ──────────────────────────────────────
+//
+// Powers the 24/7 slot picker on the Home Services booking form. The
+// backend has a matching single-source-of-truth TIME_SLOTS tuple in
+// app/services/maintenance_slots.py — the two MUST stay in sync. When
+// you add or reorder slots, change both files in the same commit.
+
+/** 8 sequential 3-hour windows spanning a full 24-hour day, starting at
+ *  09:00 and wrapping past midnight back to 09:00. Order is rendered
+ *  order on the grid. Mirror of backend TIME_SLOTS. */
+export const MAINTENANCE_TIME_SLOTS = [
+  '09:00-12:00',
+  '12:00-15:00',
+  '15:00-18:00',
+  '18:00-21:00',
+  '21:00-00:00',
+  '00:00-03:00',
+  '03:00-06:00',
+  '06:00-09:00',
+] as const;
+
+export type MaintenanceTimeSlot = (typeof MAINTENANCE_TIME_SLOTS)[number];
+
+export interface MaintenanceSlotAvailability {
+  slot: MaintenanceTimeSlot;
+  bookedCount: number;
+  capacity: number;
+  available: boolean;
+}
+
+export interface MaintenanceAvailabilityResponse {
+  category: string;
+  dateIso: string;
+  capacityPerSlot: number;
+  slots: MaintenanceSlotAvailability[];
+}
+
+/** Public read-only endpoint — no Clerk JWT required. Cheap query: a
+ *  single group-by-with-count over active tickets matching (category,
+ *  date). Safe to poll on every form-date change. */
+export async function getMaintenanceAvailability(
+  category: TicketCategory,
+  dateIso: string,
+): Promise<MaintenanceAvailabilityResponse> {
+  const params = new URLSearchParams({ category, date_iso: dateIso });
+  return http<MaintenanceAvailabilityResponse>(`/maintenance/availability?${params.toString()}`);
 }
 
 // Roster used to resolve `assigneeId` → readable name + specialty.

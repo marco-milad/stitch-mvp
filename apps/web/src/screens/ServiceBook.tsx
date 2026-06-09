@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, CheckCircle2, Home as HomeIcon, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { Check, CheckCircle2, Home as HomeIcon, Loader2, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { Calendar } from '@/components/booking/Calendar';
+import { InlineNotice, type InlineNoticeData } from '@/components/ui/InlineNotice';
 import { formatFullDate, fromDateIso, toDateIso } from '@/lib/dates';
 import { formatNumber } from '@/lib/format';
 import { SERVICE_TILES } from '@/lib/mock/services';
@@ -61,6 +63,17 @@ export function ServiceBook() {
   const qc = useQueryClient();
 
   const [submitted, setSubmitted] = useState(false);
+
+  // Inline notice replaces the legacy window.alert() popups. Stored as
+  // null when no message is active. Auto-dismisses after 6 s so a stale
+  // banner doesn't linger if the user navigates away mentally; manual
+  // dismiss button stays available for impatient readers.
+  const [notice, setNotice] = useState<InlineNoticeData | null>(null);
+  useEffect(() => {
+    if (!notice) return undefined;
+    const id = window.setTimeout(() => setNotice(null), 6000);
+    return () => window.clearTimeout(id);
+  }, [notice]);
 
   const {
     register,
@@ -174,17 +187,17 @@ export function ServiceBook() {
       // stuck blaming their connection.
       console.error('[ServiceBook] submission failed:', err);
       if (err instanceof AuthRequiredError) {
-        window.alert(t('services.book.errors.authExpired'));
+        setNotice({ tone: 'error', message: t('services.book.errors.authExpired') });
         navigate('/sign-in?redirect=/services');
         return;
       }
-      // Append the raw error message to the localized banner so the
-      // resident (and we, debugging via screenshots) can see whether
-      // this is a CORS reject, a 422 validation error, a 5xx, or
-      // something else — rather than the opaque "check your connection"
-      // catch-all that hides the actual cause.
+      // The inline notice carries the localized banner + the raw error
+      // message in its `detail` line so the resident (and we, debugging
+      // via screenshots) can tell whether the failure is a CORS reject,
+      // a 422 validation error, a 5xx, a 409 slot-full, or something
+      // else — without an opaque "check your connection" catch-all.
       const detail = err instanceof Error ? err.message : String(err);
-      window.alert(`${t('services.book.errors.submit')}\n\n${detail}`);
+      setNotice({ tone: 'error', message: t('services.book.errors.submit'), detail });
     }
   };
 
@@ -199,16 +212,22 @@ export function ServiceBook() {
   }
 
   return (
-    // Warm cream wash backdrop — soft amber→rose→white gradient lifted
-    // straight from the reference screenshots. Sits stationary behind
-    // the scrollable form so the page feels intentional, not white-box.
-    <div className="flex-1 flex flex-col bg-gradient-to-b from-amber-50/60 via-rose-50/40 to-white dark:from-ink-900 dark:via-ink-900 dark:to-ink-900">
+    // Light sand backdrop — calmer #F5F5F5-equivalent (sand-50 / #FBF7F0)
+    // tied into the brand identity tokens, so the form sits on a soft
+    // neutral instead of the prior amber/rose wash. Dark-mode keeps the
+    // existing ink palette.
+    <div className="flex-1 flex flex-col bg-sand-50 dark:bg-ink-900">
       <Header onClose={() => navigate(`/services/${tile.id}/providers/${provider.id}`)} />
 
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex-1 overflow-y-auto px-4 py-4 space-y-6"
       >
+        {/* Submission feedback — replaces window.alert() popups with an
+            inline banner that animates in/out via AnimatePresence. The
+            6 s auto-dismiss happens in the useEffect above. */}
+        <InlineNotice notice={notice} onDismiss={() => setNotice(null)} />
+
         {/* Read-only summary widget — confirms what's being booked */}
         <SummaryWidget
           tile={tile}
@@ -322,9 +341,37 @@ export function ServiceBook() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-br from-ink-900 to-ink-800 disabled:from-ink-400 disabled:to-ink-400 rounded-2xl py-3.5 text-white font-semibold shadow-lg shadow-ink-900/20 hover:shadow-xl hover:shadow-ink-900/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
+            className="w-full bg-gradient-to-br from-ink-900 to-ink-800 disabled:from-ink-400 disabled:to-ink-400 disabled:cursor-not-allowed rounded-2xl py-3.5 text-white font-semibold shadow-lg shadow-ink-900/20 hover:shadow-xl hover:shadow-ink-900/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
           >
-            {isSubmitting ? t('services.book.submitting') : t('services.book.submit')}
+            {/* Cross-fade between idle + submitting labels. AnimatePresence
+                with mode="wait" so the outgoing label fully fades before
+                the spinner slides in — no juddery overlap, no layout shift. */}
+            <AnimatePresence mode="wait" initial={false}>
+              {isSubmitting ? (
+                <motion.span
+                  key="submitting"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-flex items-center justify-center gap-2"
+                >
+                  <Loader2 size={16} className="animate-spin" />
+                  {t('services.book.submitting')}
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="idle"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-block"
+                >
+                  {t('services.book.submit')}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
         </div>
       </form>
@@ -359,6 +406,35 @@ function Header({ onClose }: { onClose: () => void }) {
   );
 }
 
+// Motion variants for the slot grid: container staggers child entry,
+// each child fades-and-slides up. Tap variant scales the selected slot
+// for a subtle press feedback. Defined at module scope so reference
+// identity is stable across renders.
+const SLOT_GRID_VARIANTS: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.04, delayChildren: 0.04 },
+  },
+};
+
+const SLOT_ITEM_VARIANTS: Variants = {
+  hidden: { opacity: 0, y: 12, scale: 0.96 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+  },
+};
+
+// CSS background for the "Full" slot — soft diagonal stripes layered over
+// the sand surface. Tailwind's arbitrary-value syntax keeps the pattern
+// declarative without pulling in a custom plugin. The sand-tinted lines
+// stay subtle so the badge does the heavy lifting visually.
+const FULL_STRIPES =
+  'bg-[repeating-linear-gradient(135deg,_theme(colors.sand.200)_0px,_theme(colors.sand.200)_6px,_theme(colors.sand.100)_6px,_theme(colors.sand.100)_12px)]';
+
 function MaintenanceSlotGrid({
   selected,
   onSelect,
@@ -378,86 +454,133 @@ function MaintenanceSlotGrid({
 
   // Until the resident picks a date there's nothing to show capacity
   // against — render an instructional placeholder instead of an empty
-  // grid that pretends to be live.
-  if (!dateChosen) {
-    return (
-      <div className="rounded-2xl border border-dashed border-ink-100 dark:border-ink-700 px-4 py-6 text-center text-[11px] text-ink-500 dark:text-ink-100">
-        {t('services.book.maintenanceSlots.pickDateFirst')}
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="rounded-2xl border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-[11px] text-red-700 dark:text-red-200">
-        {t('services.book.maintenanceSlots.error')}
-      </div>
-    );
-  }
-
-  // Loading state — render disabled placeholders so the grid keeps its
-  // shape (no layout shift when data lands). Capacity numbers ride
-  // alongside the labels even in the loading state for consistency.
-  const slotsToRender = availability?.slots ?? [];
+  // grid that pretends to be live. Animated with a clean fade+slide so
+  // swapping between placeholder ↔ grid feels intentional.
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-      {MAINTENANCE_TIME_SLOTS.map((slot) => {
-        const meta = slotsToRender.find((s) => s.slot === slot);
-        const active = slot === selected;
-        const available = meta?.available ?? false;
-        const bookedCount = meta?.bookedCount ?? 0;
-        const capacity = meta?.capacity ?? availability?.capacityPerSlot ?? 3;
-        const disabled = isLoading || !meta || !available;
+    <AnimatePresence mode="wait" initial={false}>
+      {!dateChosen ? (
+        <motion.div
+          key="pick-date"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
+          className="rounded-2xl border border-dashed border-sand-300 dark:border-ink-700 bg-white/40 dark:bg-ink-900/40 px-4 py-6 text-center text-xs text-ink-500 dark:text-ink-100"
+        >
+          {t('services.book.maintenanceSlots.pickDateFirst')}
+        </motion.div>
+      ) : isError ? (
+        <motion.div
+          key="error"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22 }}
+          className="rounded-2xl border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-xs text-red-700 dark:text-red-200"
+        >
+          {t('services.book.maintenanceSlots.error')}
+        </motion.div>
+      ) : (
+        <motion.div
+          key="grid"
+          variants={SLOT_GRID_VARIANTS}
+          initial="hidden"
+          animate="show"
+          exit={{ opacity: 0 }}
+          className="grid grid-cols-2 sm:grid-cols-4 gap-2.5"
+        >
+          {MAINTENANCE_TIME_SLOTS.map((slot) => {
+            const meta = availability?.slots.find((s) => s.slot === slot);
+            const active = slot === selected;
+            const available = meta?.available ?? false;
+            const bookedCount = meta?.bookedCount ?? 0;
+            const capacity = meta?.capacity ?? availability?.capacityPerSlot ?? 3;
+            const disabled = isLoading || !meta || !available;
+            const isFull = Boolean(meta) && !isLoading && !available;
 
-        return (
-          <button
-            key={slot}
-            type="button"
-            onClick={() => !disabled && onSelect(slot)}
-            disabled={disabled}
-            aria-pressed={active ? 'true' : 'false'}
-            aria-label={t('services.book.maintenanceSlots.slotAria', {
-              slot,
-              booked: bookedCount,
-              capacity,
-            })}
-            className={[
-              'relative flex flex-col items-center justify-center gap-1 px-2 py-3 rounded-2xl border tabular-nums transition-all duration-fast ease-smooth',
-              active && !disabled
-                ? 'bg-brand-500 text-white border-brand-500 shadow-md scale-[1.02]'
-                : disabled
-                  ? 'bg-ink-100/60 dark:bg-ink-900/30 text-ink-300 dark:text-ink-700 border-ink-100 dark:border-ink-700 cursor-not-allowed'
-                  : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-ink-100 dark:border-ink-700 hover:border-brand-400 hover:shadow-sm',
-            ].join(' ')}
-          >
-            <span dir="ltr" className="text-xs font-bold">
-              {slot}
-            </span>
-            <span
-              className={[
-                'text-[9px] uppercase tracking-wider font-semibold',
-                active && !disabled
-                  ? 'text-white/85'
-                  : disabled
-                    ? 'text-ink-400'
-                    : 'text-ink-400 dark:text-ink-100',
-              ].join(' ')}
-            >
-              {isLoading
-                ? t('services.book.maintenanceSlots.loading')
-                : !meta
-                  ? '—'
-                  : !available
-                    ? t('services.book.maintenanceSlots.full')
-                    : t('services.book.maintenanceSlots.openCount', {
-                        booked: bookedCount,
-                        capacity,
-                      })}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+            return (
+              <motion.button
+                key={slot}
+                type="button"
+                variants={SLOT_ITEM_VARIANTS}
+                whileTap={disabled ? undefined : { scale: 0.97 }}
+                whileHover={disabled ? undefined : { y: -2 }}
+                onClick={() => !disabled && onSelect(slot)}
+                disabled={disabled}
+                aria-pressed={active}
+                aria-label={t('services.book.maintenanceSlots.slotAria', {
+                  slot,
+                  booked: bookedCount,
+                  capacity,
+                })}
+                className={[
+                  // Aspect-ratio sized so the grid breathes evenly at
+                  // every viewport — squares on mobile (2-col) keep
+                  // taps comfortable; the 4-col desktop layout flattens
+                  // them slightly via `sm:aspect-[5/4]`.
+                  'relative flex flex-col items-center justify-center gap-1 rounded-2xl border-2 tabular-nums overflow-hidden',
+                  'aspect-square sm:aspect-[5/4]',
+                  'transition-colors duration-base ease-smooth',
+                  active && !disabled
+                    ? // Selected: brand-cyan ring + soft shadow. Scale is
+                      // handled by the parent motion (whileTap), so we
+                      // skip a transform here to avoid jank.
+                      'bg-brand-500 text-white border-brand-500 shadow-md shadow-brand-500/30'
+                    : isFull
+                      ? // Full: sand-tinted stripe pattern + heavy
+                        // muting on text. Cursor-not-allowed reinforces.
+                        `${FULL_STRIPES} text-ink-400 border-sand-200 cursor-not-allowed dark:bg-ink-900/40 dark:border-ink-700 dark:text-ink-700 opacity-80`
+                      : disabled
+                        ? // Loading placeholder — same muted style as
+                          // Full but no stripes (keeps a clean
+                          // shimmer-able surface).
+                          'bg-sand-100/60 text-ink-400 border-sand-200 cursor-wait dark:bg-ink-900/40 dark:border-ink-700 dark:text-ink-700'
+                        : // Available + idle.
+                          'bg-white dark:bg-ink-700 text-ink-900 dark:text-white border-sand-200 dark:border-ink-700 hover:border-brand-400 hover:shadow-md',
+                ].join(' ')}
+              >
+                {/* "Full" badge in the corner — only renders when
+                    that's actually the slot's state. Sits on top of
+                    the diagonal stripes so it reads cleanly. */}
+                {isFull && (
+                  <span className="absolute top-1.5 end-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-status-danger/90 text-white text-[9px] font-bold uppercase tracking-wider shadow-sm">
+                    {t('services.book.maintenanceSlots.full')}
+                  </span>
+                )}
+
+                <span dir="ltr" className="text-sm font-bold leading-tight">
+                  {slot}
+                </span>
+
+                <span
+                  className={[
+                    'text-[10px] uppercase tracking-wider font-semibold leading-tight',
+                    active && !disabled
+                      ? 'text-white/85'
+                      : isFull
+                        ? 'text-ink-400'
+                        : disabled
+                          ? 'text-ink-400'
+                          : 'text-ink-500 dark:text-ink-100',
+                  ].join(' ')}
+                >
+                  {isLoading
+                    ? t('services.book.maintenanceSlots.loading')
+                    : !meta
+                      ? '—'
+                      : isFull
+                        ? `${capacity}/${capacity}`
+                        : t('services.book.maintenanceSlots.openCount', {
+                            booked: bookedCount,
+                            capacity,
+                          })}
+                </span>
+              </motion.button>
+            );
+          })}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -595,6 +718,26 @@ function ConsentRow({
   );
 }
 
+// Motion variants for the success screen — a parent fade-in that
+// staggers the checkmark, title, body, and CTAs in a clean cascade so
+// the resident's relief response feels paced rather than jumpy.
+const SUCCESS_PARENT_VARIANTS: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+  },
+};
+
+const SUCCESS_ITEM_VARIANTS: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+  },
+};
+
 function SuccessState({
   provider,
   onViewRequests,
@@ -606,22 +749,41 @@ function SuccessState({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-b from-amber-50/60 via-rose-50/40 to-white dark:from-ink-900 dark:via-ink-900 dark:to-ink-900 px-6 pt-12 pb-8">
+    <motion.div
+      variants={SUCCESS_PARENT_VARIANTS}
+      initial="hidden"
+      animate="show"
+      className="flex-1 flex flex-col bg-sand-50 dark:bg-ink-900 px-6 pt-12 pb-8"
+    >
       <div className="flex-1 flex flex-col items-center text-center">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-700/30 backdrop-blur-md border border-white/60 shadow-xl shadow-emerald-500/20 ring-1 ring-white/40 flex items-center justify-center mb-5 text-emerald-600">
+        <motion.div
+          variants={SUCCESS_ITEM_VARIANTS}
+          // A little extra spring on the checkmark so it lands with
+          // satisfaction. The card itself eases linearly into place.
+          initial={{ opacity: 0, y: 12, scale: 0.6 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.42, ease: [0.32, 0.72, 0, 1] }}
+          className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-700/30 backdrop-blur-md border border-white/60 shadow-xl shadow-emerald-500/20 ring-1 ring-white/40 flex items-center justify-center mb-5 text-emerald-600"
+        >
           <CheckCircle2 size={40} />
-        </div>
-        <h2 className="text-2xl font-extrabold text-ink-900 dark:text-white mb-2">
+        </motion.div>
+        <motion.h2
+          variants={SUCCESS_ITEM_VARIANTS}
+          className="text-2xl font-extrabold text-ink-900 dark:text-white mb-2"
+        >
           {t('services.book.success.title')}
-        </h2>
-        <p className="text-sm text-ink-500 dark:text-ink-100 max-w-sm">
+        </motion.h2>
+        <motion.p
+          variants={SUCCESS_ITEM_VARIANTS}
+          className="text-sm text-ink-500 dark:text-ink-100 max-w-sm"
+        >
           {t('services.book.success.body', {
             provider: provider.name,
             min: provider.responseTimeMin,
           })}
-        </p>
+        </motion.p>
       </div>
-      <div className="space-y-2.5">
+      <motion.div variants={SUCCESS_ITEM_VARIANTS} className="space-y-2.5">
         <button
           type="button"
           onClick={onViewRequests}
@@ -636,7 +798,7 @@ function SuccessState({
         >
           {t('services.book.success.backToServices')}
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

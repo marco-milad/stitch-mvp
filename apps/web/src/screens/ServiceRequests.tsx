@@ -30,6 +30,7 @@ import {
   type ServiceBooking,
   type ServiceBookingStatus,
 } from '@/lib/residentApi';
+import { residentQueryOptions } from '@/lib/useResidentQuery';
 
 const STATUS_TONE: Record<ServiceBookingStatus, { bg: string; fg: string }> = {
   pending: { bg: '#FEF3C7', fg: '#92400E' },
@@ -53,6 +54,9 @@ export function ServiceRequests() {
     refetchInterval: 5_000,
     refetchIntervalInBackground: false,
     staleTime: 0,
+    // Shared resident-query semantics: no retry storm on a Clerk blip;
+    // keep last good list visible while a poll is in flight.
+    ...residentQueryOptions<ServiceBooking[]>(),
   });
 
   const bookings = bookingsQuery.data ?? [];

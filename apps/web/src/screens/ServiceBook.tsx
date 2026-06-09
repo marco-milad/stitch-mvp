@@ -106,7 +106,13 @@ export function ServiceBook() {
           residentName: ticket.residentName,
           category: ticket.category,
         });
-        qc.invalidateQueries({ queryKey: ['me', 'requests'] });
+        // refetchQueries (not invalidateQueries) so the polled list
+        // refreshes immediately EVEN IF it was previously sitting in an
+        // error state from a transient Clerk auth blip. invalidate alone
+        // only marks the cache stale; refetch forces a fresh GET right
+        // now using the (just-validated) auth channel that succeeded
+        // for the POST we're reacting to.
+        void qc.refetchQueries({ queryKey: ['me', 'requests'] });
       } else {
         const booking = await createMyServiceBooking({
           tileId: tile.id,
@@ -123,7 +129,7 @@ export function ServiceBook() {
           providerId: booking.providerId,
           residentName: booking.residentName,
         });
-        qc.invalidateQueries({ queryKey: ['me', 'service-bookings'] });
+        void qc.refetchQueries({ queryKey: ['me', 'service-bookings'] });
       }
       reset();
       setSubmitted(true);

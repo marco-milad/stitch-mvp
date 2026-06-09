@@ -30,6 +30,7 @@ import {
   type TicketUrgency,
 } from '@/lib/residentApi';
 import { MOCK_TECHNICIANS, MOCK_TICKETS, withMockFallback } from '@/lib/residentApiFallbacks';
+import { residentQueryOptions } from '@/lib/useResidentQuery';
 
 // Glass badges with a tinted colored glow per status. The shadow uses the
 // tone colour at low alpha so the badge reads as "lit" against the glass
@@ -110,6 +111,10 @@ export function MyMaintenanceTickets() {
     refetchInterval: 5_000,
     refetchIntervalInBackground: false,
     staleTime: 0,
+    // Shared resident-query semantics: don't retry AuthRequiredError
+    // (lets a transient Clerk outage settle without a retry storm) and
+    // keep the previous good list visible during a blip.
+    ...residentQueryOptions<MaintenanceTicket[]>(),
   });
 
   const techsQuery = useQuery<TicketTechnician[]>({

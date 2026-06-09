@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { listMyNotifications, type ResidentNotification } from '@/lib/residentApi';
 import { MOCK_NOTIFICATIONS, withMockFallback } from '@/lib/residentApiFallbacks';
+import { residentQueryOptions } from '@/lib/useResidentQuery';
 
 export const NOTIFICATIONS_KEY = ['me', 'notifications'] as const;
 const READ_STORAGE_KEY = 'stitch.notifications.read';
@@ -107,6 +108,9 @@ export function useMyNotifications(): UseMyNotificationsResult {
     refetchInterval: 5_000,
     refetchIntervalInBackground: false,
     staleTime: 0,
+    // Shared resident-query semantics: no retry storm during a Clerk
+    // blip; keep last good list visible while a poll is in flight.
+    ...residentQueryOptions<ResidentNotification[]>(),
   });
 
   const ids = useReadIds();

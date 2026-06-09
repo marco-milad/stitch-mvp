@@ -28,6 +28,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import _sanitize_name_part
 from app.core.logging import logger
 from app.models.ops import MaintenanceRequest
 from app.models.unit import Unit, UnitMember
@@ -75,8 +76,16 @@ class IllegalStateError(Exception):
 
 
 def _project(req: MaintenanceRequest, user: User, unit: Unit | None) -> ServiceRequest:
-    """Build the wire-format ServiceRequest from a row triple."""
-    full_name = " ".join(p for p in (user.first_name, user.last_name) if p) or user.email
+    """Build the wire-format ServiceRequest from a row triple.
+
+    Sanitize null-sentinel name fragments at projection time so poisoned
+    rows ("null"/"undefined" as literal strings, persisted before the
+    auth-layer guard landed) render with the email fallback instead of
+    showing as "null null" in admin.
+    """
+    clean_first = _sanitize_name_part(user.first_name)
+    clean_last = _sanitize_name_part(user.last_name)
+    full_name = " ".join(p for p in (clean_first, clean_last) if p) or user.email
     return ServiceRequest(
         id=str(req.id),
         residentName=full_name,

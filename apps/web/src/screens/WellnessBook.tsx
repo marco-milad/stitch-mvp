@@ -76,7 +76,11 @@ export function WellnessBook() {
         providerId: booking.providerId,
         residentName: booking.residentName,
       });
-      qc.invalidateQueries({ queryKey: ['me', 'service-bookings'] });
+      // refetchQueries (not invalidate) so the polled list refreshes
+      // immediately even if it was sitting in an error state from a
+      // transient Clerk auth blip — see the matching ServiceBook
+      // comment for the rationale.
+      void qc.refetchQueries({ queryKey: ['me', 'service-bookings'] });
       reset();
       setSubmitted(true);
     } catch (err) {

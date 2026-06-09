@@ -26,6 +26,7 @@ from typing import Any
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import _sanitize_name_part
 from app.core.logging import logger
 from app.models.ops import ServiceBooking as ServiceBookingRow
 from app.models.unit import Unit
@@ -43,8 +44,16 @@ class BookingNotFoundError(Exception):
 
 
 def _project(row: ServiceBookingRow, user: User, unit: Unit | None) -> ServiceBooking:
-    """Build the wire-format ServiceBooking from a row triple."""
-    full_name = " ".join(p for p in (user.first_name, user.last_name) if p) or user.email
+    """Build the wire-format ServiceBooking from a row triple.
+
+    `first_name` / `last_name` are sanitized at read-time too so any
+    poisoned rows ("null"/"undefined" strings persisted before the
+    auth-layer guard landed) render as a clean email fallback instead
+    of "null null" in the admin dashboard.
+    """
+    clean_first = _sanitize_name_part(user.first_name)
+    clean_last = _sanitize_name_part(user.last_name)
+    full_name = " ".join(p for p in (clean_first, clean_last) if p) or user.email
     return ServiceBooking(
         id=str(row.id),
         residentName=full_name,

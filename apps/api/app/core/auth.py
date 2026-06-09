@@ -130,8 +130,14 @@ async def _upsert_user(
     existing = await session.scalar(select(User).where(User.clerk_id == clerk_sub))
     if existing is not None:
         existing.email = safe_email
-        existing.first_name = first
-        existing.last_name = last
+        # Preserve a previously-stored real name when the current JWT
+        # arrives with a nullish placeholder — never regress a good
+        # name back to None just because Clerk briefly emitted "null".
+        # Also self-heal rows poisoned by the pre-sanitizer code (which
+        # persisted "null"/"undefined" as literal strings) by stripping
+        # them on the next sign-in.
+        existing.first_name = first or _sanitize_name_part(existing.first_name)
+        existing.last_name = last or _sanitize_name_part(existing.last_name)
         await session.commit()
         await session.refresh(existing)
         return existing
@@ -141,8 +147,9 @@ async def _upsert_user(
     if by_email is not None:
         previous_clerk = by_email.clerk_id
         by_email.clerk_id = clerk_sub
-        by_email.first_name = first
-        by_email.last_name = last
+        # Same preserve-good / strip-poison rule as Phase 1.
+        by_email.first_name = first or _sanitize_name_part(by_email.first_name)
+        by_email.last_name = last or _sanitize_name_part(by_email.last_name)
         await session.commit()
         await session.refresh(by_email)
         logger.info(
@@ -172,13 +179,35 @@ async def _upsert_user(
     return new_user
 
 
+_NULLISH_NAME_VALUES = frozenset({"", "null", "undefined", "none", "nan"})
+
+
+def _sanitize_name_part(value: str | None) -> str | None:
+    """Treat literal sentinel strings (`"null"`, `"undefined"`, etc.) as
+    missing. Clerk's session-token template can emit `name: "null null"`
+    when first_name + last_name are both empty on the user record — that
+    string then propagates verbatim into our DB unless we filter it.
+    Comparison is case-insensitive and ignores leading/trailing whitespace
+    so `"  NULL  "` and `"null"` are equally caught."""
+    if value is None:
+        return None
+    stripped = value.strip()
+    if stripped.casefold() in _NULLISH_NAME_VALUES:
+        return None
+    return stripped
+
+
 def _split_name(full_name: str | None) -> tuple[str | None, str | None]:
-    if not full_name:
+    """Split a Clerk-provided full name into (first, last), sanitizing
+    null-shaped placeholders away so downstream code never persists
+    `first_name="null"` to the DB."""
+    sanitized = _sanitize_name_part(full_name)
+    if not sanitized:
         return (None, None)
-    parts = full_name.strip().split(None, 1)
-    if len(parts) == 1:
-        return (parts[0], None)
-    return (parts[0], parts[1])
+    parts = sanitized.split(None, 1)
+    first = _sanitize_name_part(parts[0])
+    last = _sanitize_name_part(parts[1]) if len(parts) > 1 else None
+    return (first, last)
 
 
 def _to_auth_user(row: User) -> AuthUser:

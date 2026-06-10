@@ -19,6 +19,7 @@ dependencies = [
     "httpx>=0.28.0",
     "slowapi>=0.1.9",
     "python-multipart>=0.0.18",
+    "svix>=1.95.2",
 ]
 
 [dependency-groups]

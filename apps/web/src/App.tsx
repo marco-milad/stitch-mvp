@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom
 
 import { MobileShell } from '@/components/MobileShell';
 import { CompleteProfileGate } from '@/components/guards/CompleteProfileGate';
+import { NotificationToastHost } from '@/components/notifications/NotificationToastHost';
 import { RequireTenant } from '@/components/guards/RequireRole';
 import { TabsLayout } from '@/layout/TabsLayout';
 import { ClerkAuthBridge } from '@/lib/useClerkAuthBridge';
@@ -43,6 +44,7 @@ import { ServiceProvider } from '@/screens/ServiceProvider';
 import { ServiceSmartHome } from '@/screens/ServiceSmartHome';
 import { ServiceRequests } from '@/screens/ServiceRequests';
 import { Services } from '@/screens/Services';
+import { VisitorPasses } from '@/screens/VisitorPasses';
 import { WellnessBook } from '@/screens/WellnessBook';
 import { WellnessFacility } from '@/screens/WellnessFacility';
 import { WellnessHub } from '@/screens/WellnessHub';
@@ -58,12 +60,17 @@ if (!publishableKey) {
 }
 
 function ShellRoute() {
-  // Open the notifications WS once at the app root so the bell dot stays
-  // live across every tab without per-screen sockets.
+  // Activate the notifications poll once at the app root so the bell
+  // badge stays warm across every tab without per-screen polling.
   useNotificationsSync();
   return (
     <MobileShell>
       <Outlet />
+      {/* Floating toast host listens to new arrivals from the same
+          poll the bell uses — no extra fetch. Sits inside MobileShell
+          so it lives within the mobile viewport when emulating a
+          phone surface. */}
+      <NotificationToastHost />
     </MobileShell>
   );
 }
@@ -221,6 +228,14 @@ export function App() {
                 </Route>
 
                 {/* Modal/full-screen routes (no tab bar) */}
+                <Route
+                  path="/visitor-passes"
+                  element={
+                    <RequireTenant surfaceKey="access.surfaces.qr">
+                      <VisitorPasses />
+                    </RequireTenant>
+                  }
+                />
                 <Route
                   path="/qr"
                   element={

@@ -104,28 +104,45 @@ async function currentAuthToken(): Promise<string | null> {
   }
 }
 
-async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  // 1. Resolve the auth token BEFORE arming the abort timer. Clerk SDK
-  //    refresh can take real wall clock when the dev CDN is slow, and
-  //    counting that against the fetch budget caused the 6 s abort
-  //    storm on tile booking submissions. The timer now wraps the
-  //    actual wire round trip only.
-  const token = await currentAuthToken();
+// Retry budget for transient network errors (AbortError, TypeError,
+// 5xx, 429). Only applies to idempotent read requests — mutations
+// fail fast so a partially-completed POST isn't replayed against the
+// backend (which could double-book a slot or duplicate a ticket).
+// Backoff schedule: 0 ms (immediate), 400 ms, 1200 ms — total worst
+// case ~1.6 s of waiting before the caller sees the failure.
+const READ_RETRY_DELAYS_MS = [0, 400, 1200] as const;
 
-  // 2. Auth guard: don't fire authenticated requests with no bearer
-  //    token. The backend would 401 with "Missing Authorization
-  //    header" and the resident would just see "Could not submit your
-  //    booking" with no useful signal. Throw a typed error so callers
-  //    can prompt re-auth instead of treating it as a network/server
-  //    problem.
-  if (!token && pathRequiresAuth(path)) {
-    console.warn(
-      `[residentApi] Short-circuiting ${path}: no Clerk token available. Session likely expired.`,
-    );
-    throw new AuthRequiredError(path);
+function isIdempotent(init?: RequestInit): boolean {
+  const method = (init?.method ?? 'GET').toUpperCase();
+  return method === 'GET' || method === 'HEAD';
+}
+
+/** Normalize any thrown value into a NetworkError when it represents a
+ *  network-level failure (timeout / refused / DNS / mid-flight abort).
+ *  Returns `null` for non-network errors so the caller can re-throw
+ *  unchanged. */
+function asNetworkError(err: unknown, path: string): NetworkError | null {
+  if (!(err instanceof Error)) return null;
+  // AbortError fires when our timeout controller aborts the request.
+  // The browser surfaces this as `name === 'AbortError'` with a
+  // user-hostile message ("signal is aborted without reason"). Wrap
+  // every shape so callers never see the raw form.
+  if (err.name === 'AbortError') {
+    return new NetworkError(`Timed out reaching ${HTTP_PREFIX}${path} (${HTTP_TIMEOUT_MS}ms)`);
   }
+  // TypeError from fetch() means the request never left the browser
+  // (DNS, CORS preflight, refused connection, ngrok handshake fail).
+  if (err.name === 'TypeError') {
+    return new NetworkError(`Unable to reach ${HTTP_PREFIX}${path}: ${err.message}`);
+  }
+  return null;
+}
 
-  // 3. Arm the abort timer + fire the request.
+async function _httpOnce<T>(
+  path: string,
+  init: RequestInit | undefined,
+  token: string | null,
+): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
   let res: Response;
@@ -149,19 +166,89 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
       },
     });
   } catch (err) {
-    // AbortError (timeout) or TypeError (refused / DNS) — both treated
-    // as network-level failures so callers can fall back to mock data.
-    const reason = err instanceof Error ? err.message : 'unknown';
-    throw new NetworkError(`Unable to reach ${HTTP_PREFIX}${path}: ${reason}`);
+    const wrapped = asNetworkError(err, path);
+    if (wrapped) throw wrapped;
+    // Anything we don't recognise as network — rethrow raw so caller
+    // sees the real shape (very rare path).
+    throw err;
   } finally {
     clearTimeout(timer);
   }
+
   if (!res.ok) {
     const body = await res.text().catch(() => '');
+    // 5xx and 429 are transient — caller can retry. Wrap their message
+    // with a status-prefix so the retry layer can detect them via
+    // `err.message.startsWith('5')` / etc. Mirrors how 409 detection
+    // happens in the amenities + service-booking flows.
     throw new Error(`${res.status} ${res.statusText}${body ? ` — ${body}` : ''}`);
   }
   if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+
+  // Body parsing happens AFTER the headers arrived, but the AbortError
+  // could still fire here if the timer is in the gap. Wrap to keep the
+  // "raw signal aborted" message out of callers.
+  try {
+    return (await res.json()) as T;
+  } catch (err) {
+    const wrapped = asNetworkError(err, path);
+    if (wrapped) throw wrapped;
+    throw err;
+  }
+}
+
+async function http<T>(path: string, init?: RequestInit): Promise<T> {
+  // 1. Resolve the auth token BEFORE arming any abort timer. Clerk
+  //    SDK refresh can take real wall clock when the dev CDN is slow,
+  //    and counting that against the fetch budget caused a 6 s abort
+  //    storm on tile booking submissions.
+  const token = await currentAuthToken();
+
+  // 2. Auth guard: don't fire authenticated requests with no bearer
+  //    token. Backend would 401 with "Missing Authorization header"
+  //    and the resident would see a generic "Could not submit your
+  //    booking". Throw a typed error so callers can prompt re-auth
+  //    instead of treating it as a network/server problem.
+  if (!token && pathRequiresAuth(path)) {
+    console.warn(
+      `[residentApi] Short-circuiting ${path}: no Clerk token available. Session likely expired.`,
+    );
+    throw new AuthRequiredError(path);
+  }
+
+  // 3. Fire the request, with internal retry-on-transient for
+  //    idempotent reads only. Mutations fail fast — TanStack Query's
+  //    mutation retry config (or the caller's own UI) drives any
+  //    user-visible re-submit. This means a 400 ms ngrok hiccup mid-
+  //    poll doesn't blank the list, but a failed booking POST stays
+  //    failed so the user knows to re-confirm.
+  const canRetry = isIdempotent(init);
+  const delays = canRetry ? READ_RETRY_DELAYS_MS : ([0] as const);
+
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, delays[attempt]));
+      console.info(
+        `[residentApi] Retry ${attempt}/${delays.length - 1} for ${path} after ${delays[attempt]}ms`,
+      );
+    }
+    try {
+      return await _httpOnce<T>(path, init, token);
+    } catch (err) {
+      lastErr = err;
+      // Only retry network-level failures and transient server errors.
+      // Auth + 4xx are caller-error and won't get better on retry.
+      const retryable =
+        err instanceof NetworkError || (err instanceof Error && /^(5\d\d|429)\s/.test(err.message));
+      if (!retryable) throw err;
+      // Out of attempts — fall through to the rethrow below.
+    }
+  }
+  // Exhausted retries — throw whatever shape the last attempt produced.
+  // Will always be a NetworkError or a 5xx-prefixed Error because the
+  // retry gate filtered out everything else.
+  throw lastErr ?? new NetworkError(`Unknown failure on ${path}`);
 }
 
 // ─── Unit selection ────────────────────────────────────────────────────
@@ -209,11 +296,17 @@ export interface VisitorPassInput {
   vehicleKind: VehicleKind;
   validFrom: string;
   validTo: string;
+  /** Optional plate / vehicle ID. Free-text so we don't lock to a
+   *  single country's format. */
+  carPlate?: string;
   note?: string;
 }
 
 export interface VisitorPass extends VisitorPassInput {
   id: string;
+  /** Short, human-readable access code (`STCH-XXXX`). What the gate
+   *  scanner decodes from the QR. Share this with the visitor via
+   *  the Web Share / WhatsApp deep-link below the QR card. */
   code: string;
   qrPayload: string;
   hostName: string;
@@ -453,6 +546,94 @@ export async function createMyServiceBooking(
   });
 }
 
+// ─── Family & Residents Hub ────────────────────────────────────────────
+
+export type FamilyRelationship = 'spouse' | 'child' | 'parent' | 'tenant' | 'other';
+
+export interface FamilyMember {
+  id: string;
+  name: string;
+  /** Server-normalized form — digits with optional leading `+`.
+   *  Already-canonical by the time it reaches the client; never
+   *  re-format before sending back via createFamilyMember. */
+  phone: string;
+  relationship: FamilyRelationship;
+  unitId: string;
+  createdAt: string;
+}
+
+export interface FamilyMemberInput {
+  name: string;
+  phone: string;
+  relationship: FamilyRelationship;
+}
+
+export async function listFamilyMembers(): Promise<FamilyMember[]> {
+  const data = await http<{ items: FamilyMember[] }>('/me/family');
+  return data.items;
+}
+
+export async function createFamilyMember(input: FamilyMemberInput): Promise<FamilyMember> {
+  return http<FamilyMember>('/me/family', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+// ─── Amenities (Tennis Court / BBQ Area / Community Hall / ...) ────────
+
+export interface Amenity {
+  id: string;
+  name: string;
+  description: string | null;
+  /** Concurrent occupancy ceiling — sum of guestsCount across overlapping
+   *  bookings must stay <= capacity, else POST returns 409. */
+  capacity: number;
+  isActive: boolean;
+}
+
+export interface AmenityBookingInput {
+  amenityId: string;
+  /** Calendar day in YYYY-MM-DD. */
+  bookingDate: string;
+  /** 24h HH:MM. */
+  startTime: string;
+  /** 24h HH:MM. Must be strictly after startTime. */
+  endTime: string;
+  guestsCount: number;
+}
+
+export type AmenityBookingStatus = 'pending' | 'confirmed' | 'cancelled';
+
+export interface AmenityBooking {
+  id: string;
+  amenityId: string;
+  amenityName: string;
+  residentName: string;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  guestsCount: number;
+  status: AmenityBookingStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listAmenities(): Promise<Amenity[]> {
+  // Public catalog — no auth required. The /api/v1/amenities route
+  // skips the get_current_user dependency so the booking surface is
+  // browsable before sign-in.
+  const data = await http<{ items: Amenity[] }>('/amenities');
+  return data.items;
+}
+
+export async function bookAmenity(input: AmenityBookingInput): Promise<AmenityBooking> {
+  return http<AmenityBooking>('/amenities/book', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 export type ServiceBookingsEvent =
   | { type: 'snapshot'; items: ServiceBooking[] }
   | { type: 'booking.updated'; item: ServiceBooking }
@@ -484,12 +665,23 @@ export interface ResidentNotification {
   title: NotificationBody;
   body: NotificationBody;
   createdAt: string;
+  /** Server-side read tracking (read_at IS NOT NULL on the row).
+   *  Optional on the wire so older mock fallbacks without the field
+   *  still parse cleanly — undefined is treated as "unread". */
+  isRead?: boolean;
   link: string | null;
 }
 
 export async function listMyNotifications(): Promise<ResidentNotification[]> {
   const data = await http<{ items: ResidentNotification[] }>('/me/notifications');
   return data.items;
+}
+
+/** Mark every unread notification owned by this resident as read.
+ *  Returns the number of rows the backend flipped — useful for the
+ *  bell-badge animation. */
+export async function markAllNotificationsRead(): Promise<{ updated: number }> {
+  return http<{ updated: number }>('/me/notifications/read-all', { method: 'POST' });
 }
 
 // ─── WS subscriptions ──────────────────────────────────────────────────

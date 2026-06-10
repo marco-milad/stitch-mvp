@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
-import { markIdsRead, useMarkAllRead, useMyNotifications } from '@/lib/useNotifications';
+import { useMarkAllRead, useMyNotifications } from '@/lib/useNotifications';
 import type { NotificationKind, ResidentNotification } from '@/lib/residentApi';
 
 // ─── Visual mapping per kind ──────────────────────────────────────────
@@ -61,16 +61,17 @@ function relativeKey(iso: string): { key: string; value?: number } {
 export function Notifications() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { notifications, isLoading, isLive, readIds } = useMyNotifications();
+  const { notifications, isLoading, isLive } = useMyNotifications();
   const markAllRead = useMarkAllRead();
 
-  // On first paint, mark everything currently on screen as read so the bell
-  // dot clears immediately. New items that arrive via WS while the screen
-  // is open stay unread (NEW pill) until next mount.
+  // On first paint, hit the server to mark everything read. Any new
+  // notifications arriving via the next poll come in unread so the bell
+  // still pulses for fresh activity.
   useEffect(() => {
     if (notifications.length === 0) return;
-    markIdsRead(notifications.map((n) => n.id));
-    // intentionally NOT dependent on `notifications` — only fire once.
+    markAllRead();
+    // intentionally NOT dependent on `notifications` / `markAllRead` —
+    // only fire once when the screen mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -80,7 +81,7 @@ export function Notifications() {
   );
 
   const lang: 'en' | 'ar' = i18n.language === 'ar' ? 'ar' : 'en';
-  const anyUnread = sorted.some((n) => !readIds.has(n.id));
+  const anyUnread = sorted.some((n) => !n.isRead);
 
   return (
     <div className="flex flex-col min-h-screen bg-ink-50 dark:bg-ink-900">
@@ -131,7 +132,7 @@ export function Notifications() {
                 key={n.id}
                 notification={n}
                 lang={lang}
-                isUnread={!readIds.has(n.id)}
+                isUnread={!n.isRead}
                 onTap={() => {
                   if (n.link) navigate(n.link);
                 }}
@@ -236,13 +237,13 @@ function EmptyState() {
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="relative mb-4">
         <div className="absolute inset-0 -m-3 rounded-full bg-brand-100/40 dark:bg-brand-700/20 animate-pulse" />
-        <span className="relative text-5xl">{t('notifications.empty.emoji')}</span>
+        <span className="relative text-5xl">{t('notifications.emptyState.emoji')}</span>
       </div>
       <h2 className="text-base font-extrabold text-ink-900 dark:text-white mb-1">
-        {t('notifications.empty.title')}
+        {t('notifications.emptyState.title')}
       </h2>
       <p className="text-sm text-ink-500 dark:text-ink-100 max-w-xs leading-relaxed">
-        {t('notifications.empty.subtitle')}
+        {t('notifications.emptyState.subtitle')}
       </p>
     </div>
   );

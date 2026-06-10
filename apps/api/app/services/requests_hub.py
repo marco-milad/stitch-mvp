@@ -231,6 +231,8 @@ async def create_request(
 
     await _broadcast({"type": "request.updated", "item": ticket.model_dump()})
     await notifications_hub.emit_ticket_created(
+        session,
+        user_id=user_id,
         resident_name=ticket.residentName,
         ticket_id=ticket.id,
         category=ticket.category,
@@ -271,6 +273,8 @@ async def dispatch(
     tech = _get_tech(technician_id)
     if tech is not None:
         await notifications_hub.emit_ticket_dispatched(
+            session,
+            user_id=row.user_id,
             resident_name=ticket.residentName,
             ticket_id=ticket.id,
             category=ticket.category,
@@ -301,6 +305,8 @@ async def resolve(session: AsyncSession, request_id: str) -> ServiceRequest:
 
     await _broadcast({"type": "request.updated", "item": ticket.model_dump()})
     await notifications_hub.emit_ticket_resolved(
+        session,
+        user_id=row.user_id,
         resident_name=ticket.residentName,
         ticket_id=ticket.id,
         category=ticket.category,

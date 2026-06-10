@@ -3,6 +3,24 @@
     "title": "Stitch Admin",
     "tagline": "Madinet Masr Operations"
   },
+  "admin": {
+    "slotRibbon": {
+      "aria": "Per-slot capacity ribbon",
+      "title": "Slot load · {{date}}",
+      "subtitle": "Tap a slot to filter the table. Counts ignore resolved / completed rows.",
+      "total": "{{used}} / {{capacity}} scheduled",
+      "partial": "{{count}}/{{capacity}} used",
+      "full": "{{count}}/{{capacity}} MAX"
+    },
+    "filterPanel": {
+      "date": "Date",
+      "slot": "Slot",
+      "anySlot": "Any slot",
+      "anyCategory": "Any category",
+      "unscheduled": "Unscheduled",
+      "clear": "Clear filters"
+    }
+  },
   "nav": {
     "content": "Content Management",
     "requests": "Service Requests",
@@ -23,7 +41,8 @@
       "confirmed": "Confirmed",
       "inProgress": "In progress",
       "completed": "Completed",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "tileLabel": "Service"
     },
     "col": {
       "id": "ID",
@@ -139,7 +158,8 @@
       "all": "All",
       "pending": "Pending",
       "inProgress": "In progress",
-      "resolved": "Resolved"
+      "resolved": "Resolved",
+      "categoryLabel": "Category"
     },
     "actions": {
       "dispatch": "Dispatch",
@@ -178,8 +198,11 @@
       "category": "Category",
       "urgency": "Urgency",
       "status": "Status",
+      "scheduled": "Scheduled",
+      "unscheduled": "Unscheduled",
       "assignee": "Assigned to",
-      "openedAt": "Opened"
+      "openedAt": "Opened",
+      "actions": "Actions"
     },
     "assign": {
       "title": "Assign technician",

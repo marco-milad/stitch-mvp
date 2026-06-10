@@ -32,7 +32,8 @@ from app.core.auth import AuthUser, get_current_user, get_current_user_ws
 from app.core.database import AsyncSessionLocal, get_db
 from app.core.logging import logger
 from app.models.unit import Unit, UnitMember
-from app.schemas.notifications import NotificationsList
+from app.schemas.family import FamilyMember, FamilyMemberCreate, FamilyMembersList
+from app.schemas.notifications import MarkAllReadResponse, NotificationsList
 from app.schemas.parking import (
     ParkingBooking,
     ParkingBookingCreate,
@@ -50,6 +51,7 @@ from app.schemas.visitor_pass import (
     VisitorPassList,
 )
 from app.services import (
+    family_hub,
     notifications_hub,
     parking_hub,
     requests_hub,
@@ -413,13 +415,72 @@ async def _service_bookings_sender(
         logger.warning("me.service_bookings.ws.send_error", error=str(exc))
 
 
+# ─── Family & Residents Hub ────────────────────────────────────────────────
+
+
+@router.get("/me/family", response_model=FamilyMembersList)
+async def list_my_family(user: CurrentUser, session: DbSession) -> FamilyMembersList:
+    unit_id = await requests_hub.primary_unit_id_for(session, user.db_user_id)
+    if unit_id is None:
+        # No primary unit → empty list. Matches the resident's mental
+        # model ("I haven't told the app where I live yet, of course
+        # there are no family members on file").
+        return FamilyMembersList(items=[])
+    items = await family_hub.list_for_unit(session, unit_id=unit_id)
+    return FamilyMembersList(items=items)
+
+
+@router.post(
+    "/me/family",
+    response_model=FamilyMember,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_my_family_member(
+    payload: FamilyMemberCreate,
+    user: CurrentUser,
+    session: DbSession,
+) -> FamilyMember:
+    unit_id = await requests_hub.primary_unit_id_for(session, user.db_user_id)
+    if unit_id is None:
+        # Family roster is unit-scoped — no point inserting an orphan
+        # row. Tell the resident to pick a unit first via the actionable
+        # 400.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Set your primary unit before adding family members",
+        )
+    try:
+        return await family_hub.create_member(
+            session,
+            primary_user_id=user.db_user_id,
+            unit_id=unit_id,
+            payload=payload,
+        )
+    except family_hub.DuplicatePhoneError as exc:
+        # 409 lets the resident UI render a tailored "this number is
+        # already on the roster" inline notice instead of the generic
+        # "could not add" path.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Phone {exc} already on the unit's family roster",
+        ) from exc
+
+
 # ─── Notifications ─────────────────────────────────────────────────────────
 
 
 @router.get("/me/notifications", response_model=NotificationsList)
-async def list_my_notifications(user: CurrentUser) -> NotificationsList:
-    items = await notifications_hub.list_for(_display_name(user))
+async def list_my_notifications(user: CurrentUser, session: DbSession) -> NotificationsList:
+    items = await notifications_hub.list_for(session, user.db_user_id)
     return NotificationsList(items=items)
+
+
+@router.post("/me/notifications/read-all", response_model=MarkAllReadResponse)
+async def mark_all_my_notifications_read(
+    user: CurrentUser, session: DbSession
+) -> MarkAllReadResponse:
+    updated = await notifications_hub.mark_all_read(session, user.db_user_id)
+    return MarkAllReadResponse(updated=updated)
 
 
 @router.websocket("/me/notifications/stream")
@@ -435,7 +496,8 @@ async def my_notifications_stream(websocket: WebSocket) -> None:
     me = _display_name(user)
     logger.info("me.notifications.ws.connected", peer=str(websocket.client))
 
-    items = [n.model_dump() for n in await notifications_hub.list_for(me)]
+    async with AsyncSessionLocal() as session:
+        items = [n.model_dump() for n in await notifications_hub.list_for(session, user.db_user_id)]
     await websocket.send_text(json.dumps({"type": "snapshot", "items": items}))
 
     async with notifications_hub.subscribe(me) as queue:

@@ -59,6 +59,18 @@ export const SEED_TECHS: Technician[] = [
   { id: 't-6', name: 'Ahmed Magdy', specialty: 'other', load: 4 },
 ];
 
+// Today's date in YYYY-MM-DD form — local time so demo fixtures
+// land on the admin's wall-clock "today" view by default.
+function localToday(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+const TODAY = localToday();
+
 export const SEED_REQUESTS: ServiceRequest[] = [
   {
     id: 'sr-001',
@@ -70,6 +82,8 @@ export const SEED_REQUESTS: ServiceRequest[] = [
     status: 'pending',
     assigneeId: null,
     openedAt: hoursAgo(1),
+    scheduledDateIso: TODAY,
+    scheduledTimeSlot: '12:00-15:00',
   },
   {
     id: 'sr-002',
@@ -81,6 +95,8 @@ export const SEED_REQUESTS: ServiceRequest[] = [
     status: 'in_progress',
     assigneeId: 't-2',
     openedAt: hoursAgo(6),
+    scheduledDateIso: TODAY,
+    scheduledTimeSlot: '15:00-18:00',
   },
   {
     id: 'sr-003',
@@ -92,6 +108,8 @@ export const SEED_REQUESTS: ServiceRequest[] = [
     status: 'in_progress',
     assigneeId: 't-3',
     openedAt: hoursAgo(20),
+    scheduledDateIso: TODAY,
+    scheduledTimeSlot: '09:00-12:00',
   },
   {
     id: 'sr-004',
@@ -103,8 +121,12 @@ export const SEED_REQUESTS: ServiceRequest[] = [
     status: 'pending',
     assigneeId: null,
     openedAt: hoursAgo(3),
+    scheduledDateIso: TODAY,
+    scheduledTimeSlot: '15:00-18:00',
   },
   {
+    // Legacy / walk-up — no scheduled slot. Exercises the
+    // "Unscheduled" filter + the italic dash rendering in the table.
     id: 'sr-005',
     residentName: 'Mariam Saad',
     unit: 'Phase 1 · C5-208',
@@ -114,6 +136,8 @@ export const SEED_REQUESTS: ServiceRequest[] = [
     status: 'resolved',
     assigneeId: 't-4',
     openedAt: hoursAgo(48),
+    scheduledDateIso: null,
+    scheduledTimeSlot: null,
   },
   {
     id: 'sr-006',
@@ -125,6 +149,8 @@ export const SEED_REQUESTS: ServiceRequest[] = [
     status: 'pending',
     assigneeId: null,
     openedAt: hoursAgo(0.5),
+    scheduledDateIso: TODAY,
+    scheduledTimeSlot: '15:00-18:00',
   },
 ];
 

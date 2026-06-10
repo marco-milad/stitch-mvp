@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop; \"killed PID $_\" } catch {} }; Get-Process -Name \"ngrok\" -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force; \"killed ngrok PID $\\($_.Id\\)\" }; \"---done---\")"
+      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop; \"killed PID $_\" } catch {} }; Get-Process -Name \"ngrok\" -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force; \"killed ngrok PID $\\($_.Id\\)\" }; \"---done---\")",
+      "Bash(cd \"g:/iti projects/web projects/work/stitch-mvp/apps/web/src\" && grep -nE \"OFFLINE|isLive|isOffline|offline\" components/requests/MyMaintenanceTickets.tsx | head -20 && echo \"---\" && grep -nE \"LIVE|OFFLINE\" ../locales/en.json | head -5)",
+      "Read(//g/iti projects/web projects/work/locales/**)",
+      "Bash(pnpm --filter @stitch/web typecheck)",
+      "Bash(curl -s -i --max-time 5 -H \"Origin: http://localhost:5173\" -X OPTIONS -H \"Access-Control-Request-Method: GET\" -H \"Access-Control-Request-Headers: authorization,content-type,ngrok-skip-browser-warning\" http://localhost:8000/api/v1/me/service-bookings)",
+      "Bash(curl -s \"http://localhost:5173/src/screens/ServiceRequests.tsx\")",
+      "Bash(grep -nB 1 -A 12 \"services\\\\.requests\\\\\":\\\\|\\\\\"requests\\\\\": {\" en.json)",
+      "Bash(grep -nA 2 \"\\\\\"requests\\\\\": {\" ar.json)",
+      "Bash(grep -nB 1 -A 6 '\"nav\":' en.json)",
+      "Bash(grep -nB 1 -A 6 '\"nav\":' ar.json)"
     ]
   }
 }

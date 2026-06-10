@@ -3,6 +3,24 @@
     "title": "ستيتش · الإدارة",
     "tagline": "عمليات مدينة مصر"
   },
+  "admin": {
+    "slotRibbon": {
+      "aria": "شريط الحمل لكل سلوت",
+      "title": "حمل السلوتات · {{date}}",
+      "subtitle": "اضغط على سلوت لتصفية الجدول. العدّاد بيتجاهل الطلبات اللي اتقفلت.",
+      "total": "{{used}} / {{capacity}} مجدولة",
+      "partial": "{{count}}/{{capacity}} مستخدمة",
+      "full": "{{count}}/{{capacity}} مكتمل"
+    },
+    "filterPanel": {
+      "date": "التاريخ",
+      "slot": "السلوت",
+      "anySlot": "أي سلوت",
+      "anyCategory": "أي تصنيف",
+      "unscheduled": "بدون جدولة",
+      "clear": "مسح الفلاتر"
+    }
+  },
   "nav": {
     "content": "إدارة المحتوى",
     "requests": "طلبات الخدمة",
@@ -23,7 +41,8 @@
       "confirmed": "مؤكد",
       "inProgress": "جاري التنفيذ",
       "completed": "تم",
-      "cancelled": "ملغي"
+      "cancelled": "ملغي",
+      "tileLabel": "الخدمة"
     },
     "col": {
       "id": "كود",
@@ -139,7 +158,8 @@
       "all": "الكل",
       "pending": "قيد الانتظار",
       "inProgress": "جاري الإصلاح",
-      "resolved": "تم حل المشكلة"
+      "resolved": "تم حل المشكلة",
+      "categoryLabel": "التصنيف"
     },
     "actions": {
       "dispatch": "تعيين فني",
@@ -178,8 +198,11 @@
       "category": "التصنيف",
       "urgency": "الأولوية",
       "status": "الحالة",
+      "scheduled": "الموعد",
+      "unscheduled": "بدون جدولة",
       "assignee": "تم التعيين لـ",
-      "openedAt": "تاريخ الفتح"
+      "openedAt": "تاريخ الفتح",
+      "actions": "إجراءات"
     },
     "assign": {
       "title": "تعيين فني",

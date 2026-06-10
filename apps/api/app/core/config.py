@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     CLERK_SECRET_KEY: str
     CLERK_PUBLISHABLE_KEY: str
     CLERK_JWKS_URL: str
+    # Optional in local dev (the webhook is exposed via ngrok, but devs
+    # can disable signature verification by leaving this unset). Required
+    # in production — the route refuses to process events without it.
+    CLERK_WEBHOOK_SECRET: str | None = None
 
     # Google Gemini
     GEMINI_API_KEY: str

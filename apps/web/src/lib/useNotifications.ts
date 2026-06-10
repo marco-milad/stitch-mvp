@@ -1,86 +1,34 @@
 // Resident notifications hook bundle.
-//   - `useMyNotifications()` — TanStack Query for /me/notifications,
-//     polled every 5 s so the bell dot stays current.
-//   - `useUnreadCount()` — convenience selector for the TopBar bell dot.
-//   - `useMarkAllRead()` — call when the user opens the Notifications
-//     screen so the bell dot clears. Read state lives in localStorage
-//     (`stitch.notifications.read`) — not synced server-side yet.
 //
-// Architectural note: this used to hold an open WebSocket subscription
-// (`/me/notifications/stream`) for push-style updates. We dropped it
-// because the WS was flapping during Clerk dev-key session hiccups and
-// 5 s polling gives equivalent UX for notification-shaped traffic at
-// a fraction of the complexity. The backend WS endpoint stays in place
-// for future opt-in.
+//   - `useMyNotifications()` — TanStack Query for /me/notifications,
+//     polled every 5 s.
+//   - `useUnreadCount()` — convenience selector for the bell badge.
+//   - `useMarkAllRead()` — POST /me/notifications/read-all, then
+//     invalidate so the badge clears across every consumer.
+//   - `useNewNotificationsHandler(callback)` — fires `callback` with
+//     each notification that wasn't in the previous poll. Drives the
+//     floating toast host without bolting another fetch onto the bell.
+//
+// Architectural note: notifications were previously WS-pushed; the WS
+// flapped during Clerk dev-key session hiccups and 5 s polling gives
+// equivalent UX for notification-shaped traffic at a fraction of the
+// complexity. The backend WS endpoint stays in place for future
+// opt-in surfaces. Read state was previously localStorage-only; it's
+// now server-driven (notifications.read_at) so the badge stays
+// consistent across devices.
 
-import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef } from 'react';
 
-import { listMyNotifications, type ResidentNotification } from '@/lib/residentApi';
+import {
+  listMyNotifications,
+  markAllNotificationsRead,
+  type ResidentNotification,
+} from '@/lib/residentApi';
 import { MOCK_NOTIFICATIONS, withMockFallback } from '@/lib/residentApiFallbacks';
 import { residentQueryOptions } from '@/lib/useResidentQuery';
 
 export const NOTIFICATIONS_KEY = ['me', 'notifications'] as const;
-const READ_STORAGE_KEY = 'stitch.notifications.read';
-
-function loadReadIds(): Set<string> {
-  if (typeof localStorage === 'undefined') return new Set();
-  try {
-    const raw = localStorage.getItem(READ_STORAGE_KEY);
-    if (!raw) return new Set();
-    const parsed = JSON.parse(raw) as string[];
-    return new Set(Array.isArray(parsed) ? parsed : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function persistReadIds(ids: Set<string>): void {
-  if (typeof localStorage === 'undefined') return;
-  try {
-    localStorage.setItem(READ_STORAGE_KEY, JSON.stringify([...ids]));
-  } catch {
-    // quota / private mode — silent
-  }
-}
-
-// Module-level event emitter so multiple hooks (TopBar + Notifications
-// screen) stay in sync without a Zustand store.
-type Listener = (next: Set<string>) => void;
-const listeners = new Set<Listener>();
-let readIds: Set<string> = loadReadIds();
-
-function setReadIds(next: Set<string>): void {
-  readIds = next;
-  persistReadIds(next);
-  for (const l of listeners) l(next);
-}
-
-function useReadIds(): Set<string> {
-  const [value, setValue] = useState(readIds);
-  useEffect(() => {
-    listeners.add(setValue);
-    return () => {
-      listeners.delete(setValue);
-    };
-  }, []);
-  return value;
-}
-
-// ─── Public hooks ────────────────────────────────────────────────────────
-
-/** Mount once at the app root (App.tsx) so the notifications query is
- *  active before any screen reads it — that way the TopBar bell dot is
- *  warm on first paint of every tab. The query itself does the polling;
- *  this hook is just an activation handle.
- *
- *  Returning `void` keeps the call site (`<ShellRoute>`) trivially
- *  side-effecting. TanStack Query deduplicates the underlying GET across
- *  every consumer of `useMyNotifications`, so individual screens calling
- *  the hook again are free. */
-export function useNotificationsSync(): void {
-  useMyNotifications();
-}
 
 export interface UseMyNotificationsResult {
   notifications: ResidentNotification[];
@@ -89,42 +37,38 @@ export interface UseMyNotificationsResult {
    *  so callers that previously rendered a LIVE pill compile without
    *  changes; remove on the next round of cleanup if no consumer reads it. */
   isLive: boolean;
-  readIds: Set<string>;
   unreadCount: number;
 }
 
-/** Read hook — polls /me/notifications every 5 s. TanStack Query dedupes
- *  the GET across multiple callers, so screens that need notifications
- *  data (TopBar, Notifications screen) can call this freely without
- *  multiplying network traffic. */
+/** Mount once at the app root so the notifications query is active
+ *  before any screen reads it — that way the bell badge is warm on
+ *  first paint of every tab. TanStack Query deduplicates the underlying
+ *  GET across every consumer of `useMyNotifications`. */
+export function useNotificationsSync(): void {
+  useMyNotifications();
+}
+
+/** Read hook — polls /me/notifications every 5 s. */
 export function useMyNotifications(): UseMyNotificationsResult {
   const query = useQuery<ResidentNotification[]>({
     queryKey: NOTIFICATIONS_KEY,
-    // Wrap the real fetcher so a server-unreachable error degrades to
-    // mock notifications instead of leaving the bell dot dark forever.
     queryFn: () => withMockFallback(listMyNotifications, MOCK_NOTIFICATIONS, 'listMyNotifications'),
-    // 5 s polling replaces the WebSocket. Background-tab pausing keeps
-    // hidden tabs cheap.
     refetchInterval: 5_000,
     refetchIntervalInBackground: false,
     staleTime: 0,
-    // Shared resident-query semantics: no retry storm during a Clerk
-    // blip; keep last good list visible while a poll is in flight.
     ...residentQueryOptions<ResidentNotification[]>(),
   });
 
-  const ids = useReadIds();
   const notifications = query.data ?? [];
   const unreadCount = useMemo(
-    () => notifications.reduce((acc, n) => (ids.has(n.id) ? acc : acc + 1), 0),
-    [notifications, ids],
+    () => notifications.reduce((acc, n) => (n.isRead ? acc : acc + 1), 0),
+    [notifications],
   );
 
   return {
     notifications,
     isLoading: query.isLoading,
     isLive: false,
-    readIds: ids,
     unreadCount,
   };
 }
@@ -134,21 +78,53 @@ export function useUnreadCount(): number {
 }
 
 export function useMarkAllRead(): () => void {
-  const { notifications } = useMyNotifications();
-  return useCallback(() => {
-    const next = new Set(readIds);
-    for (const n of notifications) next.add(n.id);
-    if (next.size === readIds.size) return;
-    setReadIds(next);
-  }, [notifications]);
+  const qc = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: markAllNotificationsRead,
+    onSuccess: () => {
+      // Pull a fresh snapshot — the rows we just flipped will arrive
+      // with isRead=true and the badge clears in the next render.
+      void qc.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
+    },
+  });
+  // Stable identity so callers that wire this to an onClick don't churn.
+  return useMemo(() => () => mutation.mutate(), [mutation]);
 }
 
-/** Imperative variant for callers that have the ids on hand. Exposed so
- *  the Notifications screen can mark-as-read on mount without dragging in
- *  the full hook. */
-export function markIdsRead(ids: string[]): void {
-  const next = new Set(readIds);
-  for (const id of ids) next.add(id);
-  if (next.size === readIds.size) return;
-  setReadIds(next);
+/** Subscribe to "new notification arrived since the last poll" events.
+ *  Calls `onArrival` once per fresh id with the notification payload.
+ *  Designed to drive a floating toast host without adding a second
+ *  fetch — piggybacks on the same 5 s poll the bell uses.
+ *
+ *  Implementation notes:
+ *    - First poll never fires the callback — that initial snapshot is
+ *      historical context, not "new arrivals".
+ *    - Compares against the previous poll's id set, not against
+ *      `readIds`, so a user who marks-all-read still sees toasts for
+ *      notifications that land afterward.
+ */
+export function useNewNotificationsHandler(onArrival: (n: ResidentNotification) => void): void {
+  const { notifications } = useMyNotifications();
+  const seenRef = useRef<Set<string> | null>(null);
+  // Pin the handler ref so we don't re-run the effect when the parent
+  // re-creates the callback inline.
+  const callbackRef = useRef(onArrival);
+  callbackRef.current = onArrival;
+
+  useEffect(() => {
+    if (seenRef.current === null) {
+      seenRef.current = new Set(notifications.map((n) => n.id));
+      return;
+    }
+    const seen = seenRef.current;
+    for (const n of notifications) {
+      if (!seen.has(n.id)) {
+        seen.add(n.id);
+        // Only fire on actually unread items so a backfill from another
+        // device (which would arrive already-read) doesn't trigger a
+        // surprise toast.
+        if (!n.isRead) callbackRef.current(n);
+      }
+    }
+  }, [notifications]);
 }

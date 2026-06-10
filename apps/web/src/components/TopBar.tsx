@@ -1,19 +1,18 @@
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useNavigateWithTransition } from '@/lib/viewTransition';
 
 interface TopBarProps {
   title: string;
-  /** When provided and > 0, shows a small unread indicator on the bell icon. */
+  /** Deprecated — `NotificationBell` reads its own unread count via
+   *  `useMyNotifications()`. Kept on the props so legacy callers that
+   *  still pass it compile without changes. */
   unreadCount?: number;
 }
 
-export function TopBar({ title, unreadCount }: TopBarProps) {
-  // `useNavigateWithTransition` wraps the route change in
-  // `document.startViewTransition` on Chromium/Safari so the swap to
-  // /profile or /notifications crossfades over 240ms; Firefox falls
-  // through to a normal navigate. Drop-in replacement for `useNavigate`.
+export function TopBar({ title }: TopBarProps) {
   const navigate = useNavigateWithTransition();
   // Brand identity: TopBar reads as part of the warm sand-50 page surface
   // rather than a glassy panel. No border line — only a hairline of
@@ -25,19 +24,7 @@ export function TopBar({ title, unreadCount }: TopBarProps) {
 
       <div className="flex flex-row items-center gap-2">
         <ThemeToggle />
-        <button
-          type="button"
-          onClick={() => navigate('/notifications')}
-          aria-label="Notifications"
-          className="relative w-10 h-10 flex items-center justify-center rounded-full text-ink-700 dark:text-white hover:bg-sand-100 dark:hover:bg-ink-700 hover:scale-105 active:scale-95 transition-all duration-fast ease-smooth"
-        >
-          <Bell color="currentColor" size={22} />
-          {unreadCount !== undefined && unreadCount > 0 && (
-            // Notifications unread dot is the ONE accent on the global chrome —
-            // accent-500 (luxe gold), not brand-cyan. Restrained per Rule 5.
-            <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-accent-500 ring-2 ring-sand-50 dark:ring-ink-900" />
-          )}
-        </button>
+        <NotificationBell />
 
         <button
           type="button"

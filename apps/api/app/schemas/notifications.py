@@ -32,8 +32,19 @@ class Notification(BaseModel):
     title: NotificationBody
     body: NotificationBody
     createdAt: str  # ISO 8601 with TZ
+    # Server-tracked read state. `read_at IS NULL` on the row → unread.
+    # Migrated from the legacy localStorage-only model so the bell badge
+    # stays consistent across devices.
+    isRead: bool = False
     link: str | None = None  # client-side route to deep-link into
 
 
 class NotificationsList(BaseModel):
     items: list[Notification]
+
+
+class MarkAllReadResponse(BaseModel):
+    """Echoed back from POST /me/notifications/read-all so the optimistic
+    client knows how many rows changed (drives the badge animation)."""
+
+    updated: int

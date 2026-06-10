@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { CompletionBar } from '@/components/profile/CompletionBar';
+import { FamilyHub } from '@/components/profile/FamilyHub';
 import { ProfileRow } from '@/components/profile/ProfileRow';
 import { TopBar } from '@/components/TopBar';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -287,12 +288,18 @@ export function Profile() {
                   {email}
                 </p>
               )}
-              <div className="flex flex-row items-center mt-1.5 gap-2">
+              <div className="flex flex-row items-center mt-1.5 gap-2 flex-wrap">
                 <span className="bg-accent-300 text-ink-950 px-2 py-0.5 rounded-full text-label-sm normal-case tracking-normal font-bold">
-                  Owner
+                  {t('profile.ownerBadge')}
                 </span>
-                <span className="text-label-sm normal-case tracking-normal font-normal text-ink-500 dark:text-ink-100 truncate">
-                  {MOCK_UNIT.name} · {MOCK_UNIT.project}
+                {/* Unit badge — promoted to its own chip so the resident's
+                    primary identity (their home in the compound) reads as
+                    badge-tier metadata rather than running prose. */}
+                <span className="inline-flex items-center gap-1.5 bg-sand-100 dark:bg-ink-900/40 text-ink-700 dark:text-ink-100 px-2 py-0.5 rounded-full text-label-sm font-bold normal-case tracking-normal truncate">
+                  <Home size={11} />
+                  <span className="truncate">
+                    {MOCK_UNIT.name} · {MOCK_UNIT.project}
+                  </span>
                 </span>
               </div>
             </div>
@@ -312,6 +319,11 @@ export function Profile() {
           doneCount={completionStats.done}
           totalCount={completionStats.total}
         />
+
+        {/* Family & Residents Hub — mounted right under the identity
+            card so the household roster reads as part of the resident's
+            primary identity, not an afterthought buried under settings. */}
+        <FamilyHub />
 
         <div className="px-4 pt-3 pb-2">
           <h3 className="text-heading-lg text-ink-950 dark:text-white">Recent activity</h3>

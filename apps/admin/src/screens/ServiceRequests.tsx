@@ -1,12 +1,15 @@
-import { Loader2, Radio, UserCheck, X } from 'lucide-react';
+import { CalendarClock, Loader2, Radio, UserCheck, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DrawCheck } from '@/components/DrawCheck';
 import { PageHeader } from '@/components/PageHeader';
+import { SlotFilterPanel } from '@/components/SlotFilterPanel';
+import { SlotLoadRibbon } from '@/components/SlotLoadRibbon';
 import { StatusPill } from '@/components/StatusPill';
+import { todayIso, UNSCHEDULED_SENTINEL, type MaintenanceTimeSlot } from '@/lib/slots';
 import { useDispatchRequest, useResolveRequest, useServiceRequests } from '@/lib/useRequests';
-import type { RequestStatus, ServiceRequest, Technician } from '@/lib/types';
+import type { AdminRequestCategory, RequestStatus, ServiceRequest, Technician } from '@/lib/types';
 
 type StatusFilter = 'all' | RequestStatus;
 
@@ -39,6 +42,31 @@ function fmt(iso: string, lang: string): string {
     minute: '2-digit',
   }).format(new Date(iso));
 }
+
+function fmtDay(iso: string, lang: string): string {
+  // ISO date strings parse as UTC midnight; render with explicit
+  // timeZone:UTC so the date doesn't shift back by a day in negative
+  // UTC offsets. The slot label carries the wall-clock time anyway.
+  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+// Categories admins can filter maintenance tickets by. Mirrors the
+// resident-side TicketCategory union — the modal that used to expose
+// these was removed in the catalog-consolidation pass, but the
+// filter dropdown still needs the full list to sort the queue.
+const CATEGORY_OPTIONS: readonly AdminRequestCategory[] = [
+  'plumbing',
+  'electrical',
+  'ac',
+  'cleaning',
+  'pest',
+  'other',
+];
 
 function StreamPill({
   connected,
@@ -77,6 +105,15 @@ export function ServiceRequests() {
   const technicians = data?.technicians ?? [];
 
   const [filter, setFilter] = useState<StatusFilter>('all');
+  // Date drives the slot-load ribbon and (when a slot is picked) the
+  // schedule filter. Defaults to today so the admin lands on the
+  // "what's coming today" view with one less click.
+  const [scheduleDate, setScheduleDate] = useState<string>(() => todayIso());
+  // null = no slot filter applied. UNSCHEDULED_SENTINEL = only rows
+  // with no scheduled slot, ignoring `scheduleDate`. Any other string =
+  // a specific slot on `scheduleDate`.
+  const [slotFilter, setSlotFilter] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [assignTarget, setAssignTarget] = useState<ServiceRequest | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   // Track rows that JUST flipped to dispatched / resolved so the
@@ -121,9 +158,48 @@ export function ServiceRequests() {
   }, [technicians]);
 
   const filtered = useMemo(() => {
-    const rows = filter === 'all' ? requests : requests.filter((r) => r.status === filter);
+    let rows = filter === 'all' ? requests : requests.filter((r) => r.status === filter);
+    if (categoryFilter) {
+      rows = rows.filter((r) => r.category === categoryFilter);
+    }
+    if (slotFilter === UNSCHEDULED_SENTINEL) {
+      // "Unscheduled" override: ignore the date input entirely and
+      // surface every row without a scheduled slot. Catches legacy
+      // tickets and any future walk-up intake path.
+      rows = rows.filter((r) => !r.scheduledDateIso);
+    } else if (slotFilter) {
+      rows = rows.filter(
+        (r) => r.scheduledDateIso === scheduleDate && r.scheduledTimeSlot === slotFilter,
+      );
+    }
     return [...rows].sort((a, b) => (a.openedAt < b.openedAt ? 1 : -1));
-  }, [requests, filter]);
+  }, [requests, filter, categoryFilter, slotFilter, scheduleDate]);
+
+  // Per-slot counts powering the ribbon. Count rows scheduled on
+  // `scheduleDate` whose status hasn't ended (resolved tickets free up
+  // capacity in the admin's mental model — the slot was used but it's
+  // done). Category filter narrows the ribbon so an admin investigating
+  // plumbing load sees just that category's footprint.
+  const countsBySlot = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of requests) {
+      if (r.scheduledDateIso !== scheduleDate) continue;
+      if (!r.scheduledTimeSlot) continue;
+      if (r.status === 'resolved') continue;
+      if (categoryFilter && r.category !== categoryFilter) continue;
+      m.set(r.scheduledTimeSlot, (m.get(r.scheduledTimeSlot) ?? 0) + 1);
+    }
+    return m;
+  }, [requests, scheduleDate, categoryFilter]);
+
+  const categoryOptions = useMemo(
+    () =>
+      CATEGORY_OPTIONS.map((c) => ({
+        value: c,
+        label: t(`requests.categories.${c}`),
+      })),
+    [t],
+  );
 
   const handleDispatch = async (techId: string) => {
     if (!assignTarget) return;
@@ -164,6 +240,24 @@ export function ServiceRequests() {
           {actionError}
         </div>
       )}
+
+      <SlotLoadRibbon
+        countsBySlot={countsBySlot}
+        selectedSlot={slotFilter && slotFilter !== UNSCHEDULED_SENTINEL ? slotFilter : null}
+        onSelectSlot={(s: MaintenanceTimeSlot | null) => setSlotFilter(s)}
+        dateLabel={fmtDay(scheduleDate, i18n.language)}
+      />
+
+      <SlotFilterPanel
+        dateIso={scheduleDate}
+        onDateChange={setScheduleDate}
+        slot={slotFilter}
+        onSlotChange={(s) => setSlotFilter(s)}
+        category={categoryFilter}
+        onCategoryChange={setCategoryFilter}
+        categories={categoryOptions}
+        categoryLabelKey="requests.filters.categoryLabel"
+      />
 
       <div className="flex flex-row items-center justify-between gap-3">
         <div className="flex flex-row items-center gap-2 overflow-x-auto no-scrollbar">
@@ -216,18 +310,23 @@ export function ServiceRequests() {
                 </th>
                 <th className="text-start font-semibold px-4 py-3">{t('requests.table.status')}</th>
                 <th className="text-start font-semibold px-4 py-3">
+                  {t('requests.table.scheduled')}
+                </th>
+                <th className="text-start font-semibold px-4 py-3">
                   {t('requests.table.assignee')}
                 </th>
                 <th className="text-start font-semibold px-4 py-3">
                   {t('requests.table.openedAt')}
                 </th>
-                <th className="text-end font-semibold px-4 py-3" />
+                <th className="text-end font-semibold px-4 py-3">
+                  <span className="sr-only">{t('requests.table.actions')}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-ink-500">
+                  <td colSpan={10} className="px-4 py-10 text-center text-ink-500">
                     <span className="inline-flex items-center gap-2">
                       <Loader2 size={14} className="animate-spin" />
                       {t('requests.empty_loading')}
@@ -236,7 +335,7 @@ export function ServiceRequests() {
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-ink-500">
+                  <td colSpan={10} className="px-4 py-10 text-center text-ink-500">
                     {t('requests.empty')}
                   </td>
                 </tr>
@@ -276,6 +375,29 @@ export function ServiceRequests() {
                         <StatusPill tone={statusTone(r.status)}>
                           {t(`requests.status.${r.status}`)}
                         </StatusPill>
+                      </td>
+                      <td className="px-4 py-3 text-ink-700">
+                        {r.scheduledDateIso && r.scheduledTimeSlot ? (
+                          <div className="inline-flex items-start gap-1.5">
+                            <CalendarClock
+                              size={13}
+                              className="text-ink-500 mt-0.5 flex-shrink-0"
+                              aria-hidden
+                            />
+                            <div className="flex flex-col leading-tight">
+                              <span className="text-xs tabular-nums" dir="ltr">
+                                {fmtDay(r.scheduledDateIso, i18n.language)}
+                              </span>
+                              <span className="text-[11px] text-ink-500 tabular-nums" dir="ltr">
+                                {r.scheduledTimeSlot}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-ink-400 italic">
+                            {t('requests.table.unscheduled')}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-ink-700">{tech ? tech.name : '—'}</td>
                       <td className="px-4 py-3 text-ink-500 tabular-nums">

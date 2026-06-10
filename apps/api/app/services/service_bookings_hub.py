@@ -32,6 +32,7 @@ from app.models.ops import ServiceBooking as ServiceBookingRow
 from app.models.unit import Unit
 from app.models.user import User
 from app.schemas.service_bookings import ServiceBooking, ServiceBookingCreateInput
+from app.services import notifications_hub
 
 # ─── State machine (Option B lifecycle) ─────────────────────────────────
 #
@@ -243,6 +244,18 @@ async def _transition(
     # admin-side projection — includes admin_notes for the dashboard.
     booking = await _fetch_by_id(session, row.id, include_admin_notes=True)
     await _broadcast({"type": "booking.updated", "item": booking.model_dump()})
+    # Notify the resident on every status flip. emit_booking_status
+    # returns None for transitions that don't warrant a notification
+    # (none in the Option B lifecycle today, but the helper guards).
+    await notifications_hub.emit_booking_status(
+        session,
+        user_id=row.user_id,
+        resident_name=booking.residentName,
+        booking_id=booking.id,
+        tile_id=booking.tileId,
+        time_slot=booking.timeSlot,
+        new_status=target_status,
+    )
     logger.info(
         f"service_booking.{action_label}",
         id=booking.id,

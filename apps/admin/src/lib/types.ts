@@ -68,6 +68,12 @@ export interface ServiceRequest {
   status: RequestStatus;
   assigneeId: string | null;
   openedAt: string;
+  /** Scheduled appointment day in YYYY-MM-DD. Null on legacy / walk-up
+   *  tickets created before the 24/7 slot picker, or by any future
+   *  unscheduled intake path. */
+  scheduledDateIso: string | null;
+  /** Canonical "HH:MM-HH:MM" slot label from the maintenance grid. */
+  scheduledTimeSlot: string | null;
 }
 
 // ─── Service bookings (Wellness, Cleaning, Laundry, Pet, etc.) ────────────

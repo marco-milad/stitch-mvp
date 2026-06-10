@@ -30,11 +30,11 @@
 
 import { keepPreviousData, type UseQueryOptions } from '@tanstack/react-query';
 
-import { AuthRequiredError } from '@/lib/residentApi';
+import { AuthRequiredError, NetworkError } from '@/lib/residentApi';
 
 export function residentQueryOptions<T>(): Pick<
   UseQueryOptions<T>,
-  'retry' | 'placeholderData' | 'refetchOnWindowFocus'
+  'retry' | 'retryDelay' | 'placeholderData' | 'refetchOnWindowFocus'
 > {
   return {
     retry: (failureCount, error) => {
@@ -42,11 +42,27 @@ export function residentQueryOptions<T>(): Pick<
       // to materialize between attempts. Let the next refetchInterval
       // cycle try fresh.
       if (error instanceof AuthRequiredError) return false;
-      // One quick retry for transient network / 5xx flakes.
+      // residentApi.http() already retries network errors internally
+      // (3 attempts with 0/400/1200ms backoff) before throwing
+      // NetworkError. Don't double-spend on that — one extra retry at
+      // the TanStack layer is enough to cover a transient flake that
+      // outlasted the http()-level budget. Two retries total = ~3 s
+      // of real-time recovery before the screen falls back to its
+      // last-good data.
+      if (error instanceof NetworkError) return failureCount < 1;
+      // Non-network errors (4xx, app errors) — single retry for
+      // anything that snuck through, then surface.
       return failureCount < 1;
     },
+    // Exponential backoff capped at 4 s so a stuck endpoint doesn't
+    // ramp into 30-second sleeps and orphan the UI.
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     // Keep the last good list visible while a poll is in flight — even
-    // through an auth blip — so the screen never blanks unexpectedly.
+    // through an auth blip or network glitch — so the screen never
+    // blanks unexpectedly. Combined with the internal http() retry,
+    // residents will almost never see a "could not load" state during
+    // a brief outage; they'll see the last snapshot until the next
+    // poll cycle succeeds.
     placeholderData: keepPreviousData,
     // Don't re-fire on focus; refetchInterval handles freshness, and
     // focus-fire on top of polling causes double-requests right after

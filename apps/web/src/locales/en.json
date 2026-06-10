@@ -42,7 +42,7 @@
   },
   "amenities": {
     "title": "Amenities & facilities",
-    "subtitle": "Pools, gyms, workspaces — all bookable.",
+    "subtitle": "Compound facilities you can reserve.",
     "back": "Back to services",
     "filters": {
       "all": "All",
@@ -54,6 +54,36 @@
       "pools": "Pools",
       "gyms": "Gyms",
       "workspaces": "Workspaces"
+    },
+    "list": {
+      "loading": "Loading amenities…",
+      "empty": "No amenities available right now.",
+      "errorTitle": "Couldn't load amenities",
+      "capacity": "Capacity {{count}}",
+      "bookCta": "Book"
+    },
+    "form": {
+      "title": "Book {{name}}",
+      "subtitle": "Pick a day, a time window, and how many people you'll bring.",
+      "back": "Back to amenities",
+      "date": "Date",
+      "startTime": "Starts",
+      "endTime": "Ends",
+      "guests": "Guests",
+      "guestsHelp": "Including yourself · max {{capacity}}",
+      "submit": "Book amenity",
+      "submitting": "Booking…",
+      "errors": {
+        "endBeforeStart": "End time must be after start time.",
+        "capacity": "That slot is at capacity right now. Try a different time or a smaller group.",
+        "generic": "Could not book — {{message}}"
+      }
+    },
+    "success": {
+      "title": "You're booked",
+      "body": "{{name}} is reserved for {{date}} from {{start}} to {{end}}. We'll send the gate team your details.",
+      "bookAnother": "Book another amenity",
+      "back": "Back to services"
     },
     "bookingComingSoon": "Booking flow lands in Week 3 — for now this is a static preview."
   },
@@ -187,6 +217,39 @@
     },
     "title": "Family",
     "back": "Back",
+    "hub": {
+      "title": "Family & residents",
+      "subtitle": "{{count}} on the roster for this unit",
+      "add": "Add",
+      "loading": "Loading roster…",
+      "empty": {
+        "title": "No family on file yet",
+        "body": "Add a spouse, child, parent, or tenant so the gate team knows who lives here."
+      },
+      "relationships": {
+        "spouse": "Spouse",
+        "child": "Child",
+        "parent": "Parent",
+        "tenant": "Tenant",
+        "other": "Other"
+      },
+      "form": {
+        "title": "Add a family member",
+        "name": "Full name",
+        "namePlaceholder": "e.g. Layla Ahmed",
+        "relationship": "Relationship",
+        "phone": "Phone",
+        "phonePlaceholder": "+20 100 123 4567",
+        "submit": "Add to roster",
+        "submitting": "Adding…",
+        "cancel": "Cancel"
+      },
+      "errors": {
+        "duplicate": "That number is already on your unit's roster.",
+        "noUnit": "Set your primary unit before adding family members.",
+        "generic": "Couldn't add member — {{message}}"
+      }
+    },
     "summary": {
       "members": "{{count}} members",
       "pending": "{{count}} pending"
@@ -1293,7 +1356,8 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "signedInAs": "Signed in as {{email}}",
-    "anonymous": "Browsing as guest"
+    "anonymous": "Browsing as guest",
+    "ownerBadge": "Owner"
   },
   "notifications": {
     "title": "Notifications",
@@ -1301,7 +1365,13 @@
     "back": "Back",
     "live": "LIVE",
     "offline": "OFFLINE",
-    "empty": {
+    "bellAria": "Open notifications",
+    "toastsAria": "New activity",
+    "toastDismiss": "Dismiss",
+    "unreadCount": "{{count}} unread",
+    "allRead": "You're all caught up",
+    "empty": "Nothing to show yet — we'll ping you when something changes.",
+    "emptyState": {
       "title": "You're all caught up",
       "subtitle": "We'll ping you here when a ticket moves or a visitor scans your pass.",
       "emoji": "🔔"
@@ -1314,6 +1384,44 @@
       "mAgo": "{{value}}m ago",
       "hAgo": "{{value}}h ago",
       "dAgo": "{{value}}d ago"
+    }
+  },
+  "visitorPasses": {
+    "title": "Visitor Passes",
+    "back": "Back",
+    "form": {
+      "title": "Issue a new pass",
+      "subtitle": "Pre-authorise a guest, contractor, or delivery for a single day.",
+      "visitor": "Visitor name",
+      "visitorPlaceholder": "e.g. Omar Khaled",
+      "plate": "Car plate",
+      "plateHelp": "Optional — leave blank if they're on foot.",
+      "platePlaceholder": "ABC 1234",
+      "date": "Date of visit",
+      "submit": "Generate pass",
+      "submitting": "Generating…"
+    },
+    "errors": {
+      "create": "Couldn't issue the pass — {{message}}"
+    },
+    "ticket": {
+      "issued": "Pass issued",
+      "label": "Visitor pass",
+      "accessCode": "Access code",
+      "copyCodeAria": "Copy access code to clipboard",
+      "instructions": "Show this QR at the main gate, or share the code below with your visitor.",
+      "share": "Share pass",
+      "issueAnother": "Issue another pass"
+    },
+    "share": {
+      "title": "Stitch visitor pass",
+      "body": "Stitch visitor pass for {{visitor}} — visiting {{host}} at {{unit}} on {{date}}. Access code: {{code}}. Show this code at the compound's main gate.",
+      "successNative": "Shared via your device.",
+      "successWhatsapp": "Opened WhatsApp — finish sending in the new tab.",
+      "successCopied": "Pass copied — paste it into your messaging app.",
+      "unsupported": "Sharing isn't supported on this browser. Copy the code manually.",
+      "codeCopied": "Access code copied.",
+      "codeCopyFail": "Couldn't copy the code — long-press it instead."
     }
   },
   "qr": {

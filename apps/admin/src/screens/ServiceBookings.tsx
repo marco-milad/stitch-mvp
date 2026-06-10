@@ -18,6 +18,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/PageHeader';
+import { SlotFilterPanel } from '@/components/SlotFilterPanel';
+import { SlotLoadRibbon } from '@/components/SlotLoadRibbon';
 import { StatusPill } from '@/components/StatusPill';
 import {
   cancelServiceBooking,
@@ -26,6 +28,7 @@ import {
   listServiceBookings,
   updateServiceBookingNotes,
 } from '@/lib/api';
+import { todayIso, UNSCHEDULED_SENTINEL, type MaintenanceTimeSlot } from '@/lib/slots';
 import type { ServiceBooking, ServiceBookingStatus } from '@/lib/types';
 
 type StatusFilter = 'all' | ServiceBookingStatus;
@@ -78,10 +81,22 @@ function fmtCreated(iso: string, lang: string): string {
 
 const QUERY_KEY = ['admin', 'service-bookings'] as const;
 
+function fmtDay(iso: string, lang: string): string {
+  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${iso}T00:00:00Z`));
+}
+
 export function ServiceBookings() {
   const { t, i18n } = useTranslation();
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<string>(() => todayIso());
+  const [slotFilter, setSlotFilter] = useState<string | null>(null);
+  const [tileFilter, setTileFilter] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: QUERY_KEY,
@@ -92,10 +107,47 @@ export function ServiceBookings() {
   });
 
   const bookings = useMemo(() => query.data?.items ?? [], [query.data]);
+
   const filtered = useMemo(() => {
-    if (filter === 'all') return bookings;
-    return bookings.filter((b) => b.status === filter);
-  }, [bookings, filter]);
+    let rows = filter === 'all' ? bookings : bookings.filter((b) => b.status === filter);
+    if (tileFilter) {
+      rows = rows.filter((b) => b.tileId === tileFilter);
+    }
+    if (slotFilter === UNSCHEDULED_SENTINEL) {
+      // Bookings always carry a schedule today, so this is effectively
+      // a no-op — but keeping the case match means the filter panel can
+      // stay generic across both screens.
+      rows = [];
+    } else if (slotFilter) {
+      rows = rows.filter((b) => b.dateIso === scheduleDate && b.timeSlot === slotFilter);
+    }
+    return rows;
+  }, [bookings, filter, tileFilter, slotFilter, scheduleDate]);
+
+  // Ribbon counts: completed / cancelled bookings have closed out so
+  // they don't consume future capacity. Active + pending bookings do.
+  const countsBySlot = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const b of bookings) {
+      if (b.dateIso !== scheduleDate) continue;
+      if (b.status === 'completed' || b.status === 'cancelled') continue;
+      if (tileFilter && b.tileId !== tileFilter) continue;
+      m.set(b.timeSlot, (m.get(b.timeSlot) ?? 0) + 1);
+    }
+    return m;
+  }, [bookings, scheduleDate, tileFilter]);
+
+  // Distinct tile ids present in the current dataset, sorted. The
+  // catalog doesn't have a fixed enum on this side, so derive from
+  // what's actually in flight — keeps the dropdown honest as new
+  // tile flows come online.
+  const tileOptions = useMemo(() => {
+    const tiles = new Set<string>();
+    for (const b of bookings) tiles.add(b.tileId);
+    return Array.from(tiles)
+      .sort()
+      .map((tileId) => ({ value: tileId, label: tileId }));
+  }, [bookings]);
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -107,6 +159,24 @@ export function ServiceBookings() {
             {bookings.length} {t('bookings.totalSuffix')}
           </span>
         }
+      />
+
+      <SlotLoadRibbon
+        countsBySlot={countsBySlot}
+        selectedSlot={slotFilter && slotFilter !== UNSCHEDULED_SENTINEL ? slotFilter : null}
+        onSelectSlot={(s: MaintenanceTimeSlot | null) => setSlotFilter(s)}
+        dateLabel={fmtDay(scheduleDate, i18n.language)}
+      />
+
+      <SlotFilterPanel
+        dateIso={scheduleDate}
+        onDateChange={setScheduleDate}
+        slot={slotFilter}
+        onSlotChange={(s) => setSlotFilter(s)}
+        category={tileFilter}
+        onCategoryChange={setTileFilter}
+        categories={tileOptions}
+        categoryLabelKey="bookings.filters.tileLabel"
       />
 
       {/* Status filter tabs */}

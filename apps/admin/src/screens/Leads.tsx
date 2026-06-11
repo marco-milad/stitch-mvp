@@ -25,12 +25,18 @@ import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusPill } from '@/components/StatusPill';
 import {
+  adminListAmenityBookings,
   adminListDiscoverBookings,
   adminListEoi,
+  adminUpdateAmenityBookingStatus,
   adminUpdateBookingStatus,
+  type UpdateAmenityBookingStatusInput,
   type UpdateBookingStatusInput,
 } from '@/lib/api';
 import type {
+  AmenityBookingDecision,
+  AmenityBookingRow,
+  AmenityBookingStatus,
   DiscoverBookingDecision,
   DiscoverBookingLead,
   DiscoverBookingStatus,
@@ -39,6 +45,7 @@ import type {
 
 const EOI_KEY = ['admin', 'discover', 'eoi'] as const;
 const BOOKINGS_KEY = ['admin', 'discover', 'bookings'] as const;
+const AMENITY_BOOKINGS_KEY = ['admin', 'amenities', 'bookings'] as const;
 
 function fmt(iso: string, lang: string): string {
   return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-GB', {
@@ -65,14 +72,33 @@ interface DecisionTarget {
   status: Exclude<DiscoverBookingStatus, 'pending'>;
 }
 
+interface AmenityDecisionTarget {
+  booking: AmenityBookingRow;
+  status: Exclude<AmenityBookingStatus, 'pending' | 'cancelled'>;
+}
+
+// Bridge so a single WhatsAppToast component handles both Discover
+// and Amenity decisions. The toast only reads `booking.name` /
+// `booking.status` / `whatsappUrl`, so we narrow to that shape.
+type AnyDecision =
+  | { kind: 'discover'; decision: DiscoverBookingDecision }
+  | { kind: 'amenity'; decision: AmenityBookingDecision };
+
 export function Leads() {
   const { t, i18n } = useTranslation();
   // Open-decision modal — set when the admin clicks Confirm / Reject.
   // Holds both the target row and the intended next status so the
   // modal can render the right title + CTA copy without re-prompting.
   const [decisionTarget, setDecisionTarget] = useState<DecisionTarget | null>(null);
-  // Most-recent decision response — drives the WhatsApp toast.
-  const [recentDecision, setRecentDecision] = useState<DiscoverBookingDecision | null>(null);
+  // Same shape for amenity decisions — kept separate so a Discover
+  // modal and an amenity modal can't open at the same time.
+  const [amenityDecisionTarget, setAmenityDecisionTarget] = useState<AmenityDecisionTarget | null>(
+    null,
+  );
+  // Most-recent decision response — drives the WhatsApp toast. One
+  // slot for the whole screen; either Discover or amenity decisions
+  // hand off into it.
+  const [recentDecision, setRecentDecision] = useState<AnyDecision | null>(null);
 
   const eoiQuery = useQuery<EoiLead[]>({
     queryKey: EOI_KEY,
@@ -90,8 +116,17 @@ export function Leads() {
     staleTime: 0,
   });
 
+  const amenityBookingsQuery = useQuery<AmenityBookingRow[]>({
+    queryKey: AMENITY_BOOKINGS_KEY,
+    queryFn: adminListAmenityBookings,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+  });
+
   const eoi = eoiQuery.data ?? [];
   const bookings = bookingsQuery.data ?? [];
+  const amenityBookings = amenityBookingsQuery.data ?? [];
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -311,13 +346,132 @@ export function Leads() {
         )}
       </Section>
 
+      {/* Amenity bookings table — same column shape + status pills as
+          Discover but driven by the asset-lock engine; the PATCH route
+          refuses to confirm a row whose (amenity, date, time_slot)
+          tuple is already locked, so two concurrent admin decisions
+          can't double-book the same court / hall. */}
+      <Section
+        title={t('leads.amenityBookings.title')}
+        subtitle={t('leads.amenityBookings.subtitle', { count: amenityBookings.length })}
+        Icon={CalendarClock}
+      >
+        {amenityBookingsQuery.isLoading ? (
+          <LoadingRow />
+        ) : amenityBookingsQuery.isError ? (
+          <ErrorRow message={(amenityBookingsQuery.error as Error)?.message ?? 'unknown'} />
+        ) : amenityBookings.length === 0 ? (
+          <EmptyRow message={t('leads.amenityBookings.empty')} />
+        ) : (
+          <Table>
+            <Thead>
+              <Th>{t('leads.col.id')}</Th>
+              <Th>{t('leads.col.resident')}</Th>
+              <Th>{t('leads.col.amenity')}</Th>
+              <Th>{t('leads.col.scheduledFor')}</Th>
+              <Th>{t('leads.col.guests')}</Th>
+              <Th>{t('leads.col.status')}</Th>
+              <Th>{t('leads.col.submitted')}</Th>
+              <Th>{t('leads.col.actions')}</Th>
+            </Thead>
+            <tbody>
+              {amenityBookings.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-t border-ink-100 hover:bg-ink-50/50 transition-colors align-top"
+                >
+                  <td className="px-4 py-3 font-mono text-[11px] text-ink-500">
+                    {row.id.slice(0, 8)}
+                  </td>
+                  <td className="px-4 py-3 text-ink-900 font-semibold">
+                    {row.residentName}
+                    {row.residentPhone && (
+                      <div className="text-[11px] text-ink-500 tabular-nums mt-0.5" dir="ltr">
+                        {row.residentPhone}
+                      </div>
+                    )}
+                    {row.adminNotes && (
+                      <div className="mt-1 text-[11px] text-ink-500 italic line-clamp-2 max-w-[240px]">
+                        <span className="font-semibold not-italic">
+                          {t('leads.bookings.adminNotesLabel')}:
+                        </span>{' '}
+                        {row.adminNotes}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-ink-900 font-medium">{row.amenityName}</td>
+                  <td className="px-4 py-3 text-ink-700">
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-xs tabular-nums" dir="ltr">
+                        {fmtDay(row.bookingDate, i18n.language)}
+                      </span>
+                      <span className="text-[11px] text-ink-500 tabular-nums" dir="ltr">
+                        {row.timeSlot} – {row.endTime}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-ink-700 text-xs tabular-nums">{row.guestsCount}</td>
+                  <td className="px-4 py-3">
+                    <AmenityBookingStatusPill status={row.status} />
+                  </td>
+                  <td className="px-4 py-3 text-[11px] text-ink-500 tabular-nums whitespace-nowrap">
+                    {fmt(row.createdAt, i18n.language)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {row.status === 'pending' ? (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAmenityDecisionTarget({ booking: row, status: 'confirmed' })
+                          }
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:scale-[0.97] transition-all"
+                        >
+                          <Check size={11} />
+                          {t('leads.actions.confirm')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAmenityDecisionTarget({ booking: row, status: 'rejected' })
+                          }
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 active:scale-[0.97] transition-all"
+                        >
+                          <X size={11} />
+                          {t('leads.actions.reject')}
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-ink-400 italic">
+                        {t('leads.actions.settled')}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Section>
+
       {decisionTarget && (
         <DecisionModal
           target={decisionTarget}
           onClose={() => setDecisionTarget(null)}
           onSettled={(decision) => {
             setDecisionTarget(null);
-            setRecentDecision(decision);
+            setRecentDecision({ kind: 'discover', decision });
+          }}
+        />
+      )}
+
+      {amenityDecisionTarget && (
+        <AmenityDecisionModal
+          target={amenityDecisionTarget}
+          onClose={() => setAmenityDecisionTarget(null)}
+          onSettled={(decision) => {
+            setAmenityDecisionTarget(null);
+            setRecentDecision({ kind: 'amenity', decision });
           }}
         />
       )}
@@ -339,6 +493,165 @@ function BookingStatusPill({ status }: { status: DiscoverBookingStatus }) {
   const tone: 'warning' | 'success' | 'danger' =
     status === 'pending' ? 'warning' : status === 'confirmed' ? 'success' : 'danger';
   return <StatusPill tone={tone}>{t(`leads.bookingStatus.${status}`)}</StatusPill>;
+}
+
+function AmenityBookingStatusPill({ status }: { status: AmenityBookingStatus }) {
+  const { t } = useTranslation();
+  // Same colour grammar as Discover: amber pending, emerald confirmed,
+  // red rejected / cancelled.
+  const tone: 'warning' | 'success' | 'danger' | 'info' =
+    status === 'pending'
+      ? 'warning'
+      : status === 'confirmed'
+        ? 'success'
+        : status === 'rejected'
+          ? 'danger'
+          : 'info';
+  return <StatusPill tone={tone}>{t(`leads.amenityBookingStatus.${status}`)}</StatusPill>;
+}
+
+function AmenityDecisionModal({
+  target,
+  onClose,
+  onSettled,
+}: {
+  target: AmenityDecisionTarget;
+  onClose: () => void;
+  onSettled: (decision: AmenityBookingDecision) => void;
+}) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [notes, setNotes] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isConfirm = target.status === 'confirmed';
+
+  const mutation = useMutation({
+    mutationFn: (input: UpdateAmenityBookingStatusInput) => adminUpdateAmenityBookingStatus(input),
+    onSuccess: (decision) => {
+      void qc.invalidateQueries({ queryKey: AMENITY_BOOKINGS_KEY });
+      onSettled(decision);
+    },
+    onError: (err: Error) => {
+      // 409 → asset-locked slot. Surface a tailored message so the
+      // admin can change the time / re-assign without losing notes.
+      const msg = err.message ?? '';
+      if (msg.startsWith('409')) {
+        setErrorMessage(t('leads.amenityDecision.errors.locked'));
+      } else {
+        setErrorMessage(msg || t('leads.decision.errors.generic'));
+      }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    mutation.mutate({
+      bookingId: target.booking.id,
+      status: target.status,
+      adminNotes: notes.trim() || null,
+    });
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/40 backdrop-blur-sm p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !mutation.isPending) onClose();
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-ink-100 overflow-hidden"
+      >
+        <header className="flex items-center justify-between px-5 py-3.5 border-b border-ink-100 bg-sand-50/60">
+          <div className="flex flex-col min-w-0">
+            <h2 className="text-sm font-bold text-ink-950 leading-tight">
+              {isConfirm
+                ? t('leads.amenityDecision.confirmTitle')
+                : t('leads.amenityDecision.rejectTitle')}
+            </h2>
+            <p className="text-[11px] text-ink-500 truncate">
+              {target.booking.residentName} · {target.booking.amenityName} ·{' '}
+              <span dir="ltr">{target.booking.timeSlot}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={mutation.isPending}
+            aria-label={t('leads.decision.cancel')}
+            className="p-1.5 rounded-md text-ink-500 hover:bg-ink-100 disabled:opacity-40"
+          >
+            <X size={14} />
+          </button>
+        </header>
+
+        <div className="px-5 py-4 space-y-3">
+          {errorMessage && (
+            <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs">
+              <p className="font-semibold">{t('leads.decision.errors.title')}</p>
+              <p className="mt-0.5 opacity-90">{errorMessage}</p>
+            </div>
+          )}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-500">
+              {t('leads.decision.notesLabel')}
+            </span>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={
+                isConfirm
+                  ? t('leads.amenityDecision.notesConfirmPlaceholder')
+                  : t('leads.amenityDecision.notesRejectPlaceholder')
+              }
+              maxLength={2000}
+              rows={4}
+              className="w-full rounded-lg border border-ink-200 px-3 py-2 text-xs text-ink-900 bg-white outline-none focus:border-ink-400 focus:ring-1 focus:ring-ink-200 resize-none"
+            />
+            <span className="text-[10px] text-ink-400">{t('leads.decision.notesHelp')}</span>
+          </label>
+        </div>
+
+        <footer className="flex items-center gap-2 px-5 py-3 border-t border-ink-100">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={mutation.isPending}
+            className="flex-1 px-3 py-2 rounded-md text-xs font-semibold text-ink-700 hover:bg-ink-50 disabled:opacity-50"
+          >
+            {t('leads.decision.cancel')}
+          </button>
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className={[
+              'flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold transition-all active:scale-[0.99] disabled:opacity-50',
+              isConfirm
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'bg-red-600 text-white hover:bg-red-700',
+            ].join(' ')}
+          >
+            {mutation.isPending ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : isConfirm ? (
+              <Check size={12} />
+            ) : (
+              <X size={12} />
+            )}
+            {mutation.isPending
+              ? t('leads.decision.submitting')
+              : isConfirm
+                ? t('leads.amenityDecision.submitConfirm')
+                : t('leads.amenityDecision.submitReject')}
+          </button>
+        </footer>
+      </form>
+    </div>
+  );
 }
 
 function DecisionModal({
@@ -483,13 +796,7 @@ function DecisionModal({
   );
 }
 
-function WhatsAppToast({
-  decision,
-  onDismiss,
-}: {
-  decision: DiscoverBookingDecision;
-  onDismiss: () => void;
-}) {
+function WhatsAppToast({ decision, onDismiss }: { decision: AnyDecision; onDismiss: () => void }) {
   const { t } = useTranslation();
   // Auto-dismiss after 8 s so a series of decisions don't pile up on
   // screen. Longer than the usual toast dwell because the admin needs
@@ -499,8 +806,23 @@ function WhatsAppToast({
     return () => clearTimeout(id);
   }, [decision, onDismiss]);
 
-  const statusLabelKey = `leads.bookingStatus.${decision.booking.status}`;
-  const hasLink = !!decision.whatsappUrl;
+  // Pull the display-shape out of whichever decision variant we have.
+  // Discover bookings show the prospect's name + visit status; amenity
+  // bookings show the resident's name + amenity slot status. The
+  // toast template is identical otherwise.
+  const view =
+    decision.kind === 'discover'
+      ? {
+          name: decision.decision.booking.name,
+          statusKey: `leads.bookingStatus.${decision.decision.booking.status}`,
+          whatsappUrl: decision.decision.whatsappUrl,
+        }
+      : {
+          name: decision.decision.booking.residentName,
+          statusKey: `leads.amenityBookingStatus.${decision.decision.booking.status}`,
+          whatsappUrl: decision.decision.whatsappUrl,
+        };
+  const hasLink = !!view.whatsappUrl;
   return (
     <div
       role="status"
@@ -513,8 +835,8 @@ function WhatsAppToast({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold leading-tight">
             {t('leads.toast.title', {
-              name: decision.booking.name,
-              status: t(statusLabelKey),
+              name: view.name,
+              status: t(view.statusKey),
             })}
           </p>
           <p className="text-[11px] opacity-70 leading-snug mt-0.5">
@@ -530,9 +852,9 @@ function WhatsAppToast({
           <X size={12} />
         </button>
       </div>
-      {hasLink && decision.whatsappUrl && (
+      {hasLink && view.whatsappUrl && (
         <a
-          href={decision.whatsappUrl}
+          href={view.whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={onDismiss}

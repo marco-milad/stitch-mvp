@@ -196,12 +196,13 @@ class Amenity(UuidPk, CreatedAt, Base):
 class AmenityBooking(UuidPk, Timestamps, Base):
     """Resident booking against a specific amenity for a time window.
 
-    Lifecycle:
-        pending   →  resident submitted, ops have not yet acknowledged
-        confirmed →  ops accepted; the slot is firmly held
-        cancelled →  withdrawn (by resident or ops) — does not free
-                     capacity retroactively for past windows but does
-                     release future ones
+    Lifecycle (Option B — same shape as Discover bookings):
+        pending   →  resident submitted, ops haven't decided
+        confirmed →  ops accepted; the slot is firmly held (asset-locked
+                     — no other booking can confirm the same
+                     amenity_id + booking_date + time_slot tuple)
+        rejected  →  ops declined; the slot is open for others again
+        cancelled →  withdrawn — legacy status kept for back-compat
 
     `user_id` follows the rest of the schema's convention (the User
     table is `users`, not `residents`); the resident concept is a role
@@ -228,8 +229,18 @@ class AmenityBooking(UuidPk, Timestamps, Base):
     booking_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     start_time: Mapped[str] = mapped_column(String(5), nullable=False)  # "HH:MM"
     end_time: Mapped[str] = mapped_column(String(5), nullable=False)  # "HH:MM"
+    # NEW (spec): canonical slot identity used by the asset-lock guard
+    # and the resident's TimeSlotPicker. Always equals `start_time` for
+    # bookings created via the new flow; backfilled from `start_time`
+    # for legacy rows. Indexed alongside (amenity_id, booking_date) to
+    # make the conflict check a single index hit.
+    time_slot: Mapped[str | None] = mapped_column(String(5), nullable=True)
     guests_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    # Ops commentary at confirm / reject time. Surfaced back to the
+    # resident via the WhatsApp deep-link the PATCH route composes —
+    # mirrors how DiscoverBooking handles its admin_notes column.
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class FamilyMember(UuidPk, CreatedAt, Base):

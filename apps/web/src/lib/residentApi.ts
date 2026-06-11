@@ -746,18 +746,24 @@ export interface AmenityBookingInput {
   guestsCount: number;
 }
 
-export type AmenityBookingStatus = 'pending' | 'confirmed' | 'cancelled';
+export type AmenityBookingStatus = 'pending' | 'confirmed' | 'rejected' | 'cancelled';
 
 export interface AmenityBooking {
   id: string;
   amenityId: string;
   amenityName: string;
   residentName: string;
+  residentPhone?: string | null;
   bookingDate: string;
   startTime: string;
   endTime: string;
+  /** Canonical asset-lock identity — backend mirrors `startTime` for
+   *  bookings created via the new flow; backfilled from `startTime`
+   *  on legacy rows. */
+  timeSlot: string;
   guestsCount: number;
   status: AmenityBookingStatus;
+  adminNotes?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -775,6 +781,17 @@ export async function bookAmenity(input: AmenityBookingInput): Promise<AmenityBo
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+/** Public read — confirmed `timeSlot` values for an amenity on a
+ *  given day. Drives the resident TimeSlotPicker's grey-out logic so
+ *  a prospect literally can't pick an asset-locked slot. */
+export async function listBusyAmenitySlots(amenityId: string, dateIso: string): Promise<string[]> {
+  const params = new URLSearchParams({ amenity_id: amenityId, date: dateIso });
+  const data = await http<{ amenityId: string; dateIso: string; slots: string[] }>(
+    `/amenities/busy-slots?${params.toString()}`,
+  );
+  return data.slots;
 }
 
 export type ServiceBookingsEvent =

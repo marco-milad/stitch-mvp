@@ -60,7 +60,32 @@
       "scheduledFor": "الموعد",
       "advisor": "المستشار",
       "status": "الحالة",
-      "actions": "الإجراءات"
+      "actions": "الإجراءات",
+      "resident": "الساكن",
+      "amenity": "المرفق",
+      "guests": "الضيوف"
+    },
+    "amenityBookings": {
+      "title": "حجوزات المرافق",
+      "subtitle": "{{count}} حجز — قائمة موافقات الملاعب والمرافق",
+      "empty": "مفيش حجوزات للمرافق لسه."
+    },
+    "amenityBookingStatus": {
+      "pending": "في الانتظار",
+      "confirmed": "مؤكد",
+      "rejected": "مرفوض",
+      "cancelled": "ملغي"
+    },
+    "amenityDecision": {
+      "confirmTitle": "تأكيد حجز المرفق",
+      "rejectTitle": "رفض حجز المرفق",
+      "notesConfirmPlaceholder": "مثال: تم التأكيد — برجاء إحضار كارت الدخول.",
+      "notesRejectPlaceholder": "مثال: الموعد محجوز — برجاء اختيار وقت تاني.",
+      "submitConfirm": "تأكيد الموعد",
+      "submitReject": "رفض الموعد",
+      "errors": {
+        "locked": "المرفق ده محجوز فعلاً في الميعاد ده لحد تاني. اختار ميعاد مختلف أو ارفض الطلب."
+      }
     },
     "interest": {
       "apartment": "شقة",

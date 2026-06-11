@@ -94,11 +94,17 @@ def _project_booking(
         amenityId=str(amenity.id),
         amenityName=amenity.name,
         residentName=full_name,
+        residentPhone=user.phone,
         bookingDate=row.booking_date.isoformat(),
         startTime=row.start_time,
         endTime=row.end_time,
+        # `time_slot` is the canonical asset-lock identity. Fall back
+        # to `start_time` for legacy rows that haven't been backfilled
+        # via the migration (shouldn't happen post-deploy but defensive).
+        timeSlot=row.time_slot or row.start_time,
         guestsCount=row.guests_count,
         status=row.status,  # type: ignore[arg-type]
+        adminNotes=row.admin_notes,
         createdAt=row.created_at.isoformat(),
         updatedAt=row.updated_at.isoformat(),
     )
@@ -209,6 +215,11 @@ async def create_booking(
         booking_date=booking_date,
         start_time=payload.startTime,
         end_time=payload.endTime,
+        # `time_slot` is the asset-lock identity. Equals `start_time`
+        # for new bookings — both columns get written so the
+        # legacy capacity check and the new busy-slots / PATCH-guard
+        # queries see the same value.
+        time_slot=payload.startTime,
         guests_count=payload.guestsCount,
         status="pending",
     )
@@ -241,3 +252,142 @@ async def create_booking(
 # future split-window predicates without re-introducing the import
 # round-trip).
 _ = or_
+
+
+# ─── Busy-slots + admin approval workflow ────────────────────────────────
+
+
+class BookingNotFoundError(Exception):
+    """Raised when the requested booking id doesn't exist."""
+
+
+class SlotLockedError(Exception):
+    """Raised when an admin tries to confirm a booking whose
+    (amenity_id, booking_date, time_slot) tuple is already locked by
+    another confirmed booking. Route layer maps to 409 — distinct
+    from the resident-side `CapacityExceededError` because the
+    semantic is "this asset is reserved" rather than "this amenity is
+    at capacity for the window"."""
+
+    def __init__(self, amenity_id: uuid.UUID, booking_date: date_t, time_slot: str) -> None:
+        self.amenity_id = amenity_id
+        self.booking_date = booking_date
+        self.time_slot = time_slot
+        super().__init__(
+            f"Slot {time_slot} on {booking_date.isoformat()} for amenity "
+            f"{amenity_id} is already confirmed for another booking",
+        )
+
+
+async def list_confirmed_slots_for_amenity(
+    session: AsyncSession,
+    *,
+    amenity_id: uuid.UUID,
+    booking_date: date_t,
+) -> list[str]:
+    """Distinct `time_slot` values already in `confirmed` state for the
+    given amenity on the given day. The resident TimeSlotPicker greys
+    these out so a prospect literally can't pick a locked slot."""
+    stmt = (
+        select(AmenityBookingRow.time_slot)
+        .where(AmenityBookingRow.amenity_id == amenity_id)
+        .where(AmenityBookingRow.booking_date == booking_date)
+        .where(AmenityBookingRow.status == "confirmed")
+        .where(AmenityBookingRow.time_slot.is_not(None))
+    )
+    result = await session.execute(stmt)
+    return sorted({slot for slot in result.scalars().all() if slot})
+
+
+async def list_bookings(
+    session: AsyncSession,
+    *,
+    statuses: tuple[str, ...] | None = None,
+) -> list[AmenityBookingResponse]:
+    """Newest-first list, optionally filtered to a status subset.
+    Admin Leads Hub renders the unfiltered list; resident-only views
+    use the existing user_id-scoped helpers elsewhere."""
+    stmt = (
+        select(AmenityBookingRow, AmenityRow, User)
+        .join(AmenityRow, AmenityRow.id == AmenityBookingRow.amenity_id)
+        .join(User, User.id == AmenityBookingRow.user_id)
+        .order_by(AmenityBookingRow.created_at.desc())
+    )
+    if statuses:
+        stmt = stmt.where(AmenityBookingRow.status.in_(statuses))
+    result = await session.execute(stmt)
+    return [_project_booking(row, amenity, user) for (row, amenity, user) in result.all()]
+
+
+async def update_booking_status(
+    session: AsyncSession,
+    *,
+    booking_id: str,
+    new_status: str,
+    admin_notes: str | None,
+) -> tuple[AmenityBookingResponse, AmenityBookingRow, AmenityRow]:
+    """Confirm or reject a booking with asset-lock enforcement.
+
+    Returns the projected response plus the underlying row + amenity
+    so the route layer can compose the WhatsApp deep-link without a
+    second fetch.
+    """
+    try:
+        pk = uuid.UUID(booking_id)
+    except ValueError as exc:
+        raise BookingNotFoundError(booking_id) from exc
+
+    row = await session.get(AmenityBookingRow, pk)
+    if row is None:
+        raise BookingNotFoundError(booking_id)
+
+    if new_status == "confirmed":
+        # Asset lock: refuse if another row already holds this exact
+        # tuple. The composite index on (amenity_id, booking_date,
+        # time_slot) keeps the check sub-millisecond.
+        slot_value = row.time_slot or row.start_time
+        conflict_stmt = (
+            select(AmenityBookingRow.id)
+            .where(AmenityBookingRow.amenity_id == row.amenity_id)
+            .where(AmenityBookingRow.booking_date == row.booking_date)
+            .where(AmenityBookingRow.time_slot == slot_value)
+            .where(AmenityBookingRow.status == "confirmed")
+            .where(AmenityBookingRow.id != row.id)
+            .limit(1)
+        )
+        existing = await session.scalar(conflict_stmt)
+        if existing is not None:
+            logger.warning(
+                "amenity_booking.asset_lock_violation",
+                amenity_id=str(row.amenity_id),
+                booking_date=row.booking_date.isoformat(),
+                slot=slot_value,
+                blocked_id=str(row.id),
+                conflict_id=str(existing),
+            )
+            raise SlotLockedError(row.amenity_id, row.booking_date, slot_value)
+
+    previous = row.status
+    row.status = new_status
+    if admin_notes is not None:
+        clean = admin_notes.strip()
+        row.admin_notes = clean or None
+
+    await session.commit()
+    await session.refresh(row)
+
+    amenity = await session.get(AmenityRow, row.amenity_id)
+    user = await session.get(User, row.user_id)
+    if amenity is None or user is None:
+        raise BookingNotFoundError(booking_id)
+
+    projected = _project_booking(row, amenity, user)
+    logger.info(
+        "amenity_booking.decision",
+        id=projected.id,
+        from_status=previous,
+        to_status=new_status,
+        amenity=amenity.name,
+        has_notes=bool(row.admin_notes),
+    )
+    return projected, row, amenity

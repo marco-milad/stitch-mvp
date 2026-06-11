@@ -21,7 +21,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-AmenityBookingStatus = Literal["pending", "confirmed", "cancelled"]
+AmenityBookingStatus = Literal["pending", "confirmed", "rejected", "cancelled"]
 
 
 # ─── Amenity catalog (read-only on the resident side) ─────────────────────
@@ -84,10 +84,56 @@ class AmenityBookingResponse(BaseModel):
     amenityId: str
     amenityName: str
     residentName: str
+    residentPhone: str | None = None
     bookingDate: str
     startTime: str
     endTime: str
+    # NEW (spec): canonical slot identity. Mirrors `start_time` for
+    # records created via the new flow; backfilled from the legacy
+    # `start_time` on existing rows.
+    timeSlot: str
     guestsCount: int
     status: AmenityBookingStatus
+    adminNotes: str | None = None
     createdAt: str
     updatedAt: str
+
+
+# ─── Admin approval workflow ──────────────────────────────────────────────
+
+
+class AmenityBookingStatusUpdate(BaseModel):
+    """Admin → API: PATCH payload for the amenity approval workflow.
+
+    `status` is restricted to terminal-decision values so an admin
+    can't bounce a row back to `pending` after notifying the resident.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["confirmed", "rejected"]
+    adminNotes: str | None = Field(default=None, max_length=2000)
+
+
+class AmenityBookingDecision(BaseModel):
+    """PATCH response — updated row + ready-to-open WhatsApp deep-link
+    composed server-side. `whatsappUrl` is null when there's no phone
+    on file for the resident."""
+
+    booking: AmenityBookingResponse
+    whatsappUrl: str | None = None
+
+
+class AmenityBusySlotsResponse(BaseModel):
+    """Public read — list of `confirmed` slot starts for an amenity on
+    a given day. Resident TimeSlotPicker greys these out so a prospect
+    can't pick an asset that's already locked."""
+
+    amenityId: str
+    dateIso: str
+    slots: list[str]
+
+
+class AmenityBookingsList(BaseModel):
+    """Admin list response — newest-first."""
+
+    items: list[AmenityBookingResponse]

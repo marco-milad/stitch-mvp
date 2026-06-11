@@ -13,6 +13,9 @@ import type {
   AdminFeedItem,
   AdminPost,
   AdminReel,
+  AmenityBookingDecision,
+  AmenityBookingRow,
+  AmenityBookingStatus,
   DiscoverBookingDecision,
   DiscoverBookingLead,
   DiscoverBookingStatus,
@@ -372,6 +375,33 @@ export async function adminUpdateBookingStatus(
 ): Promise<DiscoverBookingDecision> {
   const { bookingId, status, adminNotes } = input;
   return http<DiscoverBookingDecision>(`/admin/discover/bookings/${bookingId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, adminNotes: adminNotes ?? null }),
+  });
+}
+
+// ─── Amenity bookings (Mala'eb / المرافق approval) ─────────────────────────
+
+export async function adminListAmenityBookings(): Promise<AmenityBookingRow[]> {
+  const data = await http<{ items: AmenityBookingRow[] }>('/admin/amenities/bookings');
+  return data.items;
+}
+
+export interface UpdateAmenityBookingStatusInput {
+  bookingId: string;
+  status: Exclude<AmenityBookingStatus, 'pending' | 'cancelled'>;
+  adminNotes?: string | null;
+}
+
+/** Confirm or reject an amenity booking. Backend enforces the asset-
+ *  lock guard (409 if another confirmed booking already holds the
+ *  amenity_id + booking_date + time_slot tuple). Returns the decision
+ *  + WhatsApp deep-link. */
+export async function adminUpdateAmenityBookingStatus(
+  input: UpdateAmenityBookingStatusInput,
+): Promise<AmenityBookingDecision> {
+  const { bookingId, status, adminNotes } = input;
+  return http<AmenityBookingDecision>(`/admin/amenities/bookings/${bookingId}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status, adminNotes: adminNotes ?? null }),
   });

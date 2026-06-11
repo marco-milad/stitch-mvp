@@ -60,7 +60,32 @@
       "scheduledFor": "Scheduled",
       "advisor": "Advisor",
       "status": "Status",
-      "actions": "Actions"
+      "actions": "Actions",
+      "resident": "Resident",
+      "amenity": "Amenity",
+      "guests": "Guests"
+    },
+    "amenityBookings": {
+      "title": "Amenity bookings",
+      "subtitle": "{{count}} scheduled — Mala'eb (المرافق) approval queue",
+      "empty": "No amenity bookings yet."
+    },
+    "amenityBookingStatus": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "amenityDecision": {
+      "confirmTitle": "Confirm amenity booking",
+      "rejectTitle": "Reject amenity booking",
+      "notesConfirmPlaceholder": "e.g. Confirmed — please bring your access card.",
+      "notesRejectPlaceholder": "e.g. Slot already taken — please pick another time.",
+      "submitConfirm": "Confirm slot",
+      "submitReject": "Reject slot",
+      "errors": {
+        "locked": "This amenity slot is already confirmed for another booking. Pick a different time or reject this one."
+      }
     },
     "interest": {
       "apartment": "Apartment",

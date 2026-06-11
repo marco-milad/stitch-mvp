@@ -21,12 +21,39 @@ import {
   Loader2,
   Users,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+// Hourly start times the amenity TimeSlotPicker offers. Each chip
+// represents a 1-hour window; the form's `endTime` is computed as
+// `startTime + 1h` so the canonical "asset-lock identity" matches
+// what the backend stores in `time_slot`. Stretching to multi-hour
+// bookings would need to fan the conflict check across the range.
+const AMENITY_SLOT_STARTS = [
+  '09:00',
+  '10:00',
+  '11:00',
+  '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+  '21:00',
+] as const;
+
+function addHour(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const next = (h + 1) % 24;
+  return `${String(next).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { InlineNotice, type InlineNoticeData } from '@/components/ui/InlineNotice';
-import { bookAmenity, listAmenities, type Amenity } from '@/lib/residentApi';
+import { bookAmenity, listAmenities, listBusyAmenitySlots, type Amenity } from '@/lib/residentApi';
 import { residentQueryOptions } from '@/lib/useResidentQuery';
 
 const AMENITIES_KEY = ['amenities', 'list'] as const;
@@ -294,9 +321,32 @@ function BookingForm({
   const { t } = useTranslation();
   const [bookingDate, setBookingDate] = useState(todayIso());
   const [startTime, setStartTime] = useState('10:00');
-  const [endTime, setEndTime] = useState('12:00');
   const [guestsCount, setGuestsCount] = useState(1);
   const [notice, setNotice] = useState<InlineNoticeData | null>(null);
+
+  // Derived end time — strictly +1h from the picked slot start. Keeps
+  // the asset-lock identity (`time_slot`) one-to-one with `startTime`.
+  const endTime = useMemo(() => addHour(startTime), [startTime]);
+
+  // Live busy-slots query — confirmed `time_slot` values already
+  // locked for (amenity, date). Drives the chip-grid grey-out.
+  const busySlotsQuery = useQuery<string[]>({
+    queryKey: ['amenities', 'busy-slots', amenity.id, bookingDate] as const,
+    queryFn: () => listBusyAmenitySlots(amenity.id, bookingDate),
+    enabled: !!amenity.id && !!bookingDate,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+  const busySet = useMemo(() => new Set(busySlotsQuery.data ?? []), [busySlotsQuery.data]);
+
+  // If the picked slot just became busy (an admin confirmed someone
+  // else's booking 30s ago), bump the picker to the next free slot so
+  // the user can't submit into a guaranteed 409.
+  useEffect(() => {
+    if (!busySet.has(startTime)) return;
+    const nextFree = AMENITY_SLOT_STARTS.find((s) => !busySet.has(s));
+    if (nextFree) setStartTime(nextFree);
+  }, [busySet, startTime]);
 
   const mutation = useMutation({
     mutationFn: bookAmenity,
@@ -366,28 +416,43 @@ function BookingForm({
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('amenities.form.startTime')}>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-              aria-label={t('amenities.form.startTime')}
-              className="w-full px-3 py-2.5 rounded-xl border border-sand-200 bg-white text-sm text-ink-950 tabular-nums focus:outline-none focus:border-ink-400"
-            />
-          </Field>
-          <Field label={t('amenities.form.endTime')}>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-              aria-label={t('amenities.form.endTime')}
-              className="w-full px-3 py-2.5 rounded-xl border border-sand-200 bg-white text-sm text-ink-950 tabular-nums focus:outline-none focus:border-ink-400"
-            />
-          </Field>
-        </div>
+        <Field
+          label={t('amenities.form.timeSlot')}
+          help={t('amenities.form.timeSlotHelp', { endTime })}
+        >
+          <div className="flex flex-row flex-wrap gap-2">
+            {AMENITY_SLOT_STARTS.map((slot) => {
+              const isBusy = busySet.has(slot);
+              const active = slot === startTime;
+              return (
+                <button
+                  key={slot}
+                  type="button"
+                  onClick={() => !isBusy && setStartTime(slot)}
+                  disabled={isBusy}
+                  aria-pressed={active ? 'true' : 'false'}
+                  aria-disabled={isBusy ? 'true' : 'false'}
+                  title={isBusy ? t('amenities.form.slotBookedTitle') : undefined}
+                  className={[
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors tabular-nums',
+                    isBusy
+                      ? 'bg-ink-100 text-ink-400 border-ink-100 line-through cursor-not-allowed'
+                      : active
+                        ? 'bg-ink-950 dark:bg-white text-white dark:text-ink-950 border-ink-950 dark:border-white'
+                        : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-sand-200 dark:border-ink-700 hover:border-ink-400',
+                  ].join(' ')}
+                >
+                  <span dir="ltr">{slot}</span>
+                  {isBusy && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">
+                      {t('amenities.form.slotBookedBadge')}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
 
         <Field
           label={t('amenities.form.guests')}

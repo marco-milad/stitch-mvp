@@ -31,12 +31,18 @@ from app.core.logging import logger
 from app.models.ops import DiscoverBooking as DiscoverBookingRow
 from app.models.ops import EoiSubmission as EoiSubmissionRow
 from app.models.user import User, UserRole
+from app.schemas.amenities import (
+    AmenityBookingDecision,
+    AmenityBookingsList,
+    AmenityBookingStatusUpdate,
+)
 from app.schemas.discover import (
     DiscoverBookingDecision,
     DiscoverBookingResponse,
     DiscoverBookingStatusUpdate,
     EoiSubmissionResponse,
 )
+from app.services import amenities_hub
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -288,3 +294,122 @@ async def update_booking_status(
         has_whatsapp=whatsapp_url is not None,
     )
     return DiscoverBookingDecision(booking=projected, whatsappUrl=whatsapp_url)
+
+
+# ─── Amenity bookings (Mala'eb / المرافق approval workflow) ───────────────
+
+
+_AMENITY_STATUS_LABELS_EN: dict[str, str] = {
+    "confirmed": "confirmed ✓",
+    "rejected": "declined",
+}
+
+
+def _humanize_amenity_name(slug: str) -> str:
+    """Turn `tennis_court_1` → `Tennis Court 1` so the WhatsApp body
+    reads naturally without renaming the seed slugs."""
+    return slug.replace("_", " ").title()
+
+
+def _compose_amenity_whatsapp_url(
+    *,
+    resident_name: str,
+    resident_phone: str | None,
+    amenity_slug: str,
+    booking_date: date_t,
+    time_slot: str,
+    decision: str,
+    admin_notes: str | None,
+) -> str | None:
+    """Build a click-to-message WhatsApp link for the resident.
+
+    Body matches the spec exactly:
+        "Hello [Resident], your booking for [Amenity] on [Date] at
+         [Time] is confirmed! ✓"
+    plus admin notes when present and a fallback line for rejections.
+    """
+    if not resident_phone:
+        return None
+    digits = "".join(c for c in resident_phone if c.isdigit())
+    if not digits:
+        return None
+
+    amenity_label = _humanize_amenity_name(amenity_slug)
+    date_label = booking_date.strftime("%A, %d %B %Y")
+    if decision == "confirmed":
+        body = (
+            f"Hello {resident_name}, your booking for {amenity_label} on "
+            f"{date_label} at {time_slot} is confirmed! ✓"
+        )
+    else:
+        body = (
+            f"Hello {resident_name}, unfortunately your booking for "
+            f"{amenity_label} on {date_label} at {time_slot} was declined."
+        )
+    if admin_notes:
+        body += f" Notes: {admin_notes}"
+    return f"https://wa.me/{digits}?text={quote(body)}"
+
+
+@router.get(
+    "/amenities/bookings",
+    response_model=AmenityBookingsList,
+)
+async def list_amenity_bookings(_user: CurrentAdmin, session: DbSession) -> AmenityBookingsList:
+    """Newest-first list of every amenity booking. Drives the admin
+    Leads Hub amenity table."""
+    items = await amenities_hub.list_bookings(session)
+    return AmenityBookingsList(items=items)
+
+
+@router.patch(
+    "/amenities/bookings/{booking_id}/status",
+    response_model=AmenityBookingDecision,
+)
+async def update_amenity_booking_status(
+    payload: AmenityBookingStatusUpdate,
+    _user: CurrentAdmin,
+    session: DbSession,
+    booking_id: Annotated[str, Path()],
+) -> AmenityBookingDecision:
+    """Confirm or reject an amenity booking.
+
+    Asset-lock guard: when `status='confirmed'`, refuses if any other
+    booking already holds the same (amenity_id, booking_date, time_slot)
+    tuple in `confirmed` state. 409 with the spec-mandated message
+    lets the admin re-assign without losing typed notes.
+    """
+    try:
+        projected, row, amenity = await amenities_hub.update_booking_status(
+            session,
+            booking_id=booking_id,
+            new_status=payload.status,
+            admin_notes=payload.adminNotes,
+        )
+    except amenities_hub.BookingNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Booking not found") from exc
+    except amenities_hub.SlotLockedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "This amenity slot is already confirmed for another "
+                f"booking ({exc.time_slot} on {exc.booking_date.isoformat()})."
+            ),
+        ) from exc
+
+    whatsapp_url = _compose_amenity_whatsapp_url(
+        resident_name=projected.residentName,
+        resident_phone=projected.residentPhone,
+        amenity_slug=amenity.name,
+        booking_date=row.booking_date,
+        time_slot=projected.timeSlot,
+        decision=payload.status,
+        admin_notes=row.admin_notes,
+    )
+    logger.info(
+        "amenity_booking.decision_returned",
+        id=projected.id,
+        to_status=payload.status,
+        has_whatsapp=whatsapp_url is not None,
+    )
+    return AmenityBookingDecision(booking=projected, whatsappUrl=whatsapp_url)

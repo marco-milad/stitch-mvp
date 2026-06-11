@@ -146,6 +146,36 @@ export interface DiscoverBookingDecision {
   whatsappUrl: string | null;
 }
 
+// ─── Amenity bookings (asset-lock approval workflow) ──────────────────────
+
+export type AmenityBookingStatus = 'pending' | 'confirmed' | 'rejected' | 'cancelled';
+
+export interface AmenityBookingRow {
+  id: string;
+  amenityId: string;
+  amenityName: string;
+  residentName: string;
+  residentPhone: string | null;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  /** Asset-lock identity. The PATCH route refuses to confirm two
+   *  bookings sharing (amenityId, bookingDate, timeSlot). */
+  timeSlot: string;
+  guestsCount: number;
+  status: AmenityBookingStatus;
+  adminNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmenityBookingDecision {
+  booking: AmenityBookingRow;
+  /** Click-to-message deep-link composed server-side. Null when the
+   *  resident has no phone on file. */
+  whatsappUrl: string | null;
+}
+
 // ─── Gate & Parking ─────────────────────────────────────────────────────────
 
 export const PermitStatusSchema = z.enum(['pending', 'approved', 'rejected', 'expired']);

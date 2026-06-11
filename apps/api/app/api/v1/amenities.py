@@ -12,9 +12,11 @@ should re-acquire the `get_current_user` dependency.
 
 from __future__ import annotations
 
+import uuid as _uuid
+from datetime import date as date_t
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import AuthUser, get_current_user
@@ -23,6 +25,7 @@ from app.schemas.amenities import (
     AmenitiesList,
     AmenityBookingCreateInput,
     AmenityBookingResponse,
+    AmenityBusySlotsResponse,
 )
 from app.services import amenities_hub, requests_hub
 
@@ -64,3 +67,41 @@ async def book_amenity(
         # 422 schema-shape failure or a 500 server error, so it can show
         # a tailored "this slot just filled" message.
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get(
+    "/amenities/busy-slots",
+    response_model=AmenityBusySlotsResponse,
+    tags=["amenities"],
+)
+async def list_amenity_busy_slots(
+    session: DbSession,
+    amenity_id: Annotated[
+        str,
+        Query(description="Amenity UUID.", min_length=1, max_length=64),
+    ],
+    booking_date: Annotated[
+        str,
+        Query(
+            alias="date",
+            description="ISO calendar day YYYY-MM-DD.",
+            pattern=r"^\d{4}-\d{2}-\d{2}$",
+        ),
+    ],
+) -> AmenityBusySlotsResponse:
+    """Public read — no auth required. The resident TimeSlotPicker hits
+    this whenever (amenity, date) changes to grey out slots already
+    locked by `confirmed` bookings. Empty list when there's no
+    matching amenity (no error — same shape as "no bookings yet")."""
+    try:
+        amenity_pk = _uuid.UUID(amenity_id)
+    except ValueError:
+        return AmenityBusySlotsResponse(amenityId=amenity_id, dateIso=booking_date, slots=[])
+
+    day = date_t.fromisoformat(booking_date)
+    slots = await amenities_hub.list_confirmed_slots_for_amenity(
+        session,
+        amenity_id=amenity_pk,
+        booking_date=day,
+    )
+    return AmenityBusySlotsResponse(amenityId=amenity_id, dateIso=booking_date, slots=slots)

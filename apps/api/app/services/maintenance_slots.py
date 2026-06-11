@@ -13,10 +13,12 @@ this exact string.
 
 from __future__ import annotations
 
+from datetime import date as date_t
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.ops import MaintenanceRequest
+from app.models.ops import MaintenanceRequest, Technician
 
 # ─── Canonical slot definitions ──────────────────────────────────────────
 
@@ -140,11 +142,163 @@ async def is_slot_within_capacity(
     return int(current) < CAPACITY_PER_SLOT
 
 
+# ─── Dynamic capacity engine (technicians-backed) ────────────────────────
+
+#: New slot vocabulary — HH:MM start times. Maps 1:1 to the legacy
+#: `TIME_SLOTS` ranges via `slot_range_to_start()`. The 8 values stay
+#: ordered start-of-day-first so the resident grid renders left-to-right.
+SLOT_START_TIMES: tuple[str, ...] = (
+    "09:00",
+    "12:00",
+    "15:00",
+    "18:00",
+    "21:00",
+    "00:00",
+    "03:00",
+    "06:00",
+)
+
+# Statuses that consume a slot's capacity for the dynamic engine.
+# `confirmed` is the spec value; legacy `in_progress` is kept so a
+# tech mid-fix doesn't free their slot for a new request.
+_CONFIRMED_STATUSES: tuple[str, ...] = ("confirmed", "in_progress")
+
+
+def slot_range_to_start(slot_range: str) -> str:
+    """Convert "09:00-12:00" → "09:00". Pass-through for already-HH:MM
+    values so callers can be lazy."""
+    if len(slot_range) == 5:
+        return slot_range
+    return slot_range[:5]
+
+
+async def count_active_technicians(session: AsyncSession, *, category: str) -> int:
+    """How many technicians are active in this category right now —
+    the per-slot capacity ceiling."""
+    stmt = (
+        select(func.count())
+        .select_from(Technician)
+        .where(Technician.category == category)
+        .where(Technician.is_active.is_(True))
+    )
+    return int(await session.scalar(stmt) or 0)
+
+
+async def list_active_technicians(session: AsyncSession, *, category: str) -> list[Technician]:
+    """Return the technicians driving the capacity ceiling. Surfaced
+    alongside the slot list so the resident UI can hint "3 plumbers
+    available today" without an extra round-trip."""
+    stmt = (
+        select(Technician)
+        .where(Technician.category == category)
+        .where(Technician.is_active.is_(True))
+        .order_by(Technician.name)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def count_confirmed_in_slot(
+    session: AsyncSession,
+    *,
+    category: str,
+    booking_date: date_t,
+    time_slot: str,
+) -> int:
+    """Count confirmed bookings in (category, date, slot) — exactly the
+    rows that have already consumed capacity. Reads the NEW columns
+    (`booking_date`, `time_slot`); the legacy `scheduled_*` columns
+    are queried by `is_slot_within_capacity` below for the older
+    surface and stay isolated from this path."""
+    stmt = (
+        select(func.count())
+        .select_from(MaintenanceRequest)
+        .where(MaintenanceRequest.category == category)
+        .where(MaintenanceRequest.booking_date == booking_date)
+        .where(MaintenanceRequest.time_slot == time_slot)
+        .where(MaintenanceRequest.status.in_(_CONFIRMED_STATUSES))
+    )
+    return int(await session.scalar(stmt) or 0)
+
+
+async def dynamic_availability_for(
+    session: AsyncSession,
+    *,
+    category: str,
+    booking_date: date_t,
+) -> tuple[list[dict[str, object]], int]:
+    """Compute the per-slot availability tuple for the new endpoint.
+
+    Returns `(slot_rows, technician_count)` where `slot_rows` is a list
+    of dicts with `slot / capacity / confirmed / available` keys, one
+    row per `SLOT_START_TIMES` entry. `available` is clipped at 0 so
+    callers don't have to clamp at render time.
+    """
+    technician_count = await count_active_technicians(session, category=category)
+
+    # Pull confirmed counts in one query group-by'd on time_slot, then
+    # zip into the canonical slot list. Single round-trip instead of
+    # 8 counts.
+    counts_stmt = (
+        select(MaintenanceRequest.time_slot, func.count())
+        .where(MaintenanceRequest.category == category)
+        .where(MaintenanceRequest.booking_date == booking_date)
+        .where(MaintenanceRequest.status.in_(_CONFIRMED_STATUSES))
+        .group_by(MaintenanceRequest.time_slot)
+    )
+    result = await session.execute(counts_stmt)
+    confirmed_by_slot: dict[str, int] = {
+        row[0]: int(row[1]) for row in result.all() if row[0] is not None
+    }
+
+    slot_rows: list[dict[str, object]] = []
+    for slot in SLOT_START_TIMES:
+        confirmed = confirmed_by_slot.get(slot, 0)
+        available = max(0, technician_count - confirmed)
+        slot_rows.append(
+            {
+                "slot": slot,
+                "capacity": technician_count,
+                "confirmed": confirmed,
+                "available": available,
+            }
+        )
+    return slot_rows, technician_count
+
+
+async def is_slot_available_dynamic(
+    session: AsyncSession,
+    *,
+    category: str,
+    booking_date: date_t,
+    time_slot: str,
+) -> bool:
+    """True iff the slot still has headroom — used by the POST
+    submission guard so a resident can't book a slot that just filled."""
+    technician_count = await count_active_technicians(session, category=category)
+    if technician_count == 0:
+        return False
+    confirmed = await count_confirmed_in_slot(
+        session,
+        category=category,
+        booking_date=booking_date,
+        time_slot=time_slot,
+    )
+    return confirmed < technician_count
+
+
 __all__ = [
     "CAPACITY_PER_SLOT",
+    "SLOT_START_TIMES",
     "TIME_SLOTS",
     "availability_for",
+    "count_active_technicians",
+    "count_confirmed_in_slot",
     "count_slot_bookings",
+    "dynamic_availability_for",
+    "is_slot_available_dynamic",
     "is_slot_within_capacity",
     "is_valid_slot",
+    "list_active_technicians",
+    "slot_range_to_start",
 ]

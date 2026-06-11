@@ -23,7 +23,9 @@ import {
   createMyServiceBooking,
   createMyTicket,
   getMaintenanceAvailability,
+  listAvailableMaintenanceSlots,
   MAINTENANCE_TIME_SLOTS,
+  type MaintenanceAvailableSlotsResponse,
   type MaintenanceAvailabilityResponse,
   type TicketCategory,
 } from '@/lib/residentApi';
@@ -82,6 +84,7 @@ export function ServiceBook() {
     watch,
     control,
     reset,
+    setValue,
   } = useForm<ServiceBookingFormInput>({
     resolver: zodResolver(serviceBookingFormSchema),
     mode: 'onBlur',
@@ -92,6 +95,7 @@ export function ServiceBook() {
   }
 
   const dateIso = watch('dateIso');
+  const timeSlot = watch('timeSlot');
   const selectedDate = dateIso ? fromDateIso(dateIso) : null;
 
   // Architectural option A: Home Services (Pest · Plumbing · Repair)
@@ -105,25 +109,71 @@ export function ServiceBook() {
     [offering],
   );
 
-  // Live availability for the maintenance slot grid. Only fires when
-  // (a) we're on the Home Services tile flow AND (b) the user has
-  // picked a date — there's nothing to query before then.
-  // Cached for 30 s after a successful fetch so date toggling within
-  // the same minute doesn't hammer the endpoint; refetch on remount
-  // makes sure stale capacity numbers don't survive a Confirm-and-bounce
-  // back through the form.
-  const availabilityQuery = useQuery<MaintenanceAvailabilityResponse>({
-    queryKey: ['maintenance', 'availability', maintenanceCategory, dateIso],
+  // Live availability for the maintenance slot grid — backed by the
+  // new dynamic capacity engine. `capacity` for each slot = active
+  // technicians in the category; `available` = capacity - confirmed
+  // bookings. So picking "plumbing" with 3 seeded plumbers gives a
+  // 3-per-slot ceiling automatically; seeding a 4th instantly raises
+  // it without a code change.
+  //
+  // The legacy `/maintenance/availability` endpoint (`MaintenanceAvailabilityResponse`
+  // type) is still wired in residentApi for back-compat with anything
+  // outside ServiceBook that hasn't migrated; ServiceBook reads only
+  // the new shape and adapts it to the legacy grid contract.
+  const dynamicSlotsQuery = useQuery<MaintenanceAvailableSlotsResponse>({
+    queryKey: ['maintenance', 'available-slots', maintenanceCategory, dateIso],
     queryFn: () => {
       if (!isMaintenanceTile || !maintenanceCategory || !dateIso) {
-        throw new Error('availability query fired without prerequisites');
+        throw new Error('available-slots query fired without prerequisites');
       }
-      return getMaintenanceAvailability(maintenanceCategory, dateIso);
+      return listAvailableMaintenanceSlots(maintenanceCategory, dateIso);
     },
     enabled: Boolean(isMaintenanceTile && maintenanceCategory && dateIso),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
+
+  // Adapt the new HH:MM-start payload into the legacy "HH:MM-HH:MM"
+  // slot vocabulary the existing MaintenanceSlotGrid consumes. Single
+  // shape downstream → zero UI churn during the engine swap.
+  const availabilityData = useMemo<MaintenanceAvailabilityResponse | undefined>(() => {
+    const d = dynamicSlotsQuery.data;
+    if (!d) return undefined;
+    return {
+      category: d.category,
+      dateIso: d.dateIso,
+      capacityPerSlot: d.technicianCount,
+      slots: MAINTENANCE_TIME_SLOTS.map((rangeSlot) => {
+        const start = rangeSlot.slice(0, 5);
+        const dyn = d.slots.find((s) => s.slot === start);
+        if (!dyn) {
+          return { slot: rangeSlot, bookedCount: 0, capacity: 0, available: false };
+        }
+        return {
+          slot: rangeSlot,
+          bookedCount: dyn.confirmed,
+          capacity: dyn.capacity,
+          available: dyn.available > 0,
+        };
+      }),
+    };
+  }, [dynamicSlotsQuery.data]);
+
+  // Auto-clear the picked slot if its capacity ran out mid-form (e.g.
+  // an admin confirmed another resident's request for the same slot
+  // 30s ago). Prevents the inevitable SlotFullError on submit.
+  useEffect(() => {
+    if (!availabilityData || !timeSlot) return;
+    const meta = availabilityData.slots.find((s) => s.slot === timeSlot);
+    if (meta && !meta.available) {
+      setValue('timeSlot', '' as ServiceBookingFormInput['timeSlot']);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availabilityData]);
+
+  // Read-only legacy hook so the unused-import lint stays quiet during
+  // the transition period. Remove once nothing else imports it.
+  void getMaintenanceAvailability;
 
   const onSubmit = async (data: ServiceBookingFormInput) => {
     try {
@@ -272,9 +322,9 @@ export function ServiceBook() {
                 <MaintenanceSlotGrid
                   selected={field.value}
                   onSelect={(slot) => field.onChange(slot)}
-                  availability={availabilityQuery.data}
-                  isLoading={availabilityQuery.isPending}
-                  isError={availabilityQuery.isError}
+                  availability={availabilityData}
+                  isLoading={dynamicSlotsQuery.isPending}
+                  isError={dynamicSlotsQuery.isError}
                   dateChosen={Boolean(dateIso)}
                 />
               ) : (
@@ -286,7 +336,7 @@ export function ServiceBook() {
                         key={slot}
                         type="button"
                         onClick={() => field.onChange(slot)}
-                        aria-pressed={active ? 'true' : 'false'}
+                        aria-pressed={active}
                         className={[
                           'px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums transition-colors',
                           active
@@ -690,7 +740,7 @@ function ConsentRow({
               <button
                 type="button"
                 role="checkbox"
-                aria-checked={checked ? 'true' : 'false'}
+                aria-checked={checked}
                 onClick={() => field.onChange(!checked)}
                 onBlur={field.onBlur}
                 className={[

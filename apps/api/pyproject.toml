@@ -20,6 +20,7 @@ dependencies = [
     "slowapi>=0.1.9",
     "python-multipart>=0.0.18",
     "svix>=1.95.2",
+    "email-validator>=2.3.0",
 ]
 
 [dependency-groups]

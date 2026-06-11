@@ -1,7 +1,8 @@
 import { useUser } from '@clerk/clerk-react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check, CheckCircle2, X, type LucideIcon } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -10,28 +11,66 @@ import { AdvisorPicker } from '@/components/booking/AdvisorPicker';
 import { Calendar } from '@/components/booking/Calendar';
 import { OtelBookingButton } from '@/components/booking/OtelBookingButton';
 import { TimeSlotPicker } from '@/components/booking/TimeSlotPicker';
+import { InlineNotice, type InlineNoticeData } from '@/components/ui/InlineNotice';
 import { formatFullDate, fromDateIso, toDateIso } from '@/lib/dates';
 import { ADVISORS, ANY_ADVISOR_ID, VISIT_TYPES, formatSlotRange } from '@/lib/mock/booking';
+import { listBusyDiscoverSlots, submitDiscoverBooking } from '@/lib/residentApi';
 import { bookingSchema, type BookingInput, type VisitType } from '@/lib/schemas/booking';
-import { useBookingStore } from '@/stores/bookingStore';
+
+// Pull the first usable error message out of an http() error string.
+// Backend 422 looks like `422 Unprocessable Entity — {"detail":[...]}`;
+// we surface the first detail.msg if we can, otherwise pass through.
+function extractFriendlyError(raw: string): string {
+  if (!raw) return raw;
+  const jsonStart = raw.indexOf('{');
+  if (jsonStart < 0) return raw;
+  try {
+    const parsed = JSON.parse(raw.slice(jsonStart));
+    const detail = parsed?.detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      const first = detail[0];
+      if (typeof first?.msg === 'string') {
+        const loc = Array.isArray(first.loc) ? first.loc.join('.') : '';
+        return loc ? `${loc}: ${first.msg}` : first.msg;
+      }
+    }
+    if (typeof detail === 'string') return detail;
+  } catch {
+    // Fall through to the raw string.
+  }
+  return raw;
+}
 
 /**
  * Book-a-visit form — Week 3 deliverable.
- * Calendar excludes Fridays for showroom + onsite visits (Egyptian weekend).
- * TODO: POST /api/v1/discover/bookings once the backend endpoint exists.
+ *
+ * Calendar excludes Fridays for showroom + onsite visits (Egyptian
+ * weekend). POSTs to the live `/api/v1/discover/bookings` endpoint and
+ * fires an admin notification per admin user on success. The legacy
+ * `bookingStore` Zustand + localStorage cache was stripped — bookings
+ * persist server-side end-to-end. The Clerk-prefill behaviour stays;
+ * everything else that used to read `draft` is gone.
  */
 export function DiscoverBook() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isLoaded: clerkLoaded } = useUser();
-  const { draft, setDraft, addSubmission } = useBookingStore();
   const [submitted, setSubmitted] = useState<BookingInput | null>(null);
+  const [notice, setNotice] = useState<InlineNoticeData | null>(null);
+  // Anchor for scroll-to-error. The InlineNotice mounts at the top of
+  // the form, so a user who scrolled down to the submit button would
+  // miss a 422 / network error appearing way up out of view. We
+  // imperatively scroll this ref into view whenever the notice flips
+  // from null → set, so the failure mode is always visible regardless
+  // of scroll position.
+  const noticeRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (notice && noticeRef.current) {
+      noticeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [notice]);
 
-  const defaultValues = useMemo<Partial<BookingInput>>(
-    () => ({ advisorId: ANY_ADVISOR_ID, ...draft }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+  const defaultValues = useMemo<Partial<BookingInput>>(() => ({ advisorId: ANY_ADVISOR_ID }), []);
 
   const {
     register,
@@ -49,7 +88,18 @@ export function DiscoverBook() {
 
   const visitType = watch('visitType');
   const dateIso = watch('dateIso');
+  const advisorId = watch('advisorId');
+  const timeSlot = watch('timeSlot');
   const selectedDate = useMemo(() => (dateIso ? fromDateIso(dateIso) : null), [dateIso]);
+
+  // Resolve the advisor's display name for the busy-slots query. The
+  // backend keys on `advisor_name`, not the form's `advisorId`, so the
+  // mapping has to happen client-side. "Any advisor" → undefined →
+  // backend returns an empty list (no advisor-specific lockout).
+  const advisorName = useMemo(() => {
+    if (!advisorId || advisorId === ANY_ADVISOR_ID) return undefined;
+    return ADVISORS.find((a) => a.id === advisorId)?.name;
+  }, [advisorId]);
 
   // Friday disable rule: applies to showroom + onsite only.
   const isDisabled = useMemo(() => {
@@ -57,24 +107,43 @@ export function DiscoverBook() {
     return (date: Date) => date.getDay() === 5;
   }, [visitType]);
 
+  // Pull busy slots whenever (date, advisor) lands. Skipped entirely
+  // when either is missing, since the backend would short-circuit to
+  // an empty list anyway — saves the round-trip during a half-filled
+  // form state.
+  const busySlotsQuery = useQuery<string[]>({
+    queryKey: ['discover', 'busy-slots', dateIso, advisorName ?? null] as const,
+    queryFn: () => listBusyDiscoverSlots({ dateIso, advisorName }),
+    enabled: !!dateIso && !!advisorName,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+  const busySlots = useMemo(() => busySlotsQuery.data ?? [], [busySlotsQuery.data]);
+
+  // If the slot the user already picked just became busy (e.g. an
+  // admin confirmed someone else for it 5 s ago), drop the picked
+  // value so the form can't be submitted into a guaranteed 409. The
+  // greyed-out chip in TimeSlotPicker is enough visual signal — no
+  // need to also surface an inline error.
+  useEffect(() => {
+    if (timeSlot && busySlots.includes(timeSlot)) {
+      setValue('timeSlot', '' as BookingInput['timeSlot'], { shouldDirty: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busySlots, timeSlot]);
+
   // Clerk prefill — only into fields the user hasn't typed in.
   useEffect(() => {
     if (!clerkLoaded || !user) return;
-    if (!draft.name && user.fullName) setValue('name', user.fullName, { shouldDirty: false });
-    if (!draft.email && user.primaryEmailAddress?.emailAddress) {
+    if (user.fullName) setValue('name', user.fullName, { shouldDirty: false });
+    if (user.primaryEmailAddress?.emailAddress) {
       setValue('email', user.primaryEmailAddress.emailAddress, { shouldDirty: false });
     }
-    if (!draft.phone && user.primaryPhoneNumber?.phoneNumber) {
+    if (user.primaryPhoneNumber?.phoneNumber) {
       setValue('phone', user.primaryPhoneNumber.phoneNumber, { shouldDirty: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clerkLoaded, user]);
-
-  // Auto-save draft on every change.
-  useEffect(() => {
-    const sub = watch((value) => setDraft(value as Partial<BookingInput>));
-    return () => sub.unsubscribe();
-  }, [watch, setDraft]);
 
   // Changing visit type or date invalidates the previously-picked slot.
   useEffect(() => {
@@ -82,11 +151,56 @@ export function DiscoverBook() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitType, dateIso]);
 
-  const onSubmit = async (data: BookingInput) => {
-    await new Promise((r) => setTimeout(r, 350)); // simulated latency
-    addSubmission(data);
-    reset();
-    setSubmitted(data);
+  const mutation = useMutation({
+    mutationFn: submitDiscoverBooking,
+    onError: (err: Error) => {
+      // The backend's 422 errors arrive as
+      //   "422 Unprocessable Entity — { detail: [ {loc, msg, type}, ... ] }"
+      // Extract the first `msg` if we can parse the JSON suffix; otherwise
+      // pass the raw message through. Keeps the inline notice readable for
+      // the senior dev when something does go wrong (a date pattern miss,
+      // a malformed email) without dumping the full Pydantic blob.
+      const detail = extractFriendlyError(err.message);
+      setNotice({
+        tone: 'error',
+        message: t('discover.book.errors.submitTitle'),
+        detail,
+      });
+      console.error('[DiscoverBook] submit failed', err);
+    },
+  });
+
+  const onSubmit = (data: BookingInput) => {
+    setNotice(null);
+    // Resolve the human advisor name from the picked advisorId — the
+    // backend stores `advisor_name` (not the id) so a UI redesign that
+    // swaps the picker doesn't strand orphan ids in the DB.
+    const advisor = ADVISORS.find((a) => a.id === data.advisorId);
+    const advisorName =
+      data.advisorId === ANY_ADVISOR_ID ? undefined : (advisor?.name ?? undefined);
+    const payload = {
+      visitType: data.visitType,
+      bookingDate: data.dateIso,
+      timeSlot: data.timeSlot,
+      advisorName,
+      name: data.name,
+      email: data.email,
+      phone: data.phone || undefined,
+    };
+    // Diagnostic so a dev opening the console can see the exact wire
+    // payload going to POST /api/v1/discover/bookings. Drop once the
+    // form has been verified end-to-end in incognito.
+    console.info('[DiscoverBook] POST /discover/bookings →', payload);
+    mutation.mutate(payload, {
+      // Per-call onSuccess closes over `data` so SuccessState can
+      // render the picked advisor / date / slot without an extra
+      // round-trip. Keeps the global onError generic.
+      onSuccess: (response) => {
+        console.info('[DiscoverBook] booking created', response);
+        reset();
+        setSubmitted(data);
+      },
+    });
   };
 
   if (submitted) {
@@ -102,6 +216,10 @@ export function DiscoverBook() {
         onSubmit={handleSubmit(onSubmit)}
         className="flex-1 overflow-y-auto px-4 py-4 space-y-6"
       >
+        <div ref={noticeRef}>
+          <InlineNotice notice={notice} onDismiss={() => setNotice(null)} />
+        </div>
+
         {/* Visit type */}
         <Section title={t('discover.book.sections.visit')}>
           <Controller
@@ -160,6 +278,7 @@ export function DiscoverBook() {
                 visitType={visitType}
                 value={field.value || undefined}
                 onChange={field.onChange}
+                busySlots={busySlots}
               />
             )}
           />
@@ -245,17 +364,17 @@ export function DiscoverBook() {
         </Section>
 
         <div className="pt-2 pb-6 space-y-2">
-          {isDirty && (
+          {isDirty && !mutation.isPending && (
             <p className="text-[11px] text-ink-500 dark:text-ink-100 text-center">
-              {t('discover.book.draftSaved')}
+              {t('discover.book.unsavedDraft')}
             </p>
           )}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={mutation.isPending || isSubmitting}
             className="w-full bg-gradient-to-br from-ink-900 to-ink-800 disabled:from-ink-400 disabled:to-ink-400 rounded-2xl py-3.5 text-white font-semibold shadow-lg shadow-ink-900/20 hover:shadow-xl hover:shadow-ink-900/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 ease-smooth"
           >
-            {isSubmitting ? t('discover.book.submitting') : t('discover.book.submit')}
+            {mutation.isPending ? t('discover.book.submitting') : t('discover.book.submit')}
           </button>
         </div>
       </form>

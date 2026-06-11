@@ -315,11 +315,17 @@ export const SERVICE_TILES: ServiceTile[] = [
     id: 'sales-eoi',
     section: 'sales',
     name: 'Explore EOIs',
-    sub: '6 projects worldwide',
+    sub: 'Admin shortcut · Leads Hub',
     icon: Globe,
     tone: 'purple',
-    comingSoon: true,
-    keywords: 'eoi projects international invest interest عقار استثمار',
+    // Admin-side Leads Hub. The resident app doesn't have role info
+    // wired, so this tile is exposed to everyone — non-admin users
+    // who tap it land on the admin sign-in screen (or 403), which
+    // tells them they're not authorized; admins land on the Leads
+    // Hub directly. External URL is handled by Services.tsx via
+    // window.location instead of react-router navigate.
+    to: 'http://localhost:5174/leads',
+    keywords: 'eoi leads admin sales projects interest عقار استثمار شركات',
   },
   {
     id: 'sales-appt',

@@ -10,12 +10,15 @@ from app.models.ops import (
     Amenity,
     AmenityBooking,
     Booking,
+    DiscoverBooking,
+    EoiSubmission,
     FamilyMember,
     Guest,
     Invoice,
     MaintenanceRequest,
     QrLog,
     ServiceBooking,
+    Technician,
 )
 from app.models.social import Comment, Post, Reel, Story
 from app.models.unit import Unit, UnitMember
@@ -31,6 +34,8 @@ __all__ = [
     "Comment",
     "Conversation",
     "DeviceToken",
+    "DiscoverBooking",
+    "EoiSubmission",
     "FamilyMember",
     "Guest",
     "Invoice",
@@ -42,6 +47,7 @@ __all__ = [
     "Reel",
     "ServiceBooking",
     "Story",
+    "Technician",
     "Unit",
     "UnitMember",
     "User",

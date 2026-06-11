@@ -466,6 +466,60 @@ export async function getMaintenanceAvailability(
   return http<MaintenanceAvailabilityResponse>(`/maintenance/availability?${params.toString()}`);
 }
 
+// ─── Dynamic capacity engine (technicians-backed) ──────────────────────
+
+/** Canonical HH:MM start times — the new slot vocabulary the dynamic
+ *  capacity engine speaks. 1:1 with `MAINTENANCE_TIME_SLOTS` ranges. */
+export const MAINTENANCE_SLOT_STARTS = [
+  '09:00',
+  '12:00',
+  '15:00',
+  '18:00',
+  '21:00',
+  '00:00',
+  '03:00',
+  '06:00',
+] as const;
+
+export type MaintenanceSlotStart = (typeof MAINTENANCE_SLOT_STARTS)[number];
+
+export interface MaintenanceTechnicianBrief {
+  id: string;
+  name: string;
+  category: string;
+  isActive: boolean;
+}
+
+export interface MaintenanceAvailableSlot {
+  slot: MaintenanceSlotStart;
+  capacity: number;
+  confirmed: number;
+  available: number;
+}
+
+export interface MaintenanceAvailableSlotsResponse {
+  category: string;
+  dateIso: string;
+  technicianCount: number;
+  slots: MaintenanceAvailableSlot[];
+  technicians: MaintenanceTechnicianBrief[];
+}
+
+/** New dynamic capacity endpoint. Returns per-slot rows where
+ *  `capacity` = active technicians in the category and
+ *  `available` = capacity - confirmed bookings on that slot. The
+ *  resident `TimeSlotPicker` greys out any slot where `available <= 0`.
+ *  Public read — no JWT required, no PII in the response. */
+export async function listAvailableMaintenanceSlots(
+  category: TicketCategory,
+  dateIso: string,
+): Promise<MaintenanceAvailableSlotsResponse> {
+  const params = new URLSearchParams({ category, date: dateIso });
+  return http<MaintenanceAvailableSlotsResponse>(
+    `/maintenance/available-slots?${params.toString()}`,
+  );
+}
+
 // Roster used to resolve `assigneeId` → readable name + specialty.
 // Matches the backend seed; refreshed once on screen mount via the GET.
 export interface TicketTechnician {
@@ -578,6 +632,95 @@ export async function createFamilyMember(input: FamilyMemberInput): Promise<Fami
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+// ─── Discover funnel (public/guest-allowed lead capture) ──────────────
+
+export type DiscoverVisitType = 'showroom' | 'onsite' | 'virtual';
+export type DiscoverInterestType = 'apartment' | 'villa' | 'townhouse' | 'studio';
+
+export interface EoiSubmissionInput {
+  name: string;
+  email: string;
+  phone?: string;
+  interestType?: DiscoverInterestType;
+  budget?: string;
+  timeline?: string;
+  notes?: string;
+}
+
+export interface EoiSubmissionResponse {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  interestType?: DiscoverInterestType | null;
+  budget?: string | null;
+  timeline?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface DiscoverBookingInput {
+  visitType: DiscoverVisitType;
+  bookingDate: string;
+  timeSlot: string;
+  advisorName?: string;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+export interface DiscoverBookingResponse {
+  id: string;
+  visitType: DiscoverVisitType;
+  bookingDate: string;
+  timeSlot: string;
+  advisorName?: string | null;
+  name: string;
+  email: string;
+  phone?: string | null;
+  createdAt: string;
+}
+
+/** Submit an Expression of Interest. Public endpoint — no Clerk
+ *  session required. The backend fans out an admin notification per
+ *  admin row on success. */
+export async function submitEoi(input: EoiSubmissionInput): Promise<EoiSubmissionResponse> {
+  return http<EoiSubmissionResponse>('/discover/eoi', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/** Submit a Discover Book-a-Visit. Same auth model as `submitEoi`. */
+export async function submitDiscoverBooking(
+  input: DiscoverBookingInput,
+): Promise<DiscoverBookingResponse> {
+  return http<DiscoverBookingResponse>('/discover/bookings', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export interface BusySlotsQuery {
+  dateIso: string;
+  /** Resolved advisor display name. Omit / pass null when the user
+   *  picked "Any advisor" — backend short-circuits to an empty list. */
+  advisorName?: string | null;
+}
+
+/** Time slots already confirmed for `advisorName` on `dateIso`.
+ *  Returns an empty array when no advisor is specified. Used by
+ *  DiscoverBook to grey out conflicting slots in the picker so a
+ *  prospect literally can't choose a locked time. */
+export async function listBusyDiscoverSlots(query: BusySlotsQuery): Promise<string[]> {
+  const params = new URLSearchParams({ date: query.dateIso });
+  if (query.advisorName) params.set('advisor_name', query.advisorName);
+  const data = await http<{ slots: string[] }>(
+    `/discover/bookings/busy-slots?${params.toString()}`,
+  );
+  return data.slots;
 }
 
 // ─── Amenities (Tennis Court / BBQ Area / Community Hall / ...) ────────

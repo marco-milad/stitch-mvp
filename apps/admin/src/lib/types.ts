@@ -107,6 +107,45 @@ export interface ServiceBooking {
   updatedAt: string;
 }
 
+// ─── Discover funnel leads (admin Leads Hub) ───────────────────────────────
+
+export type DiscoverVisitType = 'showroom' | 'onsite' | 'virtual';
+export type DiscoverInterestType = 'apartment' | 'villa' | 'townhouse' | 'studio';
+export type DiscoverBookingStatus = 'pending' | 'confirmed' | 'rejected';
+
+export interface EoiLead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  interestType: DiscoverInterestType | null;
+  budget: string | null;
+  timeline: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface DiscoverBookingLead {
+  id: string;
+  visitType: DiscoverVisitType;
+  bookingDate: string;
+  timeSlot: string;
+  advisorName: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  status: DiscoverBookingStatus;
+  adminNotes: string | null;
+  createdAt: string;
+}
+
+export interface DiscoverBookingDecision {
+  booking: DiscoverBookingLead;
+  /** Click-to-message deep-link composed server-side. Null when the
+   *  booking has no phone on file. */
+  whatsappUrl: string | null;
+}
+
 // ─── Gate & Parking ─────────────────────────────────────────────────────────
 
 export const PermitStatusSchema = z.enum(['pending', 'approved', 'rejected', 'expired']);

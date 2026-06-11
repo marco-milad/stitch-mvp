@@ -216,6 +216,8 @@ function PlaceholderPanel({
   bullets: string[];
   Icon: LucideIcon;
 }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   return (
     <div className="rounded-3xl border border-white/60 bg-gradient-to-br from-amber-50/60 via-white/60 to-rose-50/40 backdrop-blur-md p-5 shadow-lg shadow-amber-500/10">
       <div className="flex flex-row items-start gap-3 mb-4">
@@ -240,6 +242,19 @@ function PlaceholderPanel({
           </li>
         ))}
       </ul>
+      {/* "Register interest to unlock" — converts the decorative
+          placeholder into an active lead-generation hook. Routes
+          straight into the live POST /api/v1/discover/eoi form so the
+          user's interest gets captured server-side. */}
+      <button
+        type="button"
+        onClick={() => navigate('/discover/eoi/contact')}
+        className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-2xl py-3 bg-ink-950 dark:bg-white text-white dark:text-ink-950 text-sm font-bold shadow-md hover:shadow-lg active:scale-[0.99] transition-all duration-base ease-smooth"
+      >
+        <Mail size={14} />
+        <span>{t('discover.eoi.hub.placeholderCta')}</span>
+        <ArrowRight size={14} className="rtl:rotate-180" />
+      </button>
     </div>
   );
 }

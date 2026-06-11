@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   Languages,
   LogOut,
+  Mail,
   Megaphone,
   Menu,
   ParkingCircle,
@@ -40,6 +41,7 @@ const NAV: NavEntry[] = [
   { to: '/content', labelKey: 'nav.content', icon: <Megaphone size={18} /> },
   { to: '/requests', labelKey: 'nav.requests', icon: <Wrench size={18} /> },
   { to: '/bookings', labelKey: 'nav.bookings', icon: <Sparkles size={18} /> },
+  { to: '/leads', labelKey: 'nav.leads', icon: <Mail size={18} /> },
   { to: '/gate', labelKey: 'nav.gate', icon: <ParkingCircle size={18} /> },
 ];
 

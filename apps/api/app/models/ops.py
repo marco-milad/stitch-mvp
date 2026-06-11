@@ -34,6 +34,25 @@ class Booking(UuidPk, CreatedAt, Base):
     status: Mapped[str] = mapped_column(String, default="confirmed", nullable=False)
 
 
+class Technician(UuidPk, CreatedAt, Base):
+    """Maintenance technician — the actual specialist who fulfills a
+    request. Acts as the capacity unit: the number of active technicians
+    in a category is the per-slot ceiling for that category's bookings.
+
+    `assignee_id` on `MaintenanceRequest` is the legacy free-string
+    pointer from the mock-roster era; `technician_id` is the new FK
+    that ties a confirmed ticket to a real DB-backed person.
+    """
+
+    __tablename__ = "technicians"
+
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    # Free string mirrors `MaintenanceRequest.category`: plumbing,
+    # electrical, hvac, general, ac, pest, cleaning, other.
+    category: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
 class MaintenanceRequest(UuidPk, Timestamps, Base):
     # `created_at` from Timestamps mixin = wire-format `openedAt`.
     # `updated_at` from Timestamps mixin = wire-format `updatedAt`.
@@ -49,15 +68,33 @@ class MaintenanceRequest(UuidPk, Timestamps, Base):
     urgency: Mapped[str] = mapped_column(String, nullable=False)
     title: Mapped[str | None] = mapped_column(String(80), nullable=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
+    # Lifecycle: pending → confirmed → completed (terminal),
+    # or pending → rejected (terminal). Legacy values (`in_progress`,
+    # `resolved`) still appear on older rows; the new Pydantic schema
+    # accepts both vocabularies so admin views don't break.
     status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    # Legacy assignee pointer — free string from the mock-technician
+    # roster era. Kept for back-compat; new flows write to the
+    # `technician_id` FK below instead.
     assignee_id: Mapped[str | None] = mapped_column(String, nullable=True)
-    # Scheduled appointment metadata for the 24/7 maintenance slot
-    # system. Nullable because legacy tickets pre-date this feature and
-    # because some emergency/internal tickets don't go through the slot
-    # picker. `scheduled_time_slot` stores the canonical label form
-    # "09:00-12:00" (11 chars max) defined in
-    # `app.services.maintenance_slots.TIME_SLOTS`. Counted by
-    # /api/v1/maintenance/availability to enforce per-slot concurrency.
+    # NEW: FK to the actual technicians table. Nullable so a
+    # `pending` ticket can exist before any technician is bound.
+    technician_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("technicians.id"), nullable=True, index=True
+    )
+    # NEW (spec): canonical Date column for the booking day. Lives
+    # alongside the legacy string columns for one release while the
+    # admin UI migrates to the typed value. `booking_date` is the
+    # source of truth for the capacity engine.
+    booking_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    # NEW (spec): canonical HH:MM start time for the slot. Mirrors the
+    # `time_slot` field shape used by amenities + discover bookings so
+    # the capacity engine speaks one slot vocabulary across surfaces.
+    time_slot: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    # Legacy slot columns — kept for back-compat with the existing
+    # admin dashboard. New flows write to `booking_date` + `time_slot`
+    # above; the migration backfills these on existing rows so both
+    # vocabularies stay in sync.
     scheduled_date_iso: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
     scheduled_time_slot: Mapped[str | None] = mapped_column(String(11), nullable=True)
 
@@ -226,6 +263,66 @@ class FamilyMember(UuidPk, CreatedAt, Base):
     # flexible (a developer can add "guardian" later without an enum
     # migration) while the API surface stays strongly typed.
     relationship: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
+class EoiSubmission(UuidPk, CreatedAt, Base):
+    """Expression of Interest from a prospect on the Discover funnel.
+
+    Persisted from the public POST /api/v1/discover/eoi endpoint —
+    no `user_id` foreign key because submissions can be anonymous
+    (a prospect who hasn't signed in is the primary intake target).
+    When a signed-in prospect submits, their identity is recorded on
+    the `email` / `phone` columns just like an anonymous submission;
+    the sales team de-dupes against existing leads downstream.
+    """
+
+    __tablename__ = "eoi_submissions"
+
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Free string mirrors the resident-side enum (apartment / villa /
+    # townhouse) without binding the DB to a Postgres ENUM that would
+    # need a migration on every new unit type.
+    interest_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    budget: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    timeline: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class DiscoverBooking(UuidPk, CreatedAt, Base):
+    """Showroom / onsite / virtual visit booking from the Discover funnel.
+
+    Same shape as EoiSubmission re: anonymous-allowed (no user_id FK).
+    Date + slot stored as native DATE + STRING(5) "HH:MM" — symmetric
+    with `AmenityBooking` so the admin board can render both with the
+    same helpers.
+
+    Lifecycle (Option B, mirroring service bookings):
+        pending   → resident submitted, awaiting sales-ops review
+        confirmed → admin accepted; visit is on the books
+        rejected  → admin declined; resident should be notified
+    """
+
+    __tablename__ = "discover_bookings"
+
+    # showroom / onsite / virtual — free string, enforced at the
+    # Pydantic boundary via Literal.
+    visit_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    booking_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    time_slot: Mapped[str] = mapped_column(String(5), nullable=False)
+    advisor_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Lifecycle gate. Default "pending" so freshly-submitted rows
+    # land in the admin's review queue without an explicit write.
+    status: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)
+    # Sales-ops commentary attached at confirm / reject time. Surfaced
+    # back to the resident via the WhatsApp deep-link the PATCH route
+    # composes, so admins should write in the resident's voice
+    # ("Confirmed for 2pm with Layla — please arrive 10 min early").
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class QrLog(UuidPk, Base):

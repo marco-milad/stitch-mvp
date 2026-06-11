@@ -16,18 +16,21 @@ import {
 } from '@/lib/mock/calculator';
 import { UNIT_TYPES } from '@/lib/mock/eoi';
 import type { UnitType } from '@/lib/schemas/eoi';
-import { useEoiStore } from '@/stores/eoiStore';
 
 /**
  * Price calculator — Week 3 deliverable.
  * Inputs: unit type, area (m²), down payment %, plan years.
  * Outputs: total price, down payment, monthly installment, year-by-year breakdown.
  * All math is pure (apps/web/src/lib/calculator.ts) — recomputes on every render.
+ *
+ * Calculator → EOI handoff now flows through React Router location
+ * state. The legacy `eoiStore` Zustand cache was stripped; persisting
+ * a "draft" between unrelated routes was just a more elaborate way of
+ * hiding stale data from the user.
  */
 export function DiscoverCalculator() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const setDraft = useEoiStore((s) => s.setDraft);
 
   const [unitType, setUnitType] = useState<UnitType>('apartment');
   const [areaM2, setAreaM2] = useState<number>(AREA_RANGE.apartment.default);
@@ -55,8 +58,12 @@ export function DiscoverCalculator() {
   }));
 
   const saveAndRegister = () => {
-    setDraft({ interestedIn: unitType });
-    navigate('/discover/eoi');
+    // Hand the calculator's picked unit type to the EOI form via
+    // React Router location state. EOI reads `location.state.interestedIn`
+    // on mount; refresh on the destination URL drops the prefill, which
+    // is the correct UX (a stale calculator state shouldn't survive a
+    // page reload).
+    navigate('/discover/eoi/contact', { state: { interestedIn: unitType } });
   };
 
   return (
@@ -136,7 +143,7 @@ export function DiscoverCalculator() {
           <button
             type="button"
             onClick={() => setShowBreakdown((s) => !s)}
-            aria-expanded={showBreakdown ? 'true' : 'false'}
+            aria-expanded={showBreakdown}
             className="flex flex-row items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400"
           >
             <ChevronDown

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { InlineNotice, type InlineNoticeData } from '@/components/ui/InlineNotice';
 import { UnsplashImage } from '@/components/ui/UnsplashImage';
 import {
   COMPOUND,
@@ -231,6 +232,23 @@ function ZonePanel({ zone, onClose }: { zone: MasterPlanZone; onClose: () => voi
   const { t } = useTranslation();
   const tone = KIND_COLOR[zone.kind];
   const kindImage = KIND_IMAGE[zone.kind];
+  const [notice, setNotice] = useState<InlineNoticeData | null>(null);
+
+  // Auto-dismiss the "coming soon" notice after a beat so the resident
+  // can re-tap and see it re-confirm. 3 s matches the brand's notice
+  // dwell convention.
+  useEffect(() => {
+    if (!notice) return undefined;
+    const id = setTimeout(() => setNotice(null), 3000);
+    return () => clearTimeout(id);
+  }, [notice]);
+
+  // Reset the notice when the open zone changes — otherwise the
+  // previous zone's stale message would carry over into the new panel.
+  useEffect(() => {
+    setNotice(null);
+  }, [zone.id]);
+
   return (
     <div
       role="dialog"
@@ -276,12 +294,25 @@ function ZonePanel({ zone, onClose }: { zone: MasterPlanZone; onClose: () => voi
         </div>
         <button
           type="button"
-          onClick={() => window.alert(t('discover.masterPlan.comingSoon'))}
+          onClick={() =>
+            setNotice({
+              tone: 'info',
+              message: t('discover.masterPlan.comingSoonTitle'),
+              detail: t('discover.masterPlan.comingSoon'),
+            })
+          }
           className="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-white"
           style={{ backgroundColor: tone.dot }}
         >
           {t('discover.masterPlan.exploreZone')}
         </button>
+        {/* InlineNotice replaces the old window.alert. The component's
+            AnimatePresence handles the slide-in / fade-out, so the
+            empty state below it stays out of the way when there's no
+            notice on screen. */}
+        <div className="mt-3">
+          <InlineNotice notice={notice} onDismiss={() => setNotice(null)} />
+        </div>
       </div>
     </div>
   );

@@ -18,6 +18,12 @@ NotificationKind = Literal[
     "ticket_created",
     "ticket_dispatched",
     "ticket_resolved",
+    # Admin-facing kinds — emitted when a new lead drops via the
+    # Discover funnel. Residents will never see these (the row's
+    # user_id points at an admin/super_admin), but they share the same
+    # storage + WS broadcast mechanics.
+    "eoi_received",
+    "discover_booking_received",
 ]
 
 

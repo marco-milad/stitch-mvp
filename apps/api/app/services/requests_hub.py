@@ -22,6 +22,7 @@ import contextlib
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import date
 from typing import Any
 
 from sqlalchemy import desc, select
@@ -185,6 +186,12 @@ async def create_request(
     """
     schedule_date: str | None = None
     schedule_slot: str | None = None
+    # New typed columns mirroring the spec's capacity engine. Populated
+    # alongside the legacy strings when scheduling is provided so both
+    # vocabularies stay in sync without the caller having to send two
+    # payloads.
+    new_booking_date: date | None = None
+    new_time_slot: str | None = None
     if payload.scheduledDateIso and payload.scheduledTimeSlot:
         # Validate the slot is one of the canonical 8 — guards against
         # frontend drift / hand-crafted payloads.
@@ -194,8 +201,9 @@ async def create_request(
                 date_iso=payload.scheduledDateIso,
                 time_slot=payload.scheduledTimeSlot,
             )
-        # Capacity check inside the same session so the count we read
-        # reflects any concurrent INSERTs the same transaction sees.
+        # Legacy capacity check (counts pending+in_progress against a
+        # fixed cap of CAPACITY_PER_SLOT=3). Still fires for back-compat
+        # with the existing demo dataset before technicians were seeded.
         within = await maintenance_slots.is_slot_within_capacity(
             session,
             category=payload.category,
@@ -208,6 +216,35 @@ async def create_request(
                 date_iso=payload.scheduledDateIso,
                 time_slot=payload.scheduledTimeSlot,
             )
+
+        # Convert legacy formats to the new typed columns.
+        new_booking_date = date.fromisoformat(payload.scheduledDateIso)
+        new_time_slot = maintenance_slots.slot_range_to_start(payload.scheduledTimeSlot)
+
+        # Spec-mandated capacity guard: when the technicians table has
+        # rows for this category, the technician count is the real
+        # ceiling. Counts only `confirmed` bookings (see
+        # `_CONFIRMED_STATUSES` in maintenance_slots). When no
+        # technicians are configured for the category we leave gating
+        # to the legacy check above — refusing the submission would be
+        # surprising for a category with no specialists yet seeded.
+        tech_count = await maintenance_slots.count_active_technicians(
+            session, category=payload.category
+        )
+        if tech_count > 0:
+            dynamic_ok = await maintenance_slots.is_slot_available_dynamic(
+                session,
+                category=payload.category,
+                booking_date=new_booking_date,
+                time_slot=new_time_slot,
+            )
+            if not dynamic_ok:
+                raise SlotFullError(
+                    category=payload.category,
+                    date_iso=payload.scheduledDateIso,
+                    time_slot=payload.scheduledTimeSlot,
+                )
+
         schedule_date = payload.scheduledDateIso
         schedule_slot = payload.scheduledTimeSlot
 
@@ -222,6 +259,8 @@ async def create_request(
         assignee_id=None,
         scheduled_date_iso=schedule_date,
         scheduled_time_slot=schedule_slot,
+        booking_date=new_booking_date,
+        time_slot=new_time_slot,
     )
     session.add(new)
     await session.flush()  # populate new.id without committing yet

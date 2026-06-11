@@ -1062,11 +1062,17 @@
       "subtitle": "Pick a date, time, and advisor — we'll confirm by text and email.",
       "close": "Close form",
       "draftSaved": "Draft saved",
+      "unsavedDraft": "You have unsaved changes — submit to confirm.",
       "submit": "Confirm booking",
       "submitting": "Booking…",
+      "errors": {
+        "submitTitle": "Couldn't confirm your booking — try again?"
+      },
       "slotsTitle": "Available times",
       "slotsPickFirst": "Pick a visit type and date to see times.",
       "noSlots": "No slots on this day — try another date.",
+      "slotBookedBadge": "Booked",
+      "slotBookedTitle": "This advisor already has a confirmed booking at this time.",
       "advisorTitle": "Choose an advisor",
       "sections": {
         "visit": "Visit type",
@@ -1163,6 +1169,7 @@
         "subtitle": "Tours, plans, availability — all in one place.",
         "back": "Back to Discover",
         "contact": "Contact sales",
+        "placeholderCta": "Register interest to unlock",
         "tabs": {
           "tours": "360° Tours",
           "availability": "Unit Availability",
@@ -1204,8 +1211,12 @@
       "subtitle": "Tell us what you're looking for — a sales advisor will reach out within 24 hours.",
       "close": "Close form",
       "draftSaved": "Draft saved",
+      "unsavedDraft": "You have unsaved changes — submit to finish.",
       "submit": "Submit interest",
       "submitting": "Submitting…",
+      "errors": {
+        "submitTitle": "Couldn't submit your interest — try again?"
+      },
       "sections": {
         "about": "About you",
         "interest": "What you're looking for",
@@ -1332,6 +1343,7 @@
       "legendTitle": "Legend",
       "exploreZone": "Explore this zone",
       "comingSoon": "Detailed zone view lands in Week 3.",
+      "comingSoonTitle": "Detailed zone view — coming soon",
       "kinds": {
         "all": "All",
         "residential": "Residential",

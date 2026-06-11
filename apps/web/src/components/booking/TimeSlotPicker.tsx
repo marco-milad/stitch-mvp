@@ -8,13 +8,21 @@ interface Props {
   visitType: VisitType | undefined;
   value: string | undefined;
   onChange: (slot: string) => void;
+  /** Slots the picked advisor has already confirmed on the picked
+   *  date. Rendered as disabled chips so the prospect literally can't
+   *  tap them. Empty array (default) → all slots clickable. */
+  busySlots?: readonly string[];
 }
 
 /**
  * Renders the available slot chips for a given (date, visit-type). When
  * either prereq is missing, shows an inline hint instead of an empty grid.
+ *
+ * `busySlots` greys out slots already locked by the advisor's confirmed
+ * bookings — the chip is non-clickable and carries a "Booked" badge so
+ * the conflict is legible at a glance.
  */
-export function TimeSlotPicker({ date, visitType, value, onChange }: Props) {
+export function TimeSlotPicker({ date, visitType, value, onChange, busySlots = [] }: Props) {
   const { t } = useTranslation();
 
   if (!date || !visitType) {
@@ -33,24 +41,37 @@ export function TimeSlotPicker({ date, visitType, value, onChange }: Props) {
     );
   }
 
+  const busy = new Set(busySlots);
+
   return (
     <div className="flex flex-row flex-wrap gap-2">
       {slots.map((slot) => {
         const active = slot === value;
+        const isBusy = busy.has(slot);
         return (
           <button
             key={slot}
             type="button"
-            onClick={() => onChange(slot)}
-            aria-pressed={active ? 'true' : 'false'}
+            onClick={() => !isBusy && onChange(slot)}
+            disabled={isBusy}
+            aria-pressed={active}
+            aria-disabled={isBusy}
+            title={isBusy ? t('discover.book.slotBookedTitle') : undefined}
             className={[
-              'px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors tabular-nums',
-              active
-                ? 'bg-brand-500 text-white border-brand-500'
-                : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-ink-100 dark:border-ink-700 hover:border-brand-400',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors tabular-nums',
+              isBusy
+                ? 'bg-ink-100 dark:bg-ink-700/50 text-ink-400 dark:text-ink-100/60 border-ink-100 dark:border-ink-700 line-through cursor-not-allowed'
+                : active
+                  ? 'bg-brand-500 text-white border-brand-500'
+                  : 'bg-white dark:bg-ink-700 text-ink-700 dark:text-white border-ink-100 dark:border-ink-700 hover:border-brand-400',
             ].join(' ')}
           >
             <span dir="ltr">{formatSlotRange(slot)}</span>
+            {isBusy && (
+              <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">
+                {t('discover.book.slotBookedBadge')}
+              </span>
+            )}
           </button>
         );
       })}

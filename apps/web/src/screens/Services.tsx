@@ -93,7 +93,15 @@ export function Services() {
   );
 
   const onTileClick = (tile: Tile) => {
-    navigate(tile.to ?? `/services/${tile.id}`);
+    const dest = tile.to ?? `/services/${tile.id}`;
+    // External URLs (admin shortcut etc.) bypass react-router so the
+    // browser does a real navigation across origins / ports. Internal
+    // paths stay in-app.
+    if (/^https?:\/\//i.test(dest)) {
+      window.location.href = dest;
+      return;
+    }
+    navigate(dest);
   };
 
   return (

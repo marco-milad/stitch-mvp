@@ -161,7 +161,7 @@ function ResidentView() {
       <SectionTitle>{t('discover.resident.tonightTitle')}</SectionTitle>
       <div className="space-y-2">
         {TONIGHT_EVENTS.map((e) => (
-          <EventCard key={e.id} event={e} />
+          <EventCard key={e.id} event={e} onSelect={() => navigate(e.to)} />
         ))}
       </div>
 
@@ -283,25 +283,36 @@ function IconBadge({ Icon, active }: { Icon: LucideIcon; active: boolean }) {
   );
 }
 
-function EventCard({ event }: { event: TonightEvent }) {
+function EventCard({ event, onSelect }: { event: TonightEvent; onSelect: () => void }) {
   const { t } = useTranslation();
   const { icon: Icon } = event;
   // Existing data-driven gradient art retained per art direction — this
-  // is the screen's ONE accent slot. Curve upgraded to rounded-3xl.
+  // is the screen's ONE accent slot. The whole card is now a button so
+  // it routes into the surface that owns the experience (Cinema →
+  // community feed, Spa/Yoga → services). cursor-pointer + the lift
+  // hover give the tap-target the visual affordance it was missing.
   return (
-    <Gradient from={event.gradient.from} to={event.gradient.to} radius={24}>
-      <div className="p-4 flex flex-row items-center">
-        <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center me-3 flex-shrink-0">
-          <Icon color="#fff" size={20} />
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={t(event.titleKey)}
+      className="block w-full text-start rounded-3xl cursor-pointer hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-base ease-smooth focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-950"
+    >
+      <Gradient from={event.gradient.from} to={event.gradient.to} radius={24}>
+        <div className="p-4 flex flex-row items-center">
+          <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center me-3 flex-shrink-0">
+            <Icon color="#fff" size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-body-md font-bold truncate">{t(event.titleKey)}</p>
+            <p className="text-white/85 text-label-sm normal-case tracking-normal font-normal truncate">
+              {t(event.subKey)}
+            </p>
+          </div>
+          <ArrowRight size={16} className="text-white/80 rtl:rotate-180 flex-shrink-0 ms-2" />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-body-md font-bold truncate">{t(event.titleKey)}</p>
-          <p className="text-white/85 text-label-sm normal-case tracking-normal font-normal truncate">
-            {t(event.subKey)}
-          </p>
-        </div>
-      </div>
-    </Gradient>
+      </Gradient>
+    </button>
   );
 }
 

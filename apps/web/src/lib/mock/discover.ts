@@ -67,6 +67,11 @@ export interface TonightEvent {
   subKey: string;
   icon: LucideIcon;
   gradient: { from: string; to: string };
+  /** Destination route when the card is tapped. Each event routes
+   *  into the surface that owns the underlying experience —
+   *  Cinema lives on the community feed, Spa lands in the services
+   *  marketplace, Yoga goes straight to the wellness hub. */
+  to: string;
 }
 
 export interface OtherProject {
@@ -287,6 +292,8 @@ export const TONIGHT_EVENTS: TonightEvent[] = [
     subKey: 'discover.tonight.cinema.sub',
     icon: Film,
     gradient: { from: '#06B6D4', to: '#7C3AED' },
+    // Cinema night is a community event — surfaces on the feed.
+    to: '/community',
   },
   {
     id: 'spa',
@@ -294,6 +301,9 @@ export const TONIGHT_EVENTS: TonightEvent[] = [
     subKey: 'discover.tonight.spa.sub',
     icon: Heart,
     gradient: { from: '#EC4899', to: '#F97316' },
+    // Spa is a bookable service — drop the resident into the catalog
+    // where they can pick a Wellness provider.
+    to: '/services',
   },
   {
     id: 'yoga',
@@ -301,6 +311,8 @@ export const TONIGHT_EVENTS: TonightEvent[] = [
     subKey: 'discover.tonight.yoga.sub',
     icon: Sparkles,
     gradient: { from: '#10B981', to: '#06B6D4' },
+    // Yoga lands directly on the dedicated Wellness hub.
+    to: '/services/wellness',
   },
 ];
 

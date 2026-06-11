@@ -1,39 +1,60 @@
 import { useUser } from '@clerk/clerk-react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { Check, CheckCircle2, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { COMPOUND } from '@/lib/mock/discover';
 import { ChipPicker } from '@/components/ui/ChipPicker';
+import { InlineNotice, type InlineNoticeData } from '@/components/ui/InlineNotice';
 import { BUDGET_RANGES, SOURCES, TIMELINES, UNIT_TYPES } from '@/lib/mock/eoi';
+import { submitEoi, type DiscoverInterestType } from '@/lib/residentApi';
 import { eoiSchema, type EoiInput } from '@/lib/schemas/eoi';
-import { useEoiStore } from '@/stores/eoiStore';
 
 /**
  * Smart EOI form — Week 3 deliverable.
- * Prefills from Clerk when signed in, auto-saves draft to localStorage on
- * every change, shows a success state on submit.
- * TODO: POST /api/v1/discover/eoi once the backend endpoint exists.
+ *
+ * Prefills from Clerk when signed in, then POSTs to the live
+ * `/api/v1/discover/eoi` endpoint. On success the backend fans out
+ * an admin notification per admin user and we render the success
+ * state. The legacy `eoiStore` Zustand + localStorage cache was
+ * stripped — submissions now persist server-side end-to-end.
+ *
+ * Cross-screen handoff (e.g. Calculator → EOI prefill) flows through
+ * React Router location state instead, so a refresh on this URL no
+ * longer carries a stale draft.
  */
+interface EoiPrefillState {
+  interestedIn?: DiscoverInterestType;
+}
+
 export function DiscoverEoi() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isLoaded: clerkLoaded } = useUser();
-  const { draft, setDraft, addSubmission } = useEoiStore();
   const [submitted, setSubmitted] = useState(false);
+  const [notice, setNotice] = useState<InlineNoticeData | null>(null);
 
-  // Defaults: localStorage draft wins (last thing the user typed).
-  // Clerk fills in anything still empty when isLoaded fires below.
-  const defaultValues = useMemo<Partial<EoiInput>>(() => ({ ...draft }), []);
+  // Read the optional Calculator → EOI handoff payload from navigate state.
+  // Frozen at mount so a re-render doesn't keep re-prefilling.
+  const prefill = useMemo<EoiPrefillState>(
+    () => (location.state as EoiPrefillState | null) ?? {},
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const defaultValues = useMemo<Partial<EoiInput>>(
+    () => ({ interestedIn: prefill.interestedIn }),
+    [prefill],
+  );
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting, isDirty },
-    watch,
     setValue,
     control,
     reset,
@@ -47,11 +68,11 @@ export function DiscoverEoi() {
   useEffect(() => {
     if (!clerkLoaded || !user) return;
     const patch: Partial<EoiInput> = {};
-    if (!draft.name && user.fullName) patch.name = user.fullName;
-    if (!draft.email && user.primaryEmailAddress?.emailAddress) {
+    if (user.fullName) patch.name = user.fullName;
+    if (user.primaryEmailAddress?.emailAddress) {
       patch.email = user.primaryEmailAddress.emailAddress;
     }
-    if (!draft.phone && user.primaryPhoneNumber?.phoneNumber) {
+    if (user.primaryPhoneNumber?.phoneNumber) {
       patch.phone = user.primaryPhoneNumber.phoneNumber;
     }
     if (Object.keys(patch).length === 0) return;
@@ -61,20 +82,36 @@ export function DiscoverEoi() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clerkLoaded, user]);
 
-  // Auto-save draft to localStorage on every change.
-  useEffect(() => {
-    const sub = watch((value) => {
-      setDraft(value as Partial<EoiInput>);
-    });
-    return () => sub.unsubscribe();
-  }, [watch, setDraft]);
+  const mutation = useMutation({
+    mutationFn: submitEoi,
+    onSuccess: () => {
+      reset();
+      setSubmitted(true);
+    },
+    onError: (err: Error) => {
+      setNotice({
+        tone: 'error',
+        message: t('discover.eoi.errors.submitTitle'),
+        detail: err.message,
+      });
+    },
+  });
 
-  const onSubmit = async (data: EoiInput) => {
-    // TODO: POST to /api/v1/discover/eoi. For now, store locally + simulate latency.
-    await new Promise((r) => setTimeout(r, 350));
-    addSubmission(data);
-    reset();
-    setSubmitted(true);
+  const onSubmit = (data: EoiInput) => {
+    setNotice(null);
+    // Map the form's local field names onto the backend wire-format.
+    // `interestedIn` → `interestType`; `source` + `consent` aren't part
+    // of the spec's persisted schema and are intentionally dropped —
+    // add columns + map them in when sales-ops needs source attribution.
+    mutation.mutate({
+      name: data.name,
+      email: data.email,
+      phone: data.phone || undefined,
+      interestType: data.interestedIn,
+      budget: data.budget,
+      timeline: data.timeline,
+      notes: data.notes || undefined,
+    });
   };
 
   if (submitted) {
@@ -88,6 +125,8 @@ export function DiscoverEoi() {
         onSubmit={handleSubmit(onSubmit)}
         className="flex-1 overflow-y-auto px-4 py-4 space-y-6"
       >
+        <InlineNotice notice={notice} onDismiss={() => setNotice(null)} />
+
         {/* About you */}
         <Section title={t('discover.eoi.sections.about')}>
           <Field label={t('discover.eoi.fields.name.label')} error={errors.name} htmlFor="eoi-name">
@@ -205,17 +244,17 @@ export function DiscoverEoi() {
 
         {/* Footer */}
         <div className="pt-2 pb-6 space-y-2">
-          {isDirty && (
+          {isDirty && !mutation.isPending && (
             <p className="text-[11px] text-ink-500 dark:text-ink-100 text-center">
-              {t('discover.eoi.draftSaved')}
+              {t('discover.eoi.unsavedDraft')}
             </p>
           )}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={mutation.isPending || isSubmitting}
             className="w-full bg-brand-500 disabled:bg-ink-400 rounded-xl py-3.5 text-white font-semibold"
           >
-            {isSubmitting ? t('discover.eoi.submitting') : t('discover.eoi.submit')}
+            {mutation.isPending ? t('discover.eoi.submitting') : t('discover.eoi.submit')}
           </button>
         </div>
       </form>

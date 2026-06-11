@@ -6,6 +6,7 @@ import { AdminShell } from '@/layout/AdminShell';
 import { useFeedSync } from '@/lib/useFeedSync';
 import { ContentManagement } from '@/screens/ContentManagement';
 import { GateOps } from '@/screens/GateOps';
+import { Leads } from '@/screens/Leads';
 import { NotFound } from '@/screens/NotFound';
 import { ServiceBookings } from '@/screens/ServiceBookings';
 import { ServiceRequests } from '@/screens/ServiceRequests';
@@ -39,6 +40,7 @@ export function App() {
               <Route path="/content" element={<ContentManagement />} />
               <Route path="/requests" element={<ServiceRequests />} />
               <Route path="/bookings" element={<ServiceBookings />} />
+              <Route path="/leads" element={<Leads />} />
               <Route path="/gate" element={<GateOps />} />
               <Route path="*" element={<NotFound />} />
             </Route>

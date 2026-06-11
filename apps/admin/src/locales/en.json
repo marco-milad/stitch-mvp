@@ -25,9 +25,94 @@
     "content": "Content Management",
     "requests": "Service Requests",
     "bookings": "Service Bookings",
+    "leads": "Leads Hub",
     "gate": "Gate & Parking",
     "signOut": "Sign out",
     "lang": "العربية"
+  },
+  "leads": {
+    "title": "Leads Hub",
+    "subtitle": "EOI submissions and Discover visit bookings from the funnel.",
+    "totals": "{{eoi}} EOI · {{bookings}} bookings",
+    "loading": "Loading leads…",
+    "eoi": {
+      "title": "Expression of Interest",
+      "subtitle": "{{count}} prospect submissions",
+      "empty": "No EOI submissions yet."
+    },
+    "bookings": {
+      "title": "Discover visit bookings",
+      "subtitle": "{{count}} scheduled visits",
+      "empty": "No site visits booked yet.",
+      "adminNotesLabel": "Admin notes"
+    },
+    "col": {
+      "id": "ID",
+      "name": "Name",
+      "contact": "Contact",
+      "interest": "Interest",
+      "budget": "Budget",
+      "timeline": "Timeline",
+      "notes": "Notes",
+      "submitted": "Submitted",
+      "visitor": "Visitor",
+      "visitType": "Visit type",
+      "scheduledFor": "Scheduled",
+      "advisor": "Advisor",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "interest": {
+      "apartment": "Apartment",
+      "villa": "Villa",
+      "townhouse": "Townhouse",
+      "studio": "Studio"
+    },
+    "visitType": {
+      "showroom": "Showroom",
+      "onsite": "On-site",
+      "virtual": "Virtual"
+    },
+    "bookingStatus": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "reject": "Reject",
+      "settled": "—"
+    },
+    "decision": {
+      "confirmTitle": "Confirm booking",
+      "rejectTitle": "Reject booking",
+      "notesLabel": "Admin notes (optional)",
+      "notesConfirmPlaceholder": "e.g. Confirmed for 2 PM with Layla — please arrive 10 min early.",
+      "notesRejectPlaceholder": "e.g. Slot unavailable — please re-book any morning next week.",
+      "notesHelp": "Surfaces on the resident's WhatsApp message after settlement.",
+      "submitConfirm": "Confirm booking",
+      "submitReject": "Reject booking",
+      "submitting": "Saving…",
+      "cancel": "Cancel",
+      "errors": {
+        "title": "Couldn't save the decision",
+        "conflict": "This advisor already has a confirmed booking at this date and time. Re-assign or pick another slot.",
+        "generic": "Something went wrong on our side — try again in a moment."
+      }
+    },
+    "toast": {
+      "title": "{{name}} — {{status}}",
+      "subtitle": "WhatsApp message ready to send.",
+      "noPhone": "No phone on file — notify via email.",
+      "openWhatsapp": "Open WhatsApp to notify guest",
+      "dismiss": "Dismiss"
+    },
+    "advisor": {
+      "any": "Any advisor"
+    },
+    "errors": {
+      "load": "Couldn't load this list — try refreshing."
+    }
   },
   "bookings": {
     "title": "Service Bookings",

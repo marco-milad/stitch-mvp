@@ -25,9 +25,94 @@
     "content": "إدارة المحتوى",
     "requests": "طلبات الخدمة",
     "bookings": "حجوزات الخدمات",
+    "leads": "إدارة العملاء",
     "gate": "البوابة والمواقف",
     "signOut": "تسجيل الخروج",
     "lang": "English"
+  },
+  "leads": {
+    "title": "إدارة العملاء",
+    "subtitle": "طلبات الاهتمام وحجوزات الزيارات من قمع المبيعات.",
+    "totals": "{{eoi}} طلب اهتمام · {{bookings}} حجز",
+    "loading": "جاري تحميل العملاء…",
+    "eoi": {
+      "title": "طلبات الاهتمام (EOI)",
+      "subtitle": "{{count}} عميل محتمل",
+      "empty": "مفيش طلبات اهتمام لسه."
+    },
+    "bookings": {
+      "title": "حجوزات الزيارات",
+      "subtitle": "{{count}} زيارة مجدولة",
+      "empty": "مفيش زيارات محجوزة لسه.",
+      "adminNotesLabel": "ملاحظات الإدارة"
+    },
+    "col": {
+      "id": "كود",
+      "name": "الاسم",
+      "contact": "وسيلة التواصل",
+      "interest": "الاهتمام",
+      "budget": "الميزانية",
+      "timeline": "الإطار الزمني",
+      "notes": "ملاحظات",
+      "submitted": "تاريخ الطلب",
+      "visitor": "الزائر",
+      "visitType": "نوع الزيارة",
+      "scheduledFor": "الموعد",
+      "advisor": "المستشار",
+      "status": "الحالة",
+      "actions": "الإجراءات"
+    },
+    "interest": {
+      "apartment": "شقة",
+      "villa": "فيلا",
+      "townhouse": "تاون هاوس",
+      "studio": "استوديو"
+    },
+    "visitType": {
+      "showroom": "معرض",
+      "onsite": "في الموقع",
+      "virtual": "افتراضية"
+    },
+    "bookingStatus": {
+      "pending": "في الانتظار",
+      "confirmed": "مؤكد",
+      "rejected": "مرفوض"
+    },
+    "actions": {
+      "confirm": "تأكيد",
+      "reject": "رفض",
+      "settled": "—"
+    },
+    "decision": {
+      "confirmTitle": "تأكيد الحجز",
+      "rejectTitle": "رفض الحجز",
+      "notesLabel": "ملاحظات للإدارة (اختياري)",
+      "notesConfirmPlaceholder": "مثال: مؤكد الساعة 2 ظهرًا مع ليلى — يفضل الحضور قبل الموعد بـ 10 دقايق.",
+      "notesRejectPlaceholder": "مثال: الموعد ده اتحجز — برجاء اختيار صباح أي يوم الأسبوع الجاي.",
+      "notesHelp": "تظهر في رسالة الواتساب اللي بتتبعت للضيف بعد القرار.",
+      "submitConfirm": "تأكيد الحجز",
+      "submitReject": "رفض الحجز",
+      "submitting": "جاري الحفظ…",
+      "cancel": "إلغاء",
+      "errors": {
+        "title": "تعذر حفظ القرار",
+        "conflict": "المستشار ده عنده حجز مؤكد في نفس التاريخ والوقت. غيّر المستشار أو اختار موعد تاني.",
+        "generic": "في مشكلة من عندنا — جرب تاني بعد دقيقة."
+      }
+    },
+    "toast": {
+      "title": "{{name}} — {{status}}",
+      "subtitle": "رسالة واتساب جاهزة للإرسال.",
+      "noPhone": "مفيش رقم موبايل — بلّغ بالإيميل.",
+      "openWhatsapp": "افتح واتساب وبلّغ الضيف",
+      "dismiss": "إغلاق"
+    },
+    "advisor": {
+      "any": "أي مستشار"
+    },
+    "errors": {
+      "load": "تعذر تحميل القائمة — جرب التحديث."
+    }
   },
   "bookings": {
     "title": "حجوزات الخدمات",

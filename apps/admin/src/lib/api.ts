@@ -13,6 +13,10 @@ import type {
   AdminFeedItem,
   AdminPost,
   AdminReel,
+  DiscoverBookingDecision,
+  DiscoverBookingLead,
+  DiscoverBookingStatus,
+  EoiLead,
   GateScanEvent,
   ServiceBooking,
   ServiceRequest,
@@ -32,6 +36,12 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      // Dev-only convenience: the backend's `require_admin` gate honors
+      // X-Dev-Admin: true when APP_ENV=development to unblock the admin
+      // UI before Clerk auth lands here. Sent on every request — in
+      // prod it's ignored, in dev it short-circuits to a synthetic
+      // admin. Drop once the admin app has real Clerk auth wired.
+      'X-Dev-Admin': 'true',
       ...(init?.headers ?? {}),
     },
   });
@@ -332,4 +342,37 @@ export function subscribeGateStream(
     },
     isOpen: () => socket?.readyState === WebSocket.OPEN,
   };
+}
+
+// ─── Discover funnel leads ─────────────────────────────────────────────────
+
+/** Newest-first list of every EOI submission. Backend gate: `require_admin`
+ *  in apps/api/app/api/v1/admin.py. Currently honored via the X-Dev-Admin
+ *  header in dev; will swap to a real Clerk bearer once admin auth lands. */
+export async function adminListEoi(): Promise<EoiLead[]> {
+  return http<EoiLead[]>('/admin/discover/eoi');
+}
+
+/** Same shape for Discover bookings. */
+export async function adminListDiscoverBookings(): Promise<DiscoverBookingLead[]> {
+  return http<DiscoverBookingLead[]>('/admin/discover/bookings');
+}
+
+export interface UpdateBookingStatusInput {
+  bookingId: string;
+  status: Exclude<DiscoverBookingStatus, 'pending'>;
+  adminNotes?: string | null;
+}
+
+/** Confirm or reject a Discover booking and receive back the updated
+ *  row + a click-to-message WhatsApp deep-link the admin can use to
+ *  notify the resident. */
+export async function adminUpdateBookingStatus(
+  input: UpdateBookingStatusInput,
+): Promise<DiscoverBookingDecision> {
+  const { bookingId, status, adminNotes } = input;
+  return http<DiscoverBookingDecision>(`/admin/discover/bookings/${bookingId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, adminNotes: adminNotes ?? null }),
+  });
 }
